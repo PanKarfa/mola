@@ -222,7 +222,7 @@ void BridgeROS2::initialize_rds(const Yaml& c)
     using namespace std::string_literals;
 
     MRPT_START
-    ProfilerEntry tle(profiler_, "initialize");
+    const ProfilerEntry tle(profiler_, "initialize");
 
     // Mandatory parameters:
     ENSURE_YAML_ENTRY_EXISTS(c, "params");
@@ -291,7 +291,7 @@ void BridgeROS2::spinOnce()
     using mrpt::system::timeDifference;
 
     MRPT_START
-    ProfilerEntry tleg(profiler_, "spinOnce");
+    const ProfilerEntry tleg(profiler_, "spinOnce");
 
     // Publish odometry?
     importRosOdometryToMOLA();
@@ -311,7 +311,7 @@ void BridgeROS2::callbackOnPointCloud2(
     const std::optional<mrpt::poses::CPose3D>& fixedSensorPose)
 {
     MRPT_START
-    ProfilerEntry tle(profiler_, "callbackOnPointCloud2");
+    const ProfilerEntry tle(profiler_, "callbackOnPointCloud2");
 
     const std::set<std::string> fields = mrpt::ros2bridge::extractFields(o);
 
@@ -406,7 +406,7 @@ void BridgeROS2::callbackOnOdometry(
     const nav_msgs::msg::Odometry& o, const std::string& outSensorLabel)
 {
     MRPT_START
-    ProfilerEntry tle(profiler_, "callbackOnOdometry");
+    const ProfilerEntry tle(profiler_, "callbackOnOdometry");
 
     auto obs         = mrpt::obs::CObservationOdometry::Create();
     obs->timestamp   = mrpt::ros2bridge::fromROS(o.header.stamp);
@@ -464,7 +464,7 @@ void BridgeROS2::callbackOnLaserScan(
     const std::optional<mrpt::poses::CPose3D>& fixedSensorPose)
 {
     MRPT_START
-    ProfilerEntry tle(profiler_, "callbackOnLaserScan");
+    const ProfilerEntry tle(profiler_, "callbackOnLaserScan");
 
     // Sensor pose wrt robot base:
     mrpt::poses::CPose3D sensorPose;
@@ -506,7 +506,7 @@ void BridgeROS2::callbackOnImu(
     const std::optional<mrpt::poses::CPose3D>& fixedSensorPose)
 {
     MRPT_START
-    ProfilerEntry tle(profiler_, "callbackOnImu");
+    const ProfilerEntry tle(profiler_, "callbackOnImu");
 
     // Sensor pose wrt robot base:
     mrpt::poses::CPose3D sensorPose;
@@ -548,7 +548,7 @@ void BridgeROS2::callbackOnNavSatFix(
     const std::optional<mrpt::poses::CPose3D>& fixedSensorPose)
 {
     MRPT_START
-    ProfilerEntry tle(profiler_, "callbackOnNavSatFix");
+    const ProfilerEntry tle(profiler_, "callbackOnNavSatFix");
 
     // Sensor pose wrt robot base:
     mrpt::poses::CPose3D sensorPose;
