@@ -113,7 +113,7 @@ class Rosbag2Dataset : public RawDataSourceBase,
     std::string rosbag_storage_id_;  // (sqlite3|mcap) Empty = auto guess
 
     std::string rosbag_serialization_ = "cdr";
-    std::string base_link_frame_id_   = "base_footprint";
+    std::string base_link_frame_id_   = "base_link";
 
     std::optional<mrpt::Clock::time_point> rosbag_begin_time_;
     size_t                                 read_ahead_length_ = 15;
