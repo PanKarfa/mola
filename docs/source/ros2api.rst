@@ -366,3 +366,16 @@ Documented parameters:
       # generate_simplemap: false
       ros2 service call /mola_runtime_param_set mola_msgs/srv/MolaRuntimeParamSet \
          "{parameters: \"mola::LidarOdometry:lidar_odom:\n  generate_simplemap: false\n\"}"
+
+- ``reset_state``: This is actually not a real state variable, but a trigger to request MOLA-LO to
+  reset its state, effectively restarting mapping from scratch. It resets the internal local map, the
+  simplemap (keyframe map). The state estimator, since it is in a different independent module, is not
+  affected.
+
+.. dropdown:: Copy & paste commands to reset map
+
+   .. code-block:: bash
+
+      ros2 service call /mola_runtime_param_set mola_msgs/srv/MolaRuntimeParamSet \
+         "{parameters: \"mola::LidarOdometry:lidar_odom:\n  reset_state: true\n\"}"
+
