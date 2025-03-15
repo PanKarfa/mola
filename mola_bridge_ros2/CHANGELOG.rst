@@ -3,6 +3,13 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* clang-tidy: const correctness
+* Service renamed: RelocalizeFromGNSS -> RelocalizeFromStateEstimator
+* FIX: Potential deadlock in initialization
+* Contributors: Jose Luis Blanco-Claraco
+
 1.6.2 (2025-02-22)
 ------------------
 * Implement publish Diagnostics per mola module & ROS2 publishers refactored (code clean up)
