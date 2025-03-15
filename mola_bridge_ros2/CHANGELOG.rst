@@ -3,8 +3,8 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+1.6.3 (2025-03-15)
+------------------
 * clang-tidy: const correctness
 * Service renamed: RelocalizeFromGNSS -> RelocalizeFromStateEstimator
 * FIX: Potential deadlock in initialization

@@ -3,8 +3,8 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+1.6.3 (2025-03-15)
+------------------
 * rosbag2 input: update C++ default value to "base_link" (all launch files were already like that, here only the default value changes)
 * Contributors: Jose Luis Blanco-Claraco
 
