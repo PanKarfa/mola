@@ -13,7 +13,7 @@
 set +e
 set +x
 
-DIRS_IN="modules"
+DIRS_IN=$(ls mola_* -d)
 DIRS_OUT="demos docs modules/mp2p_icp/3rdparty"
 LANGS=cpp
 FORMAT_CODE_BIN="scripts/clang_git_format/format_code.py"
