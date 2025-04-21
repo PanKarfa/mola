@@ -1380,8 +1380,7 @@ void BridgeROS2::timerPubMap()
             internalPublishGridMap(*grid, mapTopic, mu.reference_frame);
         }
         // Is it a CVoxelMap?
-        else if (auto vox = std::dynamic_pointer_cast<mrpt::maps::CVoxelMap>(mu.map);
-                 vox)
+        else if (auto vox = std::dynamic_pointer_cast<mrpt::maps::CVoxelMap>(mu.map); vox)
         {
             mrpt::maps::CSimplePointsMap::Ptr pm = vox->getOccupiedVoxels();
             if (pm)
