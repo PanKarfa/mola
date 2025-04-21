@@ -1383,7 +1383,6 @@ void BridgeROS2::timerPubMap()
         else if (auto vox = std::dynamic_pointer_cast<mrpt::maps::CVoxelMap>(mu.map);
                  vox)
         {
-            // internalPublishVoxelMap(*vox, mapTopic, mu.reference_frame);
             mrpt::maps::CSimplePointsMap::Ptr pm = vox->getOccupiedVoxels();
             if (pm)
             {
