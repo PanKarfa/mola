@@ -28,6 +28,7 @@
 #include <mrpt/maps/CPointsMapXYZI.h>
 #include <mrpt/maps/CPointsMapXYZIRT.h>
 #include <mrpt/maps/CSimplePointsMap.h>
+#include <mrpt/maps/CVoxelMap.h>
 #include <mrpt/obs/CObservation2DRangeScan.h>
 #include <mrpt/obs/CObservationGPS.h>
 #include <mrpt/obs/CObservationIMU.h>
@@ -1377,6 +1378,24 @@ void BridgeROS2::timerPubMap()
                  grid)
         {
             internalPublishGridMap(*grid, mapTopic, mu.reference_frame);
+        }
+        // Is it a CVoxelMap?
+        else if (auto vox = std::dynamic_pointer_cast<mrpt::maps::CVoxelMap>(mu.map); vox)
+        {
+            mrpt::maps::CSimplePointsMap::Ptr pm = vox->getOccupiedVoxels();
+            if (pm)
+            {
+                mrpt::obs::CObservationPointCloud obs;
+                obs.sensorLabel = mapTopic;
+                obs.pointcloud  = pm;
+                // Reuse code for point cloud observations: build a "fake" observation:
+                internalOn(obs, false /*no tf*/, mu.reference_frame);
+            }
+            else
+            {
+                MRPT_LOG_WARN_STREAM(
+                    "Voxel map '" << layerName << "' has no occupied voxels to publish.");
+            }
         }
         // Not empty?
         else if (mu.map)
