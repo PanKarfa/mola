@@ -35,49 +35,49 @@ namespace mola
 class FrontEndBase : public ExecutableBase, public RawDataConsumer
 {
 #if MRPT_VERSION < 0x020e00
-    DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase)
+  DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase)
 #else
-    DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase, mola)
+  DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase, mola)
 #endif
 
-   public:
-    FrontEndBase();
-    virtual ~FrontEndBase() = default;
+ public:
+  FrontEndBase();
+  virtual ~FrontEndBase() = default;
 
-    /** Loads common parameters for all front-ends.
-     *
-     * These parameters are handled here:
-     * - `raw_data_source`: A list of one (e.g. `raw_data_source: 'moduleName'`)
-     *   or multiple (e.g. `raw_data_source: [moduleName1, moduleName2]`) MOLA
-     *   **module names** to which to subscribe for input raw observations.
-     *
-     * Recall that module names are given in the `name:` field of the mola-cli
-     * launch YAML file.
-     *
-     * Note that no individual sensor label is read in this abstract class
-     * since it is up to the derived classes to specify whether to subscribe
-     * to one or more sensor sources, and use descriptive names in the case of
-     * multiple sensors.
-     *
-     */
-    void initialize(const Yaml& cfg) override final;
+  /** Loads common parameters for all front-ends.
+   *
+   * These parameters are handled here:
+   * - `raw_data_source`: A list of one (e.g. `raw_data_source: 'moduleName'`)
+   *   or multiple (e.g. `raw_data_source: [moduleName1, moduleName2]`) MOLA
+   *   **module names** to which to subscribe for input raw observations.
+   *
+   * Recall that module names are given in the `name:` field of the mola-cli
+   * launch YAML file.
+   *
+   * Note that no individual sensor label is read in this abstract class
+   * since it is up to the derived classes to specify whether to subscribe
+   * to one or more sensor sources, and use descriptive names in the case of
+   * multiple sensors.
+   *
+   */
+  void initialize(const Yaml& cfg) override final;
 
-   protected:
-    /** Loads children specific parameters */
-    virtual void initialize_frontend(const Yaml& cfg) = 0;
+ protected:
+  /** Loads children specific parameters */
+  virtual void initialize_frontend(const Yaml& cfg) = 0;
 
-   public:
-   protected:
-    /** A list of one or multiple MOLA **module names** to which to subscribe
-     * for input raw observations.
-     */
-    std::set<std::string> front_end_source_names_;
+ public:
+ protected:
+  /** A list of one or multiple MOLA **module names** to which to subscribe
+   * for input raw observations.
+   */
+  std::set<std::string> front_end_source_names_;
 
-    /** A reference to my associated SLAM backend.
-     * Populated by initialize_common() */
-    BackEndBase::Ptr  slam_backend_;
-    WorldModel::Ptr   worldmodel_;
-    VizInterface::Ptr visualizer_;
+  /** A reference to my associated SLAM backend.
+   * Populated by initialize_common() */
+  BackEndBase::Ptr  slam_backend_;
+  WorldModel::Ptr   worldmodel_;
+  VizInterface::Ptr visualizer_;
 };
 
 }  // namespace mola

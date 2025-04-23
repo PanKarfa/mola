@@ -26,33 +26,33 @@ namespace mola
 class FilterBase : public RawDataSourceBase, RawDataConsumer
 {
 #if MRPT_VERSION < 0x020e00
-    DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase)
+  DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase)
 #else
-    DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase, mola)
+  DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase, mola)
 #endif
-   public:
-    FilterBase();
+ public:
+  FilterBase();
 
-    /** @name Virtual interface of any Filter
-     *{ */
+  /** @name Virtual interface of any Filter
+   *{ */
 
-    /** To be called for each incoming observation. Process it and return
-     * the modified observation.
-     */
-    virtual CObservation::Ptr doFilter(const CObservation::Ptr& o) = 0;
-    /** @} */
+  /** To be called for each incoming observation. Process it and return
+   * the modified observation.
+   */
+  virtual CObservation::Ptr doFilter(const CObservation::Ptr& o) = 0;
+  /** @} */
 
-    void spinOnce() override;
+  void spinOnce() override;
 
-    // Virtual interface of any RawDataConsumer
-    void onNewObservation(const CObservation::Ptr& o) override;
+  // Virtual interface of any RawDataConsumer
+  void onNewObservation(const CObservation::Ptr& o) override;
 
-   protected:
-    // Virtual interface of any RawDataSource
-    void initialize_rds(const Yaml& cfg) override;
+ protected:
+  // Virtual interface of any RawDataSource
+  void initialize_rds(const Yaml& cfg) override;
 
-   private:
-    mrpt::WorkerThreadsPool thread_pool_;
+ private:
+  mrpt::WorkerThreadsPool thread_pool_;
 };
 
 }  // namespace mola

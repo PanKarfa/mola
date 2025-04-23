@@ -38,39 +38,33 @@ namespace mola
 template <typename cell_coord_t = int32_t>
 struct index3d_t
 {
-    index3d_t() = default;
+  index3d_t() = default;
 
-    index3d_t(cell_coord_t Cx, cell_coord_t Cy, cell_coord_t Cz) noexcept
-        : cx(Cx), cy(Cy), cz(Cz)
-    {
-    }
+  index3d_t(cell_coord_t Cx, cell_coord_t Cy, cell_coord_t Cz) noexcept : cx(Cx), cy(Cy), cz(Cz) {}
 
-    cell_coord_t cx = 0, cy = 0, cz = 0;
+  cell_coord_t cx = 0, cy = 0, cz = 0;
 
-    bool operator==(const index3d_t<cell_coord_t>& o) const noexcept
-    {
-        return cx == o.cx && cy == o.cy && cz == o.cz;
-    }
-    bool operator!=(const index3d_t<cell_coord_t>& o) const noexcept
-    {
-        return !operator==(o);
-    }
+  bool operator==(const index3d_t<cell_coord_t>& o) const noexcept
+  {
+    return cx == o.cx && cy == o.cy && cz == o.cz;
+  }
+  bool operator!=(const index3d_t<cell_coord_t>& o) const noexcept { return !operator==(o); }
 
-    index3d_t operator+(const index3d_t& o) const noexcept
-    {
-        return {cx + o.cx, cy + o.cy, cz + o.cz};
-    }
-    index3d_t operator-(const index3d_t& o) const noexcept
-    {
-        return {cx - o.cx, cy - o.cy, cz - o.cz};
-    }
+  index3d_t operator+(const index3d_t& o) const noexcept
+  {
+    return {cx + o.cx, cy + o.cy, cz + o.cz};
+  }
+  index3d_t operator-(const index3d_t& o) const noexcept
+  {
+    return {cx - o.cx, cy - o.cy, cz - o.cz};
+  }
 };
 
 template <typename cell_coord_t>
 std::ostream& operator<<(std::ostream& o, const index3d_t<cell_coord_t>& idx)
 {
-    o << "(" << idx.cx << "," << idx.cy << "," << idx.cz << ")";
-    return o;
+  o << "(" << idx.cx << "," << idx.cy << "," << idx.cz << ")";
+  return o;
 }
 
 /** This implement the optimized hash from this paper:
@@ -83,32 +77,27 @@ std::ostream& operator<<(std::ostream& o, const index3d_t<cell_coord_t>& idx)
 template <typename cell_coord_t = int32_t>
 struct index3d_hash
 {
-    /// Hash operator for unordered maps:
-    std::size_t operator()(const index3d_t<cell_coord_t>& k) const noexcept
-    {
-        // These are the implicit assumptions of the reinterpret cast below:
-        static_assert(sizeof(cell_coord_t) == sizeof(uint32_t));
-        static_assert(
-            offsetof(index3d_t<cell_coord_t>, cx) == 0 * sizeof(uint32_t));
-        static_assert(
-            offsetof(index3d_t<cell_coord_t>, cy) == 1 * sizeof(uint32_t));
-        static_assert(
-            offsetof(index3d_t<cell_coord_t>, cz) == 2 * sizeof(uint32_t));
+  /// Hash operator for unordered maps:
+  std::size_t operator()(const index3d_t<cell_coord_t>& k) const noexcept
+  {
+    // These are the implicit assumptions of the reinterpret cast below:
+    static_assert(sizeof(cell_coord_t) == sizeof(uint32_t));
+    static_assert(offsetof(index3d_t<cell_coord_t>, cx) == 0 * sizeof(uint32_t));
+    static_assert(offsetof(index3d_t<cell_coord_t>, cy) == 1 * sizeof(uint32_t));
+    static_assert(offsetof(index3d_t<cell_coord_t>, cz) == 2 * sizeof(uint32_t));
 
-        const uint32_t* vec = reinterpret_cast<const uint32_t*>(&k);
-        return ((1 << 20) - 1) &
-               (vec[0] * 73856093 ^ vec[1] * 19349663 ^ vec[2] * 83492791);
-    }
+    const uint32_t* vec = reinterpret_cast<const uint32_t*>(&k);
+    return ((1 << 20) - 1) & (vec[0] * 73856093 ^ vec[1] * 19349663 ^ vec[2] * 83492791);
+  }
 
-    /// k1 < k2? for std::map containers
-    bool operator()(
-        const index3d_t<cell_coord_t>& k1,
-        const index3d_t<cell_coord_t>& k2) const noexcept
-    {
-        if (k1.cx != k2.cx) return k1.cx < k2.cx;
-        if (k1.cy != k2.cy) return k1.cy < k2.cy;
-        return k1.cz < k2.cz;
-    }
+  /// k1 < k2? for std::map containers
+  bool operator()(
+      const index3d_t<cell_coord_t>& k1, const index3d_t<cell_coord_t>& k2) const noexcept
+  {
+    if (k1.cx != k2.cx) return k1.cx < k2.cx;
+    if (k1.cy != k2.cy) return k1.cy < k2.cy;
+    return k1.cz < k2.cz;
+  }
 };
 
 }  // namespace mola

@@ -34,21 +34,21 @@
 
 void test_voxelmap_basic_ops()
 {
-    mola::NDT map;
-    ASSERT_(map.isEmpty());
+  mola::NDT map;
+  ASSERT_(map.isEmpty());
 
-    map.insertPoint({1.0f, 2.0f, 3.0f}, {.0f, .0f, .0f});
-    ASSERT_(!map.isEmpty());
+  map.insertPoint({1.0f, 2.0f, 3.0f}, {.0f, .0f, .0f});
+  ASSERT_(!map.isEmpty());
 }
 
 void test_voxelmap_insert_2d_scan()
 {
-    mola::NDT map(0.2 /*voxel size*/);
+  mola::NDT map(0.2 /*voxel size*/);
 
-    mrpt::obs::CObservation2DRangeScan scan2D;
-    mrpt::obs::stock_observations::example2DRangeScan(scan2D);
+  mrpt::obs::CObservation2DRangeScan scan2D;
+  mrpt::obs::stock_observations::example2DRangeScan(scan2D);
 
-    map.insertObservation(scan2D);
+  map.insertObservation(scan2D);
 #if 0
     mrpt::opengl::Scene scene;
     map.renderOptions.point_size = 5.0f;
@@ -56,26 +56,23 @@ void test_voxelmap_insert_2d_scan()
     scene.saveToFile("sparsevoxelmap_scan2d.3Dscene");
 #endif
 
-    {
-        size_t nPts = 0;
+  {
+    size_t nPts = 0;
 
-        const auto lambdaVisitPoints = [&nPts](const mrpt::math::TPoint3Df&)
-        { nPts++; };
+    const auto lambdaVisitPoints = [&nPts](const mrpt::math::TPoint3Df&) { nPts++; };
 
-        map.visitAllPoints(lambdaVisitPoints);
+    map.visitAllPoints(lambdaVisitPoints);
 
-        ASSERT_EQUAL_(nPts, 267UL);
-    }
+    ASSERT_EQUAL_(nPts, 267UL);
+  }
 
-    // test NN search:
-    mrpt::maps::CSimplePointsMap refPts;
-    map.visitAllPoints([&](const mrpt::math::TPoint3Df& pt)
-                       { refPts.insertPoint(pt); });
+  // test NN search:
+  mrpt::maps::CSimplePointsMap refPts;
+  map.visitAllPoints([&](const mrpt::math::TPoint3Df& pt) { refPts.insertPoint(pt); });
 
-    mrpt::maps::CSimplePointsMap queryPts;
-    queryPts.insertObservation(
-        scan2D, mrpt::poses::CPose3D::FromXYZYawPitchRoll(
-                    -0.05, -0.01, -0.01, 0, 0, 0));
+  mrpt::maps::CSimplePointsMap queryPts;
+  queryPts.insertObservation(
+      scan2D, mrpt::poses::CPose3D::FromXYZYawPitchRoll(-0.05, -0.01, -0.01, 0, 0, 0));
 
 // TODO: Update for new NN API!
 #if 0
@@ -122,14 +119,14 @@ void test_voxelmap_insert_2d_scan()
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        test_voxelmap_basic_ops();
-        test_voxelmap_insert_2d_scan();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
+  try
+  {
+    test_voxelmap_basic_ops();
+    test_voxelmap_insert_2d_scan();
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << "\n";
+    return 1;
+  }
 }

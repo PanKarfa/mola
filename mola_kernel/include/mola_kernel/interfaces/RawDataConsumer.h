@@ -23,18 +23,18 @@ using CObservation = mrpt::obs::CObservation;
  * \ingroup mola_kernel_interfaces_grp */
 class RawDataConsumer
 {
-   public:
-    RawDataConsumer()          = default;
-    virtual ~RawDataConsumer() = default;
+ public:
+  RawDataConsumer()          = default;
+  virtual ~RawDataConsumer() = default;
 
-    /** @name Virtual interface of any RawDataConsumer
-     *{ */
+  /** @name Virtual interface of any RawDataConsumer
+   *{ */
 
-    /** To be called whenever a new observation arrives. It should return as
-     * fast as possible, enqueuing the data for processing in another thread.
-     */
-    virtual void onNewObservation(const CObservation::Ptr& o) = 0;
-    /** @} */
+  /** To be called whenever a new observation arrives. It should return as
+   * fast as possible, enqueuing the data for processing in another thread.
+   */
+  virtual void onNewObservation(const CObservation::Ptr& o) = 0;
+  /** @} */
 };
 
 }  // namespace mola

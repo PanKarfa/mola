@@ -35,17 +35,16 @@
 template <typename T>
 class TraitsTest
 {
-    TraitsTest()
-    {
-        static_assert(std::is_move_constructible<T>(), "Can't move construct");
-        static_assert(std::is_copy_constructible<T>(), "Can't copy construct");
-        static_assert(std::is_move_assignable<T>(), "Can't move assign");
-        static_assert(std::is_copy_assignable<T>(), "Can't copy assign");
-    }
+  TraitsTest()
+  {
+    static_assert(std::is_move_constructible<T>(), "Can't move construct");
+    static_assert(std::is_copy_constructible<T>(), "Can't copy construct");
+    static_assert(std::is_move_assignable<T>(), "Can't move assign");
+    static_assert(std::is_copy_assignable<T>(), "Can't copy assign");
+  }
 };
 
-#define TEST_CLASS_MOVE_COPY_CTORS(_classname) \
-    template class TraitsTest<_classname>
+#define TEST_CLASS_MOVE_COPY_CTORS(_classname) template class TraitsTest<_classname>
 
 TEST_CLASS_MOVE_COPY_CTORS(mola::SparseVoxelPointCloud);
 TEST_CLASS_MOVE_COPY_CTORS(mola::OccGrid);
@@ -54,47 +53,44 @@ TEST_CLASS_MOVE_COPY_CTORS(mola::OccGrid);
 // bugs:
 void test_serialization()
 {
-    const mrpt::rtti::TRuntimeClassId* lstClasses[] = {
-        CLASS_ID(mola::OccGrid),
-        CLASS_ID(mola::SparseVoxelPointCloud),
-    };
+  const mrpt::rtti::TRuntimeClassId* lstClasses[] = {
+      CLASS_ID(mola::OccGrid),
+      CLASS_ID(mola::SparseVoxelPointCloud),
+  };
 
-    for (auto& c : lstClasses)
+  for (auto& c : lstClasses)
+  {
+    try
     {
-        try
-        {
-            mrpt::io::CMemoryStream buf;
-            auto arch = mrpt::serialization::archiveFrom(buf);
-            {
-                auto o =
-                    mrpt::ptr_cast<mrpt::serialization::CSerializable>::from(
-                        c->createObject());
-                arch << *o;
-                o.reset();
-            }
+      mrpt::io::CMemoryStream buf;
+      auto                    arch = mrpt::serialization::archiveFrom(buf);
+      {
+        auto o = mrpt::ptr_cast<mrpt::serialization::CSerializable>::from(c->createObject());
+        arch << *o;
+        o.reset();
+      }
 
-            mrpt::serialization::CSerializable::Ptr recons;
-            buf.Seek(0);
-            arch >> recons;
-        }
-        catch (const std::exception& e)
-        {
-            THROW_EXCEPTION_FMT(
-                "Exception during serialization test for class '%s': %s",
-                c->className, e.what());
-        }
+      mrpt::serialization::CSerializable::Ptr recons;
+      buf.Seek(0);
+      arch >> recons;
     }
+    catch (const std::exception& e)
+    {
+      THROW_EXCEPTION_FMT(
+          "Exception during serialization test for class '%s': %s", c->className, e.what());
+    }
+  }
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        test_serialization();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
+  try
+  {
+    test_serialization();
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << "\n";
+    return 1;
+  }
 }

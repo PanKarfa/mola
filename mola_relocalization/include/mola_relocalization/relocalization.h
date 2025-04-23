@@ -56,28 +56,28 @@ namespace mola
  */
 struct RelocalizationLikelihood_SE2
 {
-    struct Input
-    {
-        mp2p_icp::metric_map_t   reference_map;
-        mrpt::obs::CSensoryFrame observations;
-        mrpt::math::TPose2D      corner_min, corner_max;
-        double                   resolution_xy  = 0.5;
-        double                   resolution_phi = mrpt::DEG2RAD(30.0);
+  struct Input
+  {
+    mp2p_icp::metric_map_t   reference_map;
+    mrpt::obs::CSensoryFrame observations;
+    mrpt::math::TPose2D      corner_min, corner_max;
+    double                   resolution_xy  = 0.5;
+    double                   resolution_phi = mrpt::DEG2RAD(30.0);
 
-        Input() = default;
-    };
+    Input() = default;
+  };
 
-    struct Output
-    {
-        mrpt::poses::CPosePDFGrid likelihood_grid;
-        double                    time_cost          = .0;  //!< [s]
-        double                    max_log_likelihood = 0;
-        double                    min_log_likelihood = 0;
+  struct Output
+  {
+    mrpt::poses::CPosePDFGrid likelihood_grid;
+    double                    time_cost          = .0;  //!< [s]
+    double                    max_log_likelihood = 0;
+    double                    min_log_likelihood = 0;
 
-        Output() = default;
-    };
+    Output() = default;
+  };
 
-    static Output run(const Input& in);
+  static Output run(const Input& in);
 };
 
 /** Takes a global and a local metric map, a SE(2) ROI, and tries to match
@@ -92,59 +92,59 @@ struct RelocalizationLikelihood_SE2
  */
 struct RelocalizationICP_SE2
 {
-    struct ProgressFeedback
+  struct ProgressFeedback
+  {
+    ProgressFeedback() = default;
+
+    size_t              current_cell = 0;
+    size_t              total_cells  = 0;
+    mrpt::math::TPose3D cell_init_guess;
+    double              obtained_icp_quality = .0;
+  };
+
+  struct Input
+  {
+    mp2p_icp::metric_map_t reference_map;
+    mp2p_icp::metric_map_t local_map;
+
+    /** If provided more than one, several ICP runs will be triggered in
+     * parallel threads.
+     */
+    std::vector<mp2p_icp::ICP::Ptr> icp_pipeline;
+    mp2p_icp::Parameters            icp_parameters;
+    double                          icp_minimum_quality = 0.50;
+
+    struct InputLattice
     {
-        ProgressFeedback() = default;
-
-        size_t              current_cell = 0;
-        size_t              total_cells  = 0;
-        mrpt::math::TPose3D cell_init_guess;
-        double              obtained_icp_quality = .0;
+      mrpt::math::TPose2D corner_min, corner_max;
+      double              resolution_xy  = 1.0;
+      double              resolution_phi = mrpt::DEG2RAD(40.0);
     };
+    InputLattice initial_guess_lattice;
 
-    struct Input
+    struct OutputLattice
     {
-        mp2p_icp::metric_map_t reference_map;
-        mp2p_icp::metric_map_t local_map;
-
-        /** If provided more than one, several ICP runs will be triggered in
-         * parallel threads.
-         */
-        std::vector<mp2p_icp::ICP::Ptr> icp_pipeline;
-        mp2p_icp::Parameters            icp_parameters;
-        double                          icp_minimum_quality = 0.50;
-
-        struct InputLattice
-        {
-            mrpt::math::TPose2D corner_min, corner_max;
-            double              resolution_xy  = 1.0;
-            double              resolution_phi = mrpt::DEG2RAD(40.0);
-        };
-        InputLattice initial_guess_lattice;
-
-        struct OutputLattice
-        {
-            double resolution_xyz   = 0.10;
-            double resolution_yaw   = mrpt::DEG2RAD(5.0);
-            double resolution_pitch = mrpt::DEG2RAD(5.0);
-            double resolution_roll  = mrpt::DEG2RAD(5.0);
-        };
-        OutputLattice output_lattice;
-
-        std::function<void(const ProgressFeedback&)> on_progress_callback;
-
-        Input() = default;
+      double resolution_xyz   = 0.10;
+      double resolution_yaw   = mrpt::DEG2RAD(5.0);
+      double resolution_pitch = mrpt::DEG2RAD(5.0);
+      double resolution_roll  = mrpt::DEG2RAD(5.0);
     };
+    OutputLattice output_lattice;
 
-    struct Output
-    {
-        mola::HashedSetSE3 found_poses;
-        double             time_cost = .0;  //!< [s]
+    std::function<void(const ProgressFeedback&)> on_progress_callback;
 
-        Output() = default;
-    };
+    Input() = default;
+  };
 
-    static Output run(const Input& in);
+  struct Output
+  {
+    mola::HashedSetSE3 found_poses;
+    double             time_cost = .0;  //!< [s]
+
+    Output() = default;
+  };
+
+  static Output run(const Input& in);
 };
 
 /** Finds the SE(2) poses with the top given percentile likelihood, and returns
@@ -157,8 +157,7 @@ struct RelocalizationICP_SE2
  *
  * \ingroup mola_relocalization_grp
  */
-auto find_best_poses_se2(
-    const mrpt::poses::CPosePDFGrid& grid, const double percentile = 0.99)
+auto find_best_poses_se2(const mrpt::poses::CPosePDFGrid& grid, const double percentile = 0.99)
     -> std::map<double, mrpt::math::TPose2D>;
 
 }  // namespace mola

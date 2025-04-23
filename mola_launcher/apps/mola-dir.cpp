@@ -19,32 +19,32 @@
 
 int main(int argc, char** argv)
 {
-    try
+  try
+  {
+    if (argc != 2)
+      throw std::runtime_error(
+          "Usage: mola-dir <MODULE_NAME>\n"
+          "You can also use `mola-cli --list-module-shared-dirs` to list "
+          "all known module shared-files directories.");
+
+    mola::MolaLauncherApp app;
+
+    const auto modName   = std::string(argv[1]);
+    const auto foundPath = app.findModuleSharedDir(modName);
+
+    if (foundPath.empty())
     {
-        if (argc != 2)
-            throw std::runtime_error(
-                "Usage: mola-dir <MODULE_NAME>\n"
-                "You can also use `mola-cli --list-module-shared-dirs` to list "
-                "all known module shared-files directories.");
-
-        mola::MolaLauncherApp app;
-
-        const auto modName   = std::string(argv[1]);
-        const auto foundPath = app.findModuleSharedDir(modName);
-
-        if (foundPath.empty())
-        {
-            std::cerr << "Module `" << modName << "` was not found.";
-            return 1;
-        }
-
-        std::cout << foundPath << "\n";
-
-        return 0;
+      std::cerr << "Module `" << modName << "` was not found.";
+      return 1;
     }
-    catch (std::exception& e)
-    {
-        mola::pretty_print_exception(e, "[mola-dir] Exit due to exception:");
-        return 1;
-    }
+
+    std::cout << foundPath << "\n";
+
+    return 0;
+  }
+  catch (std::exception& e)
+  {
+    mola::pretty_print_exception(e, "[mola-dir] Exit due to exception:");
+    return 1;
+  }
 }

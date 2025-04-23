@@ -34,36 +34,36 @@ using annotations_data_t = std::map<std::string, LazyLoadResource>;
 class EntityBase : public mrpt::serialization::CSerializable
 {
 #if MRPT_VERSION < 0x020e00
-    DEFINE_VIRTUAL_SERIALIZABLE(EntityBase);
+  DEFINE_VIRTUAL_SERIALIZABLE(EntityBase);
 #else
-    DEFINE_VIRTUAL_SERIALIZABLE(EntityBase, mola);
+  DEFINE_VIRTUAL_SERIALIZABLE(EntityBase, mola);
 #endif
 
-   public:
-    EntityBase();
-    virtual ~EntityBase();
+ public:
+  EntityBase();
+  virtual ~EntityBase();
 
-    /** The unique ID of this entity in the world model.
-     * Stored here for convenience, notice that it is redundant since
-     * entities are already stored in the WorldModel indexed by ID.
-     */
-    mola::id_t my_id_{mola::INVALID_ID};
+  /** The unique ID of this entity in the world model.
+   * Stored here for convenience, notice that it is redundant since
+   * entities are already stored in the WorldModel indexed by ID.
+   */
+  mola::id_t my_id_{mola::INVALID_ID};
 
-    /** Entity creation timestamp */
-    mrpt::Clock::time_point timestamp_{};
+  /** Entity creation timestamp */
+  mrpt::Clock::time_point timestamp_{};
 
-    /** See annotations_data_t */
-    annotations_data_t annotations_;
+  /** See annotations_data_t */
+  annotations_data_t annotations_;
 
-    void load();
-    void unload();
-    bool is_unloaded() const;
+  void load();
+  void unload();
+  bool is_unloaded() const;
 
-   protected:
-    // Derived classes mus call these methods to serialize the common data
-    // in this base class:
-    void baseSerializeTo(mrpt::serialization::CArchive& out) const;
-    void baseSerializeFrom(mrpt::serialization::CArchive& in);
+ protected:
+  // Derived classes mus call these methods to serialize the common data
+  // in this base class:
+  void baseSerializeTo(mrpt::serialization::CArchive& out) const;
+  void baseSerializeFrom(mrpt::serialization::CArchive& in);
 };
 
 }  // namespace mola

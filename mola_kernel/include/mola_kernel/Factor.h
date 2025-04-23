@@ -31,9 +31,8 @@ namespace mola
  * \ingroup mola_kernel_grp
  */
 using Factor = std::variant<
-    std::monostate, FactorRelativePose3, FactorConstVelKinematics,
-    FactorStereoProjectionPose, SmartFactorStereoProjectionPose, SmartFactorIMU,
-    FactorOther>;
+    std::monostate, FactorRelativePose3, FactorConstVelKinematics, FactorStereoProjectionPose,
+    SmartFactorStereoProjectionPose, SmartFactorIMU, FactorOther>;
 
 /** Return a reference to the FactorBase associated to the variant f */
 FactorBase& factor_get_base(Factor& f);

@@ -21,50 +21,49 @@ IMPLEMENTS_SERIALIZABLE(FactorRelativePose3, FactorBase, mola);
 
 mola::id_t FactorRelativePose3::edge_indices(const std::size_t i) const
 {
-    switch (i)
-    {
-        case 0:
-            return from_kf_;
-        case 1:
-            return to_kf_;
-        default:
-            THROW_EXCEPTION("Out of bounds");
-    }
+  switch (i)
+  {
+    case 0:
+      return from_kf_;
+    case 1:
+      return to_kf_;
+    default:
+      THROW_EXCEPTION("Out of bounds");
+  }
 }
 
 // Implementation of the CSerializable virtual interface:
 uint8_t FactorRelativePose3::serializeGetVersion() const { return 0; }
-void FactorRelativePose3::serializeTo(mrpt::serialization::CArchive& out) const
+void    FactorRelativePose3::serializeTo(mrpt::serialization::CArchive& out) const
 {
-    baseSerializeTo(out);
+  baseSerializeTo(out);
 
-    out << from_kf_ << to_kf_ << rel_pose_;
-    out.WriteAs<bool>(noise_model_.has_value());
-    if (noise_model_) out << mrpt::math::CMatrixD(*noise_model_);
-    out << noise_model_diag_xyz_ << noise_model_diag_rot_;
+  out << from_kf_ << to_kf_ << rel_pose_;
+  out.WriteAs<bool>(noise_model_.has_value());
+  if (noise_model_) out << mrpt::math::CMatrixD(*noise_model_);
+  out << noise_model_diag_xyz_ << noise_model_diag_rot_;
 }
-void FactorRelativePose3::serializeFrom(
-    mrpt::serialization::CArchive& in, uint8_t version)
+void FactorRelativePose3::serializeFrom(mrpt::serialization::CArchive& in, uint8_t version)
 {
-    baseSerializeFrom(in);
+  baseSerializeFrom(in);
 
-    switch (version)
+  switch (version)
+  {
+    case 0:
     {
-        case 0:
-        {
-            in >> from_kf_ >> to_kf_ >> rel_pose_;
-            if (in.ReadAs<bool>())
-            {
-                mrpt::math::CMatrixD m;
-                in >> m;
-                mrpt::math::CMatrixDouble66 m66;
-                m66 = m;
-                noise_model_.emplace(std::move(m66));
-            }
-            in >> noise_model_diag_xyz_ >> noise_model_diag_rot_;
-        }
-        break;
-        default:
-            MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
-    };
+      in >> from_kf_ >> to_kf_ >> rel_pose_;
+      if (in.ReadAs<bool>())
+      {
+        mrpt::math::CMatrixD m;
+        in >> m;
+        mrpt::math::CMatrixDouble66 m66;
+        m66 = m;
+        noise_model_.emplace(std::move(m66));
+      }
+      in >> noise_model_diag_xyz_ >> noise_model_diag_rot_;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  };
 }

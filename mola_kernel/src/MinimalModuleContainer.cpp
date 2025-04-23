@@ -18,30 +18,31 @@ MinimalModuleContainer::~MinimalModuleContainer() = default;
 
 void MinimalModuleContainer::installNameServer(ExecutableBase& m)
 {
-    m.nameServer_ = std::bind(
-        &MinimalModuleContainer::nameServerImpl, this, std::placeholders::_1);
+  m.nameServer_ = std::bind(&MinimalModuleContainer::nameServerImpl, this, std::placeholders::_1);
 }
 
-ExecutableBase::Ptr MinimalModuleContainer::nameServerImpl(
-    const std::string& name)
+ExecutableBase::Ptr MinimalModuleContainer::nameServerImpl(const std::string& name)
 {
-    // Special syntax to sequentially access all existing modules:
-    // If the requested name has the format: "[" + <i>, return the i-th
-    // module, or nullptr if out of range.
-    // This is used by ExecutableBase::findService()
-    if (name.size() >= 2 && name[0] == '[')
+  // Special syntax to sequentially access all existing modules:
+  // If the requested name has the format: "[" + <i>, return the i-th
+  // module, or nullptr if out of range.
+  // This is used by ExecutableBase::findService()
+  if (name.size() >= 2 && name[0] == '[')
+  {
+    const auto idx = std::stoul(name.substr(1));
+    if (idx >= modules_.size())
     {
-        const auto idx = std::stoul(name.substr(1));
-        if (idx >= modules_.size()) { return ExecutableBase::Ptr(); }
-        else
-        {
-            auto it = modules_.begin();
-            std::advance(it, idx);
-            return *it;
-        }
+      return ExecutableBase::Ptr();
     }
-    // non numeric search not implemented in this minimal container
-    return ExecutableBase::Ptr();
+    else
+    {
+      auto it = modules_.begin();
+      std::advance(it, idx);
+      return *it;
+    }
+  }
+  // non numeric search not implemented in this minimal container
+  return ExecutableBase::Ptr();
 }
 
 }  // namespace mola

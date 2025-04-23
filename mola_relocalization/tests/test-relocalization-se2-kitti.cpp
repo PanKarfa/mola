@@ -35,57 +35,56 @@ const std::string datasetsRoot = TEST_DATASETS_ROOT;
 
 static void test1()
 {
-    using namespace mrpt::literals;  // _deg
+  using namespace mrpt::literals;  // _deg
 
-    mrpt::obs::CRawlog kitti;
-    const auto         fil = mrpt::system::pathJoin(
-                {datasetsRoot, "kitti", "kitti_00_extract.rawlog"});
+  mrpt::obs::CRawlog kitti;
+  const auto fil = mrpt::system::pathJoin({datasetsRoot, "kitti", "kitti_00_extract.rawlog"});
 
-    ASSERT_FILE_EXISTS_(fil);
-    bool readOk = kitti.loadFromRawLogFile(fil);
-    ASSERT_(readOk);
+  ASSERT_FILE_EXISTS_(fil);
+  bool readOk = kitti.loadFromRawLogFile(fil);
+  ASSERT_(readOk);
 
-    std::cout << "Loaded test kitti dataset entries: " << kitti.size() << "\n";
+  std::cout << "Loaded test kitti dataset entries: " << kitti.size() << "\n";
 
-    auto obs1 = std::dynamic_pointer_cast<mrpt::obs::CObservationPointCloud>(
-        kitti.getAsObservation(0));
-    auto obs2 = std::dynamic_pointer_cast<mrpt::obs::CObservationPointCloud>(
-        kitti.getAsObservation(8));
+  auto obs1 =
+      std::dynamic_pointer_cast<mrpt::obs::CObservationPointCloud>(kitti.getAsObservation(0));
+  auto obs2 =
+      std::dynamic_pointer_cast<mrpt::obs::CObservationPointCloud>(kitti.getAsObservation(8));
 
-    ASSERT_(obs1);
-    ASSERT_(obs2);
+  ASSERT_(obs1);
+  ASSERT_(obs2);
 
-    // Build a reference map with the first observation, and query for
-    // relocalization with the second one (using a large decimation factor in
-    // the likelihood function):
-    mp2p_icp::metric_map_t refMap;
-    refMap.layers["raw"] = obs1->pointcloud;
+  // Build a reference map with the first observation, and query for
+  // relocalization with the second one (using a large decimation factor in
+  // the likelihood function):
+  mp2p_icp::metric_map_t refMap;
+  refMap.layers["raw"] = obs1->pointcloud;
 
-    // These options may be loaded from an INI file, etc.
-    auto& likOpts = obs1->pointcloud->likelihoodOptions;
+  // These options may be loaded from an INI file, etc.
+  auto& likOpts = obs1->pointcloud->likelihoodOptions;
 
-    likOpts.max_corr_distance = 1.5;
-    likOpts.decimation        = 1000;
-    likOpts.sigma_dist        = 0.2;
+  likOpts.max_corr_distance = 1.5;
+  likOpts.decimation        = 1000;
+  likOpts.sigma_dist        = 0.2;
 
-    // query observation:
-    mrpt::obs::CSensoryFrame querySf;
-    querySf.insert(obs2);
+  // query observation:
+  mrpt::obs::CSensoryFrame querySf;
+  querySf.insert(obs2);
 
-    // relocalization:
-    mola::RelocalizationLikelihood_SE2::Input in;
-    in.corner_min     = {-2.0, -1.0, -30.0_deg};
-    in.corner_max     = {+5.0, +1.0, +30.0_deg};
-    in.observations   = querySf;
-    in.reference_map  = refMap;
-    in.resolution_xy  = 0.25;
-    in.resolution_phi = mrpt::DEG2RAD(10.0);
+  // relocalization:
+  mola::RelocalizationLikelihood_SE2::Input in;
+  in.corner_min     = {-2.0, -1.0, -30.0_deg};
+  in.corner_max     = {+5.0, +1.0, +30.0_deg};
+  in.observations   = querySf;
+  in.reference_map  = refMap;
+  in.resolution_xy  = 0.25;
+  in.resolution_phi = mrpt::DEG2RAD(10.0);
 
-    const auto out = mola::RelocalizationLikelihood_SE2::run(in);
+  const auto out = mola::RelocalizationLikelihood_SE2::run(in);
 
-    std::cout << "time_cost: " << out.time_cost << std::endl;
-    std::cout << "max_log_likelihood: " << out.max_log_likelihood << std::endl;
-    std::cout << "min_log_likelihood: " << out.min_log_likelihood << std::endl;
+  std::cout << "time_cost: " << out.time_cost << std::endl;
+  std::cout << "max_log_likelihood: " << out.max_log_likelihood << std::endl;
+  std::cout << "min_log_likelihood: " << out.min_log_likelihood << std::endl;
 
 #if 0
     const auto [cov, mean] = out.likelihood_grid.getCovarianceAndMean();
@@ -105,12 +104,11 @@ static void test1()
     }
 #endif
 
-    ASSERT_(
-        out.likelihood_grid.getByPos(1.5, 0, 0.0_deg) >
-        out.likelihood_grid.getByPos(0, 0, 0.0_deg));
+  ASSERT_(
+      out.likelihood_grid.getByPos(1.5, 0, 0.0_deg) > out.likelihood_grid.getByPos(0, 0, 0.0_deg));
 
-    // search top candidates:
-    const auto bestPoses = mola::find_best_poses_se2(out.likelihood_grid, 0.90);
+  // search top candidates:
+  const auto bestPoses = mola::find_best_poses_se2(out.likelihood_grid, 0.90);
 
 #if 0
     std::cout << "Top poses: " << bestPoses.size() << "\n";
@@ -120,28 +118,28 @@ static void test1()
     }
 #endif
 
-    ASSERT_(!bestPoses.empty());
+  ASSERT_(!bestPoses.empty());
 
-    // they are sorted by likelihood: take the last one as best:
-    const auto& best = bestPoses.rbegin()->second;
-    ASSERT_NEAR_(best.x, 1.5, 0.2);
-    ASSERT_NEAR_(best.y, 0.0, 0.2);
-    ASSERT_NEAR_(best.phi, 0.0, 0.1);
+  // they are sorted by likelihood: take the last one as best:
+  const auto& best = bestPoses.rbegin()->second;
+  ASSERT_NEAR_(best.x, 1.5, 0.2);
+  ASSERT_NEAR_(best.y, 0.0, 0.2);
+  ASSERT_NEAR_(best.phi, 0.0, 0.1);
 
-    std::cout << "best pose: " << best << std::endl;
+  std::cout << "best pose: " << best << std::endl;
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        test1();
+  try
+  {
+    test1();
 
-        std::cout << "Test successful." << std::endl;
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    std::cout << "Test successful." << std::endl;
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

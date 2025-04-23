@@ -31,24 +31,24 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 struct NavState
 {
-    NavState()  = default;
-    ~NavState() = default;
+  NavState()  = default;
+  ~NavState() = default;
 
-    /** SE(3) pose estimation, including information matrix, given
-     *  in the requested frame_id.
-     */
-    mrpt::poses::CPose3DPDFGaussianInf pose;
+  /** SE(3) pose estimation, including information matrix, given
+   *  in the requested frame_id.
+   */
+  mrpt::poses::CPose3DPDFGaussianInf pose;
 
-    /** Linear and angular velocity estimation, given in the local vehicle
-     *  frame. */
-    mrpt::math::TTwist3D twist;
+  /** Linear and angular velocity estimation, given in the local vehicle
+   *  frame. */
+  mrpt::math::TTwist3D twist;
 
-    /** Inverse covariance matrix (information) of twist,
-     *  with variable order in the matrix: [vx vy vz wx wy wz]
-     */
-    mrpt::math::CMatrixDouble66 twist_inv_cov;
+  /** Inverse covariance matrix (information) of twist,
+   *  with variable order in the matrix: [vx vy vz wx wy wz]
+   */
+  mrpt::math::CMatrixDouble66 twist_inv_cov;
 
-    std::string asString() const;
+  std::string asString() const;
 };
 
 /** Virtual API for kinematic state filtering algorithms,
@@ -60,67 +60,62 @@ struct NavState
  * \ingroup mola_kernel_interfaces_grp */
 class NavStateFilter : public mola::ExecutableBase
 {
-   public:
-    NavStateFilter();
-    ~NavStateFilter();
+ public:
+  NavStateFilter();
+  ~NavStateFilter();
 
-    /** Resets the estimator state to an initial state */
-    virtual void reset() = 0;
+  /** Resets the estimator state to an initial state */
+  virtual void reset() = 0;
 
-    // initialize(): inherited from ExecutableBase. Must be implemented to load
-    // parameters, etc.
+  // initialize(): inherited from ExecutableBase. Must be implemented to load
+  // parameters, etc.
 
-    /** Integrates new SE(3) pose estimation of the vehicle wrt a given
-     * frame_id.
-     */
-    virtual void fuse_pose(
-        const mrpt::Clock::time_point&         timestamp,
-        const mrpt::poses::CPose3DPDFGaussian& pose,
-        const std::string&                     frame_id) = 0;
+  /** Integrates new SE(3) pose estimation of the vehicle wrt a given
+   * frame_id.
+   */
+  virtual void fuse_pose(
+      const mrpt::Clock::time_point& timestamp, const mrpt::poses::CPose3DPDFGaussian& pose,
+      const std::string& frame_id) = 0;
 
-    /** Integrates new wheels-based odometry observations into the estimator.
-     *  This is a convenience method that internally ends up calling
-     *  fuse_pose(), but computing the uncertainty of odometry increments
-     *  according to a given motion model.
-     */
-    virtual void fuse_odometry(
-        const mrpt::obs::CObservationOdometry& odom,
-        const std::string&                     odomName = "odom_wheels") = 0;
+  /** Integrates new wheels-based odometry observations into the estimator.
+   *  This is a convenience method that internally ends up calling
+   *  fuse_pose(), but computing the uncertainty of odometry increments
+   *  according to a given motion model.
+   */
+  virtual void fuse_odometry(
+      const mrpt::obs::CObservationOdometry& odom, const std::string& odomName = "odom_wheels") = 0;
 
-    /** Integrates new IMU observations into the estimator */
-    virtual void fuse_imu(const mrpt::obs::CObservationIMU& imu) = 0;
+  /** Integrates new IMU observations into the estimator */
+  virtual void fuse_imu(const mrpt::obs::CObservationIMU& imu) = 0;
 
-    /** Integrates new GNSS observations into the estimator */
-    virtual void fuse_gnss(const mrpt::obs::CObservationGPS& gps) = 0;
+  /** Integrates new GNSS observations into the estimator */
+  virtual void fuse_gnss(const mrpt::obs::CObservationGPS& gps) = 0;
 
-    /** Integrates new twist estimation (in the odom frame) */
-    virtual void fuse_twist(
-        const mrpt::Clock::time_point&     timestamp,
-        const mrpt::math::TTwist3D&        twist,
-        const mrpt::math::CMatrixDouble66& twistCov) = 0;
+  /** Integrates new twist estimation (in the odom frame) */
+  virtual void fuse_twist(
+      const mrpt::Clock::time_point& timestamp, const mrpt::math::TTwist3D& twist,
+      const mrpt::math::CMatrixDouble66& twistCov) = 0;
 
-    /** Computes the estimated vehicle state at a given timestep using the
-     * observations in the time window. A std::nullopt is returned if there is
-     * no valid observations yet, or if requested a timestamp out of the model
-     * validity time window (e.g. too far in the future to be trustful).
-     */
-    virtual std::optional<NavState> estimated_navstate(
-        const mrpt::Clock::time_point& timestamp,
-        const std::string&             frame_id) = 0;
+  /** Computes the estimated vehicle state at a given timestep using the
+   * observations in the time window. A std::nullopt is returned if there is
+   * no valid observations yet, or if requested a timestamp out of the model
+   * validity time window (e.g. too far in the future to be trustful).
+   */
+  virtual std::optional<NavState> estimated_navstate(
+      const mrpt::Clock::time_point& timestamp, const std::string& frame_id) = 0;
 
-    /** (Optional virtual method) Returns the estimated trajectory (sequence of
-     * timestamped poses) between two time points, in the given frame_id.
-     *  \return std::nullopt if not implemented or not able to compute for the
-     *          requested time interval.
-     */
-    virtual std::optional<mrpt::poses::CPose3DInterpolator>
-        estimated_trajectory(
-            [[maybe_unused]] const mrpt::Clock::time_point& start_time,
-            [[maybe_unused]] const mrpt::Clock::time_point& end_time,
-            [[maybe_unused]] const std::string&             frame_id)
-    {
-        return {};  // Default: none
-    }
+  /** (Optional virtual method) Returns the estimated trajectory (sequence of
+   * timestamped poses) between two time points, in the given frame_id.
+   *  \return std::nullopt if not implemented or not able to compute for the
+   *          requested time interval.
+   */
+  virtual std::optional<mrpt::poses::CPose3DInterpolator> estimated_trajectory(
+      [[maybe_unused]] const mrpt::Clock::time_point& start_time,
+      [[maybe_unused]] const mrpt::Clock::time_point& end_time,
+      [[maybe_unused]] const std::string&             frame_id)
+  {
+    return {};  // Default: none
+  }
 };
 
 }  // namespace mola

@@ -34,72 +34,69 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class LocalizationSourceBase
 {
-   public:
-    LocalizationSourceBase()          = default;
-    virtual ~LocalizationSourceBase() = default;
+ public:
+  LocalizationSourceBase()          = default;
+  virtual ~LocalizationSourceBase() = default;
 
-    struct LocalizationUpdate
+  struct LocalizationUpdate
+  {
+    LocalizationUpdate() = default;
+
+    /** The timestamp associated to the new KeyFrame localization. */
+    mrpt::Clock::time_point timestamp;
+
+    /** Vehicle/robot pose is given wrt this frame of reference */
+    std::string reference_frame = "map";
+
+    /** Vehicle/robot pose frame */
+    std::string child_frame = "base_link";
+
+    /** The source of the localization (e.g. "slam", "lidar_odometry",
+     * "wheel_odometry", etc.) */
+    std::string method = "slam";
+
+    mrpt::math::TPose3D                        pose;
+    std::optional<mrpt::math::CMatrixDouble66> cov;
+
+    /** Localization "quality": 0.0=worst, 1.0=best
+     *  \note Field added in MOLA v1.4.0 */
+    double quality = 1.0;
+  };
+
+  using localization_updates_callback_t = std::function<void(const LocalizationUpdate&)>;
+
+  void subscribeToLocalizationUpdates(const localization_updates_callback_t& callback)
+  {
+    auto lck = mrpt::lockHelper(locUpdSubsMtx_);
+    locUpdSubs_.push_back(callback);
+  }
+
+ protected:
+  bool anyUpdateLocalizationSubscriber()
+  {
+    auto lck = mrpt::lockHelper(locUpdSubsMtx_);
+    return !locUpdSubs_.empty();
+  }
+
+  void advertiseUpdatedLocalization(const LocalizationUpdate& l)
+  {
+    auto lck = mrpt::lockHelper(locUpdSubsMtx_);
+    for (const auto& callback : locUpdSubs_)
     {
-        LocalizationUpdate() = default;
-
-        /** The timestamp associated to the new KeyFrame localization. */
-        mrpt::Clock::time_point timestamp;
-
-        /** Vehicle/robot pose is given wrt this frame of reference */
-        std::string reference_frame = "map";
-
-        /** Vehicle/robot pose frame */
-        std::string child_frame = "base_link";
-
-        /** The source of the localization (e.g. "slam", "lidar_odometry",
-         * "wheel_odometry", etc.) */
-        std::string method = "slam";
-
-        mrpt::math::TPose3D                        pose;
-        std::optional<mrpt::math::CMatrixDouble66> cov;
-
-        /** Localization "quality": 0.0=worst, 1.0=best
-         *  \note Field added in MOLA v1.4.0 */
-        double quality = 1.0;
-    };
-
-    using localization_updates_callback_t =
-        std::function<void(const LocalizationUpdate&)>;
-
-    void subscribeToLocalizationUpdates(
-        const localization_updates_callback_t& callback)
-    {
-        auto lck = mrpt::lockHelper(locUpdSubsMtx_);
-        locUpdSubs_.push_back(callback);
+      try
+      {
+        callback(l);
+      }
+      catch (const std::exception& e)
+      {
+        std::cerr << "[LocalizationSourceBase] Exception in callback: " << e.what();
+      }
     }
+  }
 
-   protected:
-    bool anyUpdateLocalizationSubscriber()
-    {
-        auto lck = mrpt::lockHelper(locUpdSubsMtx_);
-        return !locUpdSubs_.empty();
-    }
-
-    void advertiseUpdatedLocalization(const LocalizationUpdate& l)
-    {
-        auto lck = mrpt::lockHelper(locUpdSubsMtx_);
-        for (const auto& callback : locUpdSubs_)
-        {
-            try
-            {
-                callback(l);
-            }
-            catch (const std::exception& e)
-            {
-                std::cerr << "[LocalizationSourceBase] Exception in callback: "
-                          << e.what();
-            }
-        }
-    }
-
-   private:
-    std::vector<localization_updates_callback_t> locUpdSubs_;
-    std::mutex                                   locUpdSubsMtx_;
+ private:
+  std::vector<localization_updates_callback_t> locUpdSubs_;
+  std::mutex                                   locUpdSubsMtx_;
 };
 
 }  // namespace mola

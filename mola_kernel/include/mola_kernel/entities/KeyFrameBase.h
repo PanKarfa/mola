@@ -29,8 +29,8 @@ namespace mola
  */
 class KeyFrameBase
 {
-   public:
-    mrpt::obs::CSensoryFrame::Ptr raw_observations_;
+ public:
+  mrpt::obs::CSensoryFrame::Ptr raw_observations_;
 };
 
 }  // namespace mola

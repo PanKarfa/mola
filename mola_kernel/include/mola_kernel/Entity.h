@@ -33,8 +33,7 @@ namespace mola
  * \ingroup mola_kernel_grp
  */
 using Entity = std::variant<
-    std::monostate, RefPose3, RelPose3, RelPose3KF, RelDynPose3KF,
-    LandmarkPoint3, EntityOther>;
+    std::monostate, RefPose3, RelPose3, RelPose3KF, RelDynPose3KF, LandmarkPoint3, EntityOther>;
 
 /** \addtogroup entity_utils Entity handling utilities
  *  \ingroup mola_kernel_grp
@@ -45,10 +44,10 @@ EntityBase& entity_get_base(Entity& e);
 /** \overload */
 const EntityBase& entity_get_base(const Entity& e);
 
-mrpt::math::TPose3D  entity_get_pose(const Entity& e);
-mrpt::math::TTwist3D entity_get_twist(const mola::Entity& e);
-void entity_update_pose(Entity& e, const mrpt::math::TPose3D& p);
-void entity_update_vel(Entity& e, const std::array<double, 3>& v);
+mrpt::math::TPose3D     entity_get_pose(const Entity& e);
+mrpt::math::TTwist3D    entity_get_twist(const mola::Entity& e);
+void                    entity_update_pose(Entity& e, const mrpt::math::TPose3D& p);
+void                    entity_update_vel(Entity& e, const std::array<double, 3>& v);
 mrpt::Clock::time_point entity_get_timestamp(const Entity& e);
 
 /** @} */

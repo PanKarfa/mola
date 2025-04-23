@@ -12,8 +12,8 @@
 #pragma once
 
 /// To be used in #if() checks for >= minimum MOLA versions
-#define MOLA_VERSION_CHECK(major, minor, patch)                         \
-    ((MOLA_MAJOR_VERSION > (major)) ||                                  \
-     (MOLA_MAJOR_VERSION == (major) && MOLA_MINOR_VERSION > (minor)) || \
-     (MOLA_MAJOR_VERSION == (major) && MOLA_MINOR_VERSION == (minor) && \
-      MOLA_PATCH_VERSION >= (patch)))
+#define MOLA_VERSION_CHECK(major, minor, patch)                       \
+  ((MOLA_MAJOR_VERSION > (major)) ||                                  \
+   (MOLA_MAJOR_VERSION == (major) && MOLA_MINOR_VERSION > (minor)) || \
+   (MOLA_MAJOR_VERSION == (major) && MOLA_MINOR_VERSION == (minor) && \
+    MOLA_PATCH_VERSION >= (patch)))

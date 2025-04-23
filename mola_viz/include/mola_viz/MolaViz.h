@@ -42,155 +42,145 @@ namespace mola
  */
 class MolaViz : public ExecutableBase, public VizInterface
 {
-    DEFINE_MRPT_OBJECT(MolaViz, mola)
+  DEFINE_MRPT_OBJECT(MolaViz, mola)
 
-   public:
-    MolaViz();
-    ~MolaViz() override;
+ public:
+  MolaViz();
+  ~MolaViz() override;
 
-    // See docs in base class
-    void initialize(const Yaml& cfg) override;
-    void spinOnce() override;
+  // See docs in base class
+  void initialize(const Yaml& cfg) override;
+  void spinOnce() override;
 
-    /** @name mola-viz main API
-     * @{ */
-    using window_name_t    = std::string;
-    using subwindow_name_t = std::string;
+  /** @name mola-viz main API
+   * @{ */
+  using window_name_t    = std::string;
+  using subwindow_name_t = std::string;
 
-    const static window_name_t DEFAULT_WINDOW_NAME;
+  const static window_name_t DEFAULT_WINDOW_NAME;
 
-    static bool     IsRunning();
-    static MolaViz* Instance();
+  static bool     IsRunning();
+  static MolaViz* Instance();
 
-    /** Returned object is owned by the VizInterface, do NOT delete it. Updates
-     * to it must be done via enqueue_custom_nanogui_code()*/
-    std::future<nanogui::Window*> create_subwindow(
-        const std::string& subWindowTitle,
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  /** Returned object is owned by the VizInterface, do NOT delete it. Updates
+   * to it must be done via enqueue_custom_nanogui_code()*/
+  std::future<nanogui::Window*> create_subwindow(
+      const std::string& subWindowTitle,
+      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    std::future<void> subwindow_grid_layout(
-        const std::string& subWindowTitle, const bool orientationVertical,
-        int                resolution,
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  std::future<void> subwindow_grid_layout(
+      const std::string& subWindowTitle, const bool orientationVertical, int resolution,
+      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    std::future<void> subwindow_move_resize(
-        const std::string&                subWindowTitle,
-        const mrpt::math::TPoint2D_<int>& location,
-        const mrpt::math::TPoint2D_<int>& size,
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  std::future<void> subwindow_move_resize(
+      const std::string& subWindowTitle, const mrpt::math::TPoint2D_<int>& location,
+      const mrpt::math::TPoint2D_<int>& size,
+      const std::string&                parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    /** Updates the contents of a subwindow from a given object, typically a
-     * mrpt::obs::CObservation, but custom handlers can be installed for
-     * arbitrary classes.
-     *
-     * Depending on the object class RTTI, the corresponding handler is called.
-     *
-     * \return false if no handler is found for the given object.
-     *
-     * \sa
-     */
-    std::future<bool> subwindow_update_visualization(
-        const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  /** Updates the contents of a subwindow from a given object, typically a
+   * mrpt::obs::CObservation, but custom handlers can be installed for
+   * arbitrary classes.
+   *
+   * Depending on the object class RTTI, the corresponding handler is called.
+   *
+   * \return false if no handler is found for the given object.
+   *
+   * \sa
+   */
+  std::future<bool> subwindow_update_visualization(
+      const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
+      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    /** Update (or adds if not found) a 3D object in the main 3D view area.
-     */
-    std::future<bool> update_3d_object(
-        const std::string&                                  objName,
-        const std::shared_ptr<mrpt::opengl::CSetOfObjects>& obj,
-        const std::string& viewportName = "main",
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  /** Update (or adds if not found) a 3D object in the main 3D view area.
+   */
+  std::future<bool> update_3d_object(
+      const std::string& objName, const std::shared_ptr<mrpt::opengl::CSetOfObjects>& obj,
+      const std::string& viewportName = "main",
+      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    std::future<bool> update_viewport_look_at(
-        const mrpt::math::TPoint3Df& lookAt,
-        const std::string&           viewportName = "main",
-        const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+  std::future<bool> update_viewport_look_at(
+      const mrpt::math::TPoint3Df& lookAt, const std::string& viewportName = "main",
+      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
 
-    std::future<bool> update_viewport_camera_azimuth(
-        const double azimuth, bool absolute_falseForRelative = true,
-        const std::string& viewportName = "main",
-        const std::string& parentWindow = "main") override;
+  std::future<bool> update_viewport_camera_azimuth(
+      const double azimuth, bool absolute_falseForRelative = true,
+      const std::string& viewportName = "main", const std::string& parentWindow = "main") override;
 
-    std::future<bool> output_console_message(
-        const std::string& msg,
-        const std::string& parentWindow = "main") override;
+  std::future<bool> output_console_message(
+      const std::string& msg, const std::string& parentWindow = "main") override;
 
-    /// Updates to nanogui window controls must happen via this method to ensure
-    /// it is run by the correct thread, in the next available time slot.
-    std::future<void> enqueue_custom_nanogui_code(
-        const std::function<void(void)>& userCode) override;
+  /// Updates to nanogui window controls must happen via this method to ensure
+  /// it is run by the correct thread, in the next available time slot.
+  std::future<void> enqueue_custom_nanogui_code(const std::function<void(void)>& userCode) override;
 
-    /** @} */
+  /** @} */
 
-    /** @name mola-viz GUI update handlers registry
-     * @{ */
+  /** @name mola-viz GUI update handlers registry
+   * @{ */
 
-    using update_handler_t = std::function<void(
-        const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin,
-        window_name_t parentWin, MolaViz* instance)>;
-    using class_name_t     = std::string;
+  using update_handler_t = std::function<void(
+      const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin, window_name_t parentWin,
+      MolaViz* instance)>;
+  using class_name_t     = std::string;
 
-    static void register_gui_handler(
-        class_name_t name, update_handler_t handler);
+  static void register_gui_handler(class_name_t name, update_handler_t handler);
 
-    /** @} */
+  /** @} */
 
-    /** @name mola-viz module parameters
-     * @{ */
+  /** @name mola-viz module parameters
+   * @{ */
 
-    double       console_text_font_size_   = 9.0;
-    unsigned int max_console_lines_        = 5;
-    bool         show_rgbd_as_point_cloud_ = false;  // too CPU demanding!
+  double       console_text_font_size_   = 9.0;
+  unsigned int max_console_lines_        = 5;
+  bool         show_rgbd_as_point_cloud_ = false;  // too CPU demanding!
 
-    /** @} */
+  /** @} */
 
-    void markWindowForReLayout(const window_name_t& name)
-    {
-        guiThreadMustReLayoutTheseWindows_.insert(name);
-    }
+  void markWindowForReLayout(const window_name_t& name)
+  {
+    guiThreadMustReLayoutTheseWindows_.insert(name);
+  }
 
-   private:
-    static MolaViz*          instance_;
-    static std::shared_mutex instanceMtx_;
+ private:
+  static MolaViz*          instance_;
+  static std::shared_mutex instanceMtx_;
 
-    mrpt::gui::CDisplayWindowGUI::Ptr create_and_add_window(
-        const window_name_t& name);
+  mrpt::gui::CDisplayWindowGUI::Ptr create_and_add_window(const window_name_t& name);
 
-    struct PerWindowData
-    {
-        mrpt::gui::CDisplayWindowGUI::Ptr win;
-        std::vector<std::string>          console_messages = {};
-    };
+  struct PerWindowData
+  {
+    mrpt::gui::CDisplayWindowGUI::Ptr win;
+    std::vector<std::string>          console_messages = {};
+  };
 
-    std::map<window_name_t, PerWindowData> windows_;
-    std::map<window_name_t, std::map<subwindow_name_t, nanogui::Window*>>
-        subWindows_;
+  std::map<window_name_t, PerWindowData>                                windows_;
+  std::map<window_name_t, std::map<subwindow_name_t, nanogui::Window*>> subWindows_;
 
-    std::thread guiThread_;
-    void        gui_thread();
+  std::thread guiThread_;
+  void        gui_thread();
 
-    using task_queue_t = std::vector<std::function<void()>>;
-    task_queue_t            guiThreadPendingTasks_;
-    std::set<window_name_t> guiThreadMustReLayoutTheseWindows_;
-    std::mutex              guiThreadPendingTasksMtx_;
+  using task_queue_t = std::vector<std::function<void()>>;
+  task_queue_t            guiThreadPendingTasks_;
+  std::set<window_name_t> guiThreadMustReLayoutTheseWindows_;
+  std::mutex              guiThreadPendingTasksMtx_;
 
-    double lastTimeCheckForNewModules_ = 0;
-    double lastTimeUpdateDatasetUIs_   = 0;
-    struct DataPerDatasetUI
-    {
-        std::weak_ptr<mola::Dataset_UI> module;
+  double lastTimeCheckForNewModules_ = 0;
+  double lastTimeUpdateDatasetUIs_   = 0;
+  struct DataPerDatasetUI
+  {
+    std::weak_ptr<mola::Dataset_UI> module;
 
-        bool               first_time_seen    = true;
-        nanogui::Window*   ui                 = nullptr;
-        nanogui::Label*    lbPlaybackPosition = nullptr;
-        nanogui::Slider*   slider             = nullptr;
-        nanogui::CheckBox* cbPaused           = nullptr;
-        nanogui::ComboBox* cmRate             = nullptr;
-    };
-    std::map<std::string, DataPerDatasetUI> datasetUIs_;
+    bool               first_time_seen    = true;
+    nanogui::Window*   ui                 = nullptr;
+    nanogui::Label*    lbPlaybackPosition = nullptr;
+    nanogui::Slider*   slider             = nullptr;
+    nanogui::CheckBox* cbPaused           = nullptr;
+    nanogui::ComboBox* cmRate             = nullptr;
+  };
+  std::map<std::string, DataPerDatasetUI> datasetUIs_;
 
-    void dataset_ui_check_new_modules();
-    void dataset_ui_update();
+  void dataset_ui_check_new_modules();
+  void dataset_ui_update();
 };
 
 }  // namespace mola

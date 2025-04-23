@@ -26,12 +26,12 @@ namespace mola
  */
 enum class Robust : uint8_t
 {
-    REGULAR_L2 = 0 /**!< Regular L2 least-squares (no robust kernel) */,
-    HUBER /**!< Huber kernel */,
-    CAUCHY,  //
-    TUKEY,  //
-    WELSH,  //
-    GEMANMCCLURE  //
+  REGULAR_L2 = 0 /**!< Regular L2 least-squares (no robust kernel) */,
+  HUBER /**!< Huber kernel */,
+  CAUCHY,  //
+  TUKEY,  //
+  WELSH,  //
+  GEMANMCCLURE  //
 };
 
 /** Base class for all "factors" in the world model
@@ -41,40 +41,40 @@ enum class Robust : uint8_t
 class FactorBase : public mrpt::serialization::CSerializable
 {
 #if MRPT_VERSION < 0x020e00
-    DEFINE_VIRTUAL_SERIALIZABLE(FactorBase)
+  DEFINE_VIRTUAL_SERIALIZABLE(FactorBase)
 #else
-    DEFINE_VIRTUAL_SERIALIZABLE(FactorBase, mola)
+  DEFINE_VIRTUAL_SERIALIZABLE(FactorBase, mola)
 #endif
 
-   public:
-    FactorBase() = default;
-    virtual ~FactorBase();
+ public:
+  FactorBase() = default;
+  virtual ~FactorBase();
 
-    /** Number of entities involved in this factor: 1 for unary factors, 2 for
-     * binary, etc. */
-    virtual std::size_t edge_count() const = 0;
-    /** Access entity indices involved in this factor */
-    virtual mola::id_t edge_indices(const std::size_t i) const = 0;
+  /** Number of entities involved in this factor: 1 for unary factors, 2 for
+   * binary, etc. */
+  virtual std::size_t edge_count() const = 0;
+  /** Access entity indices involved in this factor */
+  virtual mola::id_t edge_indices(const std::size_t i) const = 0;
 
-    /** The unique ID of this factor in the world model.
-     * Stored here for convenience, notice that it is redundant since entities
-     * are already stored in the WorldModel indexed by ID.
-     */
-    mola::fid_t my_id_{mola::INVALID_FID};
+  /** The unique ID of this factor in the world model.
+   * Stored here for convenience, notice that it is redundant since entities
+   * are already stored in the WorldModel indexed by ID.
+   */
+  mola::fid_t my_id_{mola::INVALID_FID};
 
-    /** Type of robust error function to use
-     */
-    mola::Robust robust_type_{mola::Robust::REGULAR_L2};
+  /** Type of robust error function to use
+   */
+  mola::Robust robust_type_{mola::Robust::REGULAR_L2};
 
-    /** Parameter for the robust error function, if so defined in  robust_type_
-     */
-    double robust_param_{1.0};
+  /** Parameter for the robust error function, if so defined in  robust_type_
+   */
+  double robust_param_{1.0};
 
-   protected:
-    // Derived classes mus call these methods to serialize the common data in
-    // this base class:
-    void baseSerializeTo(mrpt::serialization::CArchive& out) const;
-    void baseSerializeFrom(mrpt::serialization::CArchive& in);
+ protected:
+  // Derived classes mus call these methods to serialize the common data in
+  // this base class:
+  void baseSerializeTo(mrpt::serialization::CArchive& out) const;
+  void baseSerializeFrom(mrpt::serialization::CArchive& in);
 };
 
 /** @}  */

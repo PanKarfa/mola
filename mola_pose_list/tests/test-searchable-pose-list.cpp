@@ -32,20 +32,20 @@
 
 static void test1()
 {
-    // write me!
+  // write me!
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        test1();
+  try
+  {
+    test1();
 
-        std::cout << "Test successful." << std::endl;
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
+    std::cout << "Test successful." << std::endl;
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }

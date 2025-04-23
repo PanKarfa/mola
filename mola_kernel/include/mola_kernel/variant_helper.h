@@ -17,7 +17,7 @@ namespace mola
 template <class... Ts>
 struct overloaded : Ts...
 {
-    using Ts::operator()...;
+  using Ts::operator()...;
 };
 
 /** Based on https://en.cppreference.com/w/cpp/utility/variant/visit */

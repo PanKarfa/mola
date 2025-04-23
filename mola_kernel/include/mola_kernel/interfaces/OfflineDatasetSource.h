@@ -27,37 +27,36 @@ using trajectory_t = mrpt::poses::CPose3DInterpolator;
  * \ingroup mola_kernel_interfaces_grp */
 class OfflineDatasetSource
 {
-   public:
-    OfflineDatasetSource()          = default;
-    virtual ~OfflineDatasetSource() = default;
+ public:
+  OfflineDatasetSource()          = default;
+  virtual ~OfflineDatasetSource() = default;
 
-    /** @name Virtual interface of any OfflineDatasetSource
-     *{ */
+  /** @name Virtual interface of any OfflineDatasetSource
+   *{ */
 
-    /** Number of different time steps available to call getObservations() */
-    virtual size_t datasetSize() const = 0;
+  /** Number of different time steps available to call getObservations() */
+  virtual size_t datasetSize() const = 0;
 
-    /** Returns the set of observations available for the given time step. */
-    virtual mrpt::obs::CSensoryFrame::Ptr datasetGetObservations(
-        size_t timestep) const = 0;
+  /** Returns the set of observations available for the given time step. */
+  virtual mrpt::obs::CSensoryFrame::Ptr datasetGetObservations(size_t timestep) const = 0;
 
-    /** Returns true if a groundtruth is available
-     *  for the vehicle trajectory.
-     *  \sa getGroundTruthTrajectory()
-     */
-    virtual bool hasGroundTruthTrajectory() const { return false; }
+  /** Returns true if a groundtruth is available
+   *  for the vehicle trajectory.
+   *  \sa getGroundTruthTrajectory()
+   */
+  virtual bool hasGroundTruthTrajectory() const { return false; }
 
-    /** If hasGroundTruthTrajectory() returns true, this returns the dataset
-     *  groundtruth for the vehicle trajectory.
-     *
-     *  Note that timestamps for datasets are not wall-clock time ("now"), but
-     *  old timestamps of when original observations were grabbed.
-     *
-     *  \sa hasGroundTruthTrajectory()
-     */
-    virtual trajectory_t getGroundTruthTrajectory() const { return {}; }
+  /** If hasGroundTruthTrajectory() returns true, this returns the dataset
+   *  groundtruth for the vehicle trajectory.
+   *
+   *  Note that timestamps for datasets are not wall-clock time ("now"), but
+   *  old timestamps of when original observations were grabbed.
+   *
+   *  \sa hasGroundTruthTrajectory()
+   */
+  virtual trajectory_t getGroundTruthTrajectory() const { return {}; }
 
-    /** @} */
+  /** @} */
 };
 
 }  // namespace mola

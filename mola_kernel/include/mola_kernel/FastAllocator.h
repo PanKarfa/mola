@@ -32,7 +32,6 @@ template <class T, class Compare = std::less<T>>
 using fast_set = std::set<T, Compare, FastAllocator<T>>;
 
 template <class Key, class T, class Compare = std::less<Key>>
-using fast_map =
-    std::map<Key, T, Compare, FastAllocator<std::pair<const Key, T>>>;
+using fast_map = std::map<Key, T, Compare, FastAllocator<std::pair<const Key, T>>>;
 
 }  // namespace mola

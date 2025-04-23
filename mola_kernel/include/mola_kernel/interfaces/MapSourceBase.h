@@ -28,72 +28,71 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class MapSourceBase
 {
-   public:
-    MapSourceBase()          = default;
-    virtual ~MapSourceBase() = default;
+ public:
+  MapSourceBase()          = default;
+  virtual ~MapSourceBase() = default;
 
-    struct MapUpdate
+  struct MapUpdate
+  {
+    MapUpdate() = default;
+
+    /** The timestamp associated to the new map information. */
+    mrpt::Clock::time_point timestamp;
+
+    /** Frame of reference for this map. */
+    std::string reference_frame = "map";
+
+    /** The source of the localization (e.g. "slam", "lidar_odometry",
+     * "wheel_odometry", etc.) */
+    std::string method = "slam";
+
+    /** Map layer/submap name */
+    std::string map_name = "local_map";
+
+    /** Might be null if georeferencing is provided, but both can be also
+     * populated. */
+    mrpt::maps::CMetricMap::Ptr map;
+
+    /** If the map is georeferenced, its metadata
+     *  \note Added in MOLA 1.7.0
+     */
+    std::optional<Georeferencing> georeferencing;
+  };
+
+  using map_updates_callback_t = std::function<void(const MapUpdate&)>;
+
+  void subscribeToMapUpdates(const map_updates_callback_t& callback)
+  {
+    auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
+    mapUpdSubs_.push_back(callback);
+  }
+
+ protected:
+  bool anyUpdateMapSubscriber()
+  {
+    auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
+    return !mapUpdSubs_.empty();
+  }
+
+  void advertiseUpdatedMap(const MapUpdate& l)
+  {
+    auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
+    for (const auto& callback : mapUpdSubs_)
     {
-        MapUpdate() = default;
-
-        /** The timestamp associated to the new map information. */
-        mrpt::Clock::time_point timestamp;
-
-        /** Frame of reference for this map. */
-        std::string reference_frame = "map";
-
-        /** The source of the localization (e.g. "slam", "lidar_odometry",
-         * "wheel_odometry", etc.) */
-        std::string method = "slam";
-
-        /** Map layer/submap name */
-        std::string map_name = "local_map";
-
-        /** Might be null if georeferencing is provided, but both can be also
-         * populated. */
-        mrpt::maps::CMetricMap::Ptr map;
-
-        /** If the map is georeferenced, its metadata
-         *  \note Added in MOLA 1.7.0
-         */
-        std::optional<Georeferencing> georeferencing;
-    };
-
-    using map_updates_callback_t = std::function<void(const MapUpdate&)>;
-
-    void subscribeToMapUpdates(const map_updates_callback_t& callback)
-    {
-        auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
-        mapUpdSubs_.push_back(callback);
+      try
+      {
+        callback(l);
+      }
+      catch (const std::exception& e)
+      {
+        std::cerr << "[MapSourceBase] Exception in callback: " << e.what();
+      }
     }
+  }
 
-   protected:
-    bool anyUpdateMapSubscriber()
-    {
-        auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
-        return !mapUpdSubs_.empty();
-    }
-
-    void advertiseUpdatedMap(const MapUpdate& l)
-    {
-        auto lck = mrpt::lockHelper(mapUpdSubsMtx_);
-        for (const auto& callback : mapUpdSubs_)
-        {
-            try
-            {
-                callback(l);
-            }
-            catch (const std::exception& e)
-            {
-                std::cerr << "[MapSourceBase] Exception in callback: "
-                          << e.what();
-            }
-        }
-    }
-
-   private:
-    std::vector<map_updates_callback_t> mapUpdSubs_;
-    std::mutex                          mapUpdSubsMtx_;
+ private:
+  std::vector<map_updates_callback_t> mapUpdSubs_;
+  std::mutex                          mapUpdSubsMtx_;
 };
 
 }  // namespace mola

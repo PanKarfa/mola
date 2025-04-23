@@ -30,3 +30,4 @@ Testing
 .vscode/*
 !.vscode/settings.json
 **/.vscode
+.cache

@@ -22,22 +22,22 @@ IMPLEMENTS_SERIALIZABLE(RelPose3, EntityBase, mola);
 uint8_t RelPose3::serializeGetVersion() const { return 0; }
 void    RelPose3::serializeTo(mrpt::serialization::CArchive& out) const
 {
-    baseSerializeTo(out);
+  baseSerializeTo(out);
 
-    out << relpose_value;
+  out << relpose_value;
 }
 void RelPose3::serializeFrom(mrpt::serialization::CArchive& in, uint8_t version)
 {
-    baseSerializeFrom(in);
+  baseSerializeFrom(in);
 
-    switch (version)
+  switch (version)
+  {
+    case 0:
     {
-        case 0:
-        {
-            in >> relpose_value;
-        }
-        break;
-        default:
-            MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
-    };
+      in >> relpose_value;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  };
 }

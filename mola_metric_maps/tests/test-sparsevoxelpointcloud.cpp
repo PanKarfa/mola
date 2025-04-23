@@ -34,25 +34,24 @@
 
 void test_voxelmap_basic_ops()
 {
-    mola::SparseVoxelPointCloud map;
-    ASSERT_(map.isEmpty());
+  mola::SparseVoxelPointCloud map;
+  ASSERT_(map.isEmpty());
 
-    map.insertPoint({1.0f, 2.0f, 3.0f});
-    ASSERT_(!map.isEmpty());
+  map.insertPoint({1.0f, 2.0f, 3.0f});
+  ASSERT_(!map.isEmpty());
 }
 
 void test_voxelmap_insert_2d_scan()
 {
-    mola::SparseVoxelPointCloud map(0.2 /*decim*/);
+  mola::SparseVoxelPointCloud map(0.2 /*decim*/);
 
-    // The numbers in this test would change if this param changes:
-    static_assert(
-        mola::SparseVoxelPointCloud::HARDLIMIT_MAX_POINTS_PER_VOXEL == 16);
+  // The numbers in this test would change if this param changes:
+  static_assert(mola::SparseVoxelPointCloud::HARDLIMIT_MAX_POINTS_PER_VOXEL == 16);
 
-    mrpt::obs::CObservation2DRangeScan scan2D;
-    mrpt::obs::stock_observations::example2DRangeScan(scan2D);
+  mrpt::obs::CObservation2DRangeScan scan2D;
+  mrpt::obs::stock_observations::example2DRangeScan(scan2D);
 
-    map.insertObservation(scan2D);
+  map.insertObservation(scan2D);
 #if 0
     mrpt::opengl::Scene scene;
     map.renderOptions.show_inner_grid_boxes = true;
@@ -62,46 +61,44 @@ void test_voxelmap_insert_2d_scan()
     scene.saveToFile("sparsevoxelmap_scan2d.3Dscene");
 #endif
 
+  {
+    size_t nPts = 0;
+
+    const auto lambdaVisitPoints = [&nPts](const mrpt::math::TPoint3Df&) { nPts++; };
+
+    map.visitAllPoints(lambdaVisitPoints);
+
+    ASSERT_EQUAL_(nPts, 267UL);
+  }
+
+  {
+    size_t nVoxels = 0;
+
+    const auto lambdaVisitVoxels = [&nVoxels](
+                                       const mola::SparseVoxelPointCloud::outer_index3d_t&,
+                                       const mola::SparseVoxelPointCloud::inner_plain_index_t,
+                                       const mola::SparseVoxelPointCloud::VoxelData& v,
+                                       const mola::SparseVoxelPointCloud::InnerGrid& grid)
     {
-        size_t nPts = 0;
+      // count them:
+      if (!v.points(grid).empty()) nVoxels++;
+    };
+    map.visitAllVoxels(lambdaVisitVoxels);
 
-        const auto lambdaVisitPoints = [&nPts](const mrpt::math::TPoint3Df&)
-        { nPts++; };
-
-        map.visitAllPoints(lambdaVisitPoints);
-
-        ASSERT_EQUAL_(nPts, 267UL);
-    }
-
-    {
-        size_t nVoxels = 0;
-
-        const auto lambdaVisitVoxels =
-            [&nVoxels](
-                const mola::SparseVoxelPointCloud::outer_index3d_t&,
-                const mola::SparseVoxelPointCloud::inner_plain_index_t,
-                const mola::SparseVoxelPointCloud::VoxelData& v,
-                const mola::SparseVoxelPointCloud::InnerGrid& grid)
-        {
-            // count them:
-            if (!v.points(grid).empty()) nVoxels++;
-        };
-        map.visitAllVoxels(lambdaVisitVoxels);
-
-        ASSERT_EQUAL_(nVoxels, 96UL);
-    }
+    ASSERT_EQUAL_(nVoxels, 96UL);
+  }
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        test_voxelmap_basic_ops();
-        test_voxelmap_insert_2d_scan();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
+  try
+  {
+    test_voxelmap_basic_ops();
+    test_voxelmap_insert_2d_scan();
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << "\n";
+    return 1;
+  }
 }

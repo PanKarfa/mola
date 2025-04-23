@@ -20,26 +20,25 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class Relocalization
 {
-   public:
-    Relocalization();
-    virtual ~Relocalization();
+ public:
+  Relocalization();
+  virtual ~Relocalization();
 
-    /** @name Virtual interface of Relocalization
-     *{ */
+  /** @name Virtual interface of Relocalization
+   *{ */
 
-    /** Re-localize near this pose, including uncetainty.
-     *  \param[in] pose The pose, in the local map frame.
-     *  There is no return value from this method.
-     */
-    virtual void relocalize_near_pose_pdf(
-        const mrpt::poses::CPose3DPDFGaussian& p) = 0;
+  /** Re-localize near this pose, including uncetainty.
+   *  \param[in] pose The pose, in the local map frame.
+   *  There is no return value from this method.
+   */
+  virtual void relocalize_near_pose_pdf(const mrpt::poses::CPose3DPDFGaussian& p) = 0;
 
-    /** Re-localize with the next incoming GNSS message.
-     *  There is no return value from this method.
-     */
-    virtual void relocalize_from_gnss() = 0;
+  /** Re-localize with the next incoming GNSS message.
+   *  There is no return value from this method.
+   */
+  virtual void relocalize_from_gnss() = 0;
 
-    /** @} */
+  /** @} */
 };
 
 }  // namespace mola

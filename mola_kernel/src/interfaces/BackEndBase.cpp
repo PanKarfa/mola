@@ -24,22 +24,20 @@ BackEndBase::BackEndBase() = default;
 
 void BackEndBase::initialize(const Yaml& cfg)
 {
-    MRPT_TRY_START
+  MRPT_TRY_START
 
-    // attach to world model:
-    auto wms = findService<WorldModel>();
-    ASSERTMSG_(!wms.empty(), "No WorldModel found in the system!");
-    ASSERTMSG_(
-        wms.size() == 1, "Only one WorldModel can coexist in the system!");
+  // attach to world model:
+  auto wms = findService<WorldModel>();
+  ASSERTMSG_(!wms.empty(), "No WorldModel found in the system!");
+  ASSERTMSG_(wms.size() == 1, "Only one WorldModel can coexist in the system!");
 
-    worldmodel_ = std::dynamic_pointer_cast<WorldModel>(wms[0]);
-    ASSERT_(worldmodel_);
-    MRPT_LOG_INFO_FMT(
-        "Attached to WorldModel module `%s`",
-        worldmodel_->getModuleInstanceName().c_str());
+  worldmodel_ = std::dynamic_pointer_cast<WorldModel>(wms[0]);
+  ASSERT_(worldmodel_);
+  MRPT_LOG_INFO_FMT(
+      "Attached to WorldModel module `%s`", worldmodel_->getModuleInstanceName().c_str());
 
-    // children config:
-    this->initialize_backend(cfg);
+  // children config:
+  this->initialize_backend(cfg);
 
-    MRPT_TRY_END
+  MRPT_TRY_END
 }

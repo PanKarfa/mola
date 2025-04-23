@@ -16,18 +16,17 @@
 using namespace mola;
 
 // arguments: class, parent class, namespace
-IMPLEMENTS_VIRTUAL_SERIALIZABLE(
-    FactorBase, mrpt::serialization::CSerializable, mola)
+IMPLEMENTS_VIRTUAL_SERIALIZABLE(FactorBase, mrpt::serialization::CSerializable, mola)
 
 FactorBase::~FactorBase() = default;
 
 void FactorBase::baseSerializeTo(mrpt::serialization::CArchive& out) const
 {
-    out << my_id_ << robust_param_;
-    out.WriteAs<uint8_t>(robust_type_);
+  out << my_id_ << robust_param_;
+  out.WriteAs<uint8_t>(robust_type_);
 }
 void FactorBase::baseSerializeFrom(mrpt::serialization::CArchive& in)
 {
-    in >> my_id_ >> robust_param_;
-    robust_type_ = static_cast<mola::Robust>(in.ReadAs<uint8_t>());
+  in >> my_id_ >> robust_param_;
+  robust_type_ = static_cast<mola::Robust>(in.ReadAs<uint8_t>());
 }

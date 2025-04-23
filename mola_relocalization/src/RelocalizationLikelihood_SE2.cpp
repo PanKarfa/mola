@@ -36,79 +36,75 @@
  */
 
 // METHOD: likelihood
-mola::RelocalizationLikelihood_SE2::Output
-    mola::RelocalizationLikelihood_SE2::run(const Input& in)
+mola::RelocalizationLikelihood_SE2::Output mola::RelocalizationLikelihood_SE2::run(const Input& in)
 {
-    mola::RelocalizationLikelihood_SE2::Output result;
+  mola::RelocalizationLikelihood_SE2::Output result;
 
-    const double t0 = mrpt::Clock::nowDouble();
+  const double t0 = mrpt::Clock::nowDouble();
 
-    ASSERT_(!in.reference_map.layers.empty());
+  ASSERT_(!in.reference_map.layers.empty());
 
-    result.likelihood_grid = mrpt::poses::CPosePDFGrid(
-        in.corner_min.x, in.corner_max.x, in.corner_min.y, in.corner_max.y,
-        in.resolution_xy, in.resolution_phi, in.corner_min.phi,
-        in.corner_max.phi);
+  result.likelihood_grid = mrpt::poses::CPosePDFGrid(
+      in.corner_min.x, in.corner_max.x, in.corner_min.y, in.corner_max.y, in.resolution_xy,
+      in.resolution_phi, in.corner_min.phi, in.corner_max.phi);
 
-    auto& grid = result.likelihood_grid;
+  auto& grid = result.likelihood_grid;
 
-    const size_t nX   = grid.getSizeX();
-    const size_t nY   = grid.getSizeY();
-    const size_t nPhi = grid.getSizePhi();
+  const size_t nX   = grid.getSizeX();
+  const size_t nY   = grid.getSizeY();
+  const size_t nPhi = grid.getSizePhi();
 
-    const size_t nCells = nX * nY * nPhi;
-    ASSERT_(nCells > 0);
+  const size_t nCells = nX * nY * nPhi;
+  ASSERT_(nCells > 0);
 
-    // evaluate over the grid:
-    std::optional<double> minW, maxW;
+  // evaluate over the grid:
+  std::optional<double> minW, maxW;
 
-    for (size_t iX = 0, iGlobal = 0; iX < nX; iX++)
+  for (size_t iX = 0, iGlobal = 0; iX < nX; iX++)
+  {
+    const double x = grid.idx2x(iX);
+    for (size_t iY = 0; iY < nY; iY++)
     {
-        const double x = grid.idx2x(iX);
-        for (size_t iY = 0; iY < nY; iY++)
+      const double y = grid.idx2y(iY);
+      for (size_t iPhi = 0; iPhi < nPhi; iPhi++, iGlobal++)
+      {
+        const double phi = grid.idx2phi(iPhi);
+
+        const auto pose = mrpt::poses::CPose3D::FromXYZYawPitchRoll(x, y, 0, phi, 0, 0);
+
+        for (const auto& [layerName, map] : in.reference_map.layers)
         {
-            const double y = grid.idx2y(iY);
-            for (size_t iPhi = 0; iPhi < nPhi; iPhi++, iGlobal++)
-            {
-                const double phi = grid.idx2phi(iPhi);
+          ASSERT_(map);
+          const double logLik = map->computeObservationsLikelihood(in.observations, pose);
 
-                const auto pose = mrpt::poses::CPose3D::FromXYZYawPitchRoll(
-                    x, y, 0, phi, 0, 0);
+          double* cell = grid.getByIndex(iX, iY, iPhi);
+          ASSERT_(cell);
+          *cell = logLik;
 
-                for (const auto& [layerName, map] : in.reference_map.layers)
-                {
-                    ASSERT_(map);
-                    const double logLik = map->computeObservationsLikelihood(
-                        in.observations, pose);
-
-                    double* cell = grid.getByIndex(iX, iY, iPhi);
-                    ASSERT_(cell);
-                    *cell = logLik;
-
-                    if (!minW || logLik < *minW) minW = logLik;
-                    if (!maxW || logLik > *maxW) maxW = logLik;
-                }
-            }
+          if (!minW || logLik < *minW) minW = logLik;
+          if (!maxW || logLik > *maxW) maxW = logLik;
         }
+      }
     }
+  }
 
-    // normalizeWeights and convert log-lik ==> likelihood
-    for (size_t iX = 0; iX < nX; iX++)
-        for (size_t iY = 0; iY < nY; iY++)
-            for (size_t iPhi = 0; iPhi < nPhi; iPhi++)
-            {
-                double& cell = *grid.getByIndex(iX, iY, iPhi);
-                cell -= *maxW;
-                cell = std::exp(cell);
-            }
-    *minW -= *maxW;
+  // normalizeWeights and convert log-lik ==> likelihood
+  for (size_t iX = 0; iX < nX; iX++)
+    for (size_t iY = 0; iY < nY; iY++)
+      for (size_t iPhi = 0; iPhi < nPhi; iPhi++)
+      {
+        double& cell = *grid.getByIndex(iX, iY, iPhi);
+        cell -= *maxW;
+        cell = std::exp(cell);
+      }
+  *minW -= *maxW;
 
-    // Normalize PDF:
-    grid.normalize();
+  // Normalize PDF:
+  grid.normalize();
 
-    result.time_cost          = mrpt::Clock::nowDouble() - t0;
-    result.max_log_likelihood = 0;  // by definition of the normalization above
-    result.min_log_likelihood = *minW;
+  result.time_cost          = mrpt::Clock::nowDouble() - t0;
+  result.max_log_likelihood = 0;  // by definition of the normalization above
+  result.min_log_likelihood = *minW;
 
-    return result;
+  return result;
 }

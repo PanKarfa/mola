@@ -17,7 +17,6 @@
 namespace mola
 {
 void pretty_print_exception(
-    const std::exception& e, const std::string& headerLine,
-    const bool use_std_cerr = true);
+    const std::exception& e, const std::string& headerLine, const bool use_std_cerr = true);
 
 }  // namespace mola

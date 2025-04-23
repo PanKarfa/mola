@@ -24,11 +24,11 @@ namespace mola
  */
 class RelPose3KF : public EntityRelativeBase, public KeyFrameBase
 {
-    DEFINE_SERIALIZABLE(RelPose3KF, mola)
+  DEFINE_SERIALIZABLE(RelPose3KF, mola)
 
-   public:
-    /** The up-to-date value of this entity. */
-    mrpt::math::TPose3D relpose_value;
+ public:
+  /** The up-to-date value of this entity. */
+  mrpt::math::TPose3D relpose_value;
 };
 
 }  // namespace mola

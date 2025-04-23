@@ -20,38 +20,36 @@ IMPLEMENTS_SERIALIZABLE(FactorConstVelKinematics, FactorBase, mola);
 
 mola::id_t FactorConstVelKinematics::edge_indices(const std::size_t i) const
 {
-    switch (i)
-    {
-        case 0:
-            return from_kf_;
-        case 1:
-            return to_kf_;
-        default:
-            THROW_EXCEPTION("Out of bounds");
-    }
+  switch (i)
+  {
+    case 0:
+      return from_kf_;
+    case 1:
+      return to_kf_;
+    default:
+      THROW_EXCEPTION("Out of bounds");
+  }
 }
 
 // Implementation of the CSerializable virtual interface:
 uint8_t FactorConstVelKinematics::serializeGetVersion() const { return 0; }
-void    FactorConstVelKinematics::serializeTo(
-       mrpt::serialization::CArchive& out) const
+void    FactorConstVelKinematics::serializeTo(mrpt::serialization::CArchive& out) const
 {
-    baseSerializeTo(out);
-    out << from_kf_ << to_kf_ << deltaTime_;
+  baseSerializeTo(out);
+  out << from_kf_ << to_kf_ << deltaTime_;
 }
-void FactorConstVelKinematics::serializeFrom(
-    mrpt::serialization::CArchive& in, uint8_t version)
+void FactorConstVelKinematics::serializeFrom(mrpt::serialization::CArchive& in, uint8_t version)
 {
-    baseSerializeFrom(in);
+  baseSerializeFrom(in);
 
-    switch (version)
+  switch (version)
+  {
+    case 0:
     {
-        case 0:
-        {
-            in >> from_kf_ >> to_kf_ >> deltaTime_;
-        }
-        break;
-        default:
-            MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
-    };
+      in >> from_kf_ >> to_kf_ >> deltaTime_;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  };
 }

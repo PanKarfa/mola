@@ -22,22 +22,21 @@ IMPLEMENTS_SERIALIZABLE(LandmarkPoint3, EntityBase, mola);
 uint8_t LandmarkPoint3::serializeGetVersion() const { return 0; }
 void    LandmarkPoint3::serializeTo(mrpt::serialization::CArchive& out) const
 {
-    baseSerializeTo(out);
-    out << point;
+  baseSerializeTo(out);
+  out << point;
 }
-void LandmarkPoint3::serializeFrom(
-    mrpt::serialization::CArchive& in, uint8_t version)
+void LandmarkPoint3::serializeFrom(mrpt::serialization::CArchive& in, uint8_t version)
 {
-    baseSerializeFrom(in);
+  baseSerializeFrom(in);
 
-    switch (version)
+  switch (version)
+  {
+    case 0:
     {
-        case 0:
-        {
-            in >> point;
-        }
-        break;
-        default:
-            MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
-    };
+      in >> point;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  };
 }

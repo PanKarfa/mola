@@ -23,24 +23,24 @@ namespace mola
  */
 class FactorConstVelKinematics : public FactorBase
 {
-    DEFINE_SERIALIZABLE(FactorConstVelKinematics, mola)
+  DEFINE_SERIALIZABLE(FactorConstVelKinematics, mola)
 
-   public:
-    FactorConstVelKinematics() = default;
+ public:
+  FactorConstVelKinematics() = default;
 
-    /** Creates relative pose constraint of KF `to` as seem from `from`. */
-    FactorConstVelKinematics(id_t kf_from, id_t kf_to, double deltaTime)
-        : from_kf_(kf_from), to_kf_(kf_to), deltaTime_(deltaTime)
-    {
-    }
+  /** Creates relative pose constraint of KF `to` as seem from `from`. */
+  FactorConstVelKinematics(id_t kf_from, id_t kf_to, double deltaTime)
+      : from_kf_(kf_from), to_kf_(kf_to), deltaTime_(deltaTime)
+  {
+  }
 
-    id_t from_kf_ = INVALID_ID, to_kf_ = INVALID_ID;
+  id_t from_kf_ = INVALID_ID, to_kf_ = INVALID_ID;
 
-    /** Elapsed time between "from_kf" and "to_kf" [seconds] */
-    double deltaTime_ = .0;
+  /** Elapsed time between "from_kf" and "to_kf" [seconds] */
+  double deltaTime_ = .0;
 
-    std::size_t edge_count() const override { return 2; }
-    mola::id_t  edge_indices(const std::size_t i) const override;
+  std::size_t edge_count() const override { return 2; }
+  mola::id_t  edge_indices(const std::size_t i) const override;
 };
 
 }  // namespace mola

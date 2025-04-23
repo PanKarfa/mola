@@ -19,63 +19,60 @@
 #include <iostream>
 
 void mola::pretty_print_exception(
-    const std::exception& e, const std::string& headerLine,
-    const bool use_std_cerr)
+    const std::exception& e, const std::string& headerLine, const bool use_std_cerr)
 {
-    using namespace mrpt::system;
+  using namespace mrpt::system;
 
-    auto& o = use_std_cerr ? std::cerr : std::cout;
+  auto& o = use_std_cerr ? std::cerr : std::cout;
 
-    const auto setFormatRed = [=](const ConsoleTextStyle style)
-    {
+  const auto setFormatRed = [=](const ConsoleTextStyle style)
+  {
 #if MRPT_VERSION >= 0x233
-        consoleColorAndStyle(
-            ConsoleForegroundColor::RED, ConsoleBackgroundColor::DEFAULT, style,
-            use_std_cerr);
+    consoleColorAndStyle(
+        ConsoleForegroundColor::RED, ConsoleBackgroundColor::DEFAULT, style, use_std_cerr);
 #else
-        setConsoleColor(CONCOL_RED, use_std_cerr);
+    setConsoleColor(CONCOL_RED, use_std_cerr);
 #endif
-    };
+  };
 
-    const auto resetFormat = [=]()
-    {
+  const auto resetFormat = [=]()
+  {
 #if MRPT_VERSION >= 0x233
-        consoleColorAndStyle(
-            ConsoleForegroundColor::DEFAULT, ConsoleBackgroundColor::DEFAULT,
-            ConsoleTextStyle::REGULAR, use_std_cerr);
+    consoleColorAndStyle(
+        ConsoleForegroundColor::DEFAULT, ConsoleBackgroundColor::DEFAULT, ConsoleTextStyle::REGULAR,
+        use_std_cerr);
 #else
-        setConsoleColor(CONCOL_NORMAL, use_std_cerr);
+    setConsoleColor(CONCOL_NORMAL, use_std_cerr);
 #endif
-    };
+  };
 
-    if (!headerLine.empty())
+  if (!headerLine.empty())
+  {
+    setFormatRed(ConsoleTextStyle::BOLD);
+    o << headerLine << "\n";
+    resetFormat();
+  }
+
+  std::vector<std::string> lines;
+  mrpt::system::tokenize(mrpt::exception_to_str(e), "\r\n", lines);
+
+  for (const auto& line : lines)
+  {
+    if (mrpt::system::strStarts(line, "Message:") || mrpt::system::strStarts(line, "Location:"))
     {
-        setFormatRed(ConsoleTextStyle::BOLD);
-        o << headerLine << "\n";
-        resetFormat();
+      setFormatRed(ConsoleTextStyle::UNDERLINED);
+      o << line.substr(0, line.find(":") + 1);
+      resetFormat();
+      o << line.substr(line.find(":") + 1);
     }
-
-    std::vector<std::string> lines;
-    mrpt::system::tokenize(mrpt::exception_to_str(e), "\r\n", lines);
-
-    for (const auto& line : lines)
+    else if (mrpt::system::strStarts(line, "==== MRPT exception"))
     {
-        if (mrpt::system::strStarts(line, "Message:") ||
-            mrpt::system::strStarts(line, "Location:"))
-        {
-            setFormatRed(ConsoleTextStyle::UNDERLINED);
-            o << line.substr(0, line.find(":") + 1);
-            resetFormat();
-            o << line.substr(line.find(":") + 1);
-        }
-        else if (mrpt::system::strStarts(line, "==== MRPT exception"))
-        {
-            setFormatRed(ConsoleTextStyle::BLINKING);
-            o << line;
-            resetFormat();
-        }
-        else
-            o << line;
-        o << "\n";
+      setFormatRed(ConsoleTextStyle::BLINKING);
+      o << line;
+      resetFormat();
     }
+    else
+      o << line;
+    o << "\n";
+  }
 }

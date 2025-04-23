@@ -29,13 +29,13 @@
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    try
-    {
-        // xx();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
+  try
+  {
+    // xx();
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << "\n";
+    return 1;
+  }
 }

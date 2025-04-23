@@ -40,50 +40,52 @@ using mrpt::containers::yaml;
 namespace
 {
 std::string::size_type findClosing(
-    size_t pos, const std::string& s, const char searchEndChar,
-    const char otherStartChar)
+    size_t pos, const std::string& s, const char searchEndChar, const char otherStartChar)
 {
-    int openEnvs = 1;
-    for (; pos < s.size(); pos++)
+  int openEnvs = 1;
+  for (; pos < s.size(); pos++)
+  {
+    const char ch = s[pos];
+    if (ch == otherStartChar)
+      openEnvs++;
+    else if (ch == searchEndChar)
     {
-        const char ch = s[pos];
-        if (ch == otherStartChar)
-            openEnvs++;
-        else if (ch == searchEndChar)
-        {
-            openEnvs--;
-            if (openEnvs == 0) { return pos; }
-        }
+      openEnvs--;
+      if (openEnvs == 0)
+      {
+        return pos;
+      }
     }
+  }
 
-    // not found:
-    return std::string::npos;
+  // not found:
+  return std::string::npos;
 }
 
 // "foo|bar" -> {"foo","bar"}
 std::tuple<std::string, std::string> splitVerticalBar(const std::string& s)
 {
-    const auto posBar = s.find("|");
-    if (posBar == std::string::npos) return {s, {}};
+  const auto posBar = s.find("|");
+  if (posBar == std::string::npos) return {s, {}};
 
-    return {s.substr(0, posBar), s.substr(posBar + 1)};
+  return {s.substr(0, posBar), s.substr(posBar + 1)};
 }
 
 std::string trimWSNL(const std::string& s)
 {
-    std::string str = s;
-    mrpt::system::trim(str);
-    str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
-    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
-    return str;
+  std::string str = s;
+  mrpt::system::trim(str);
+  str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+  str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+  return str;
 }
 }  // namespace
 
 std::string mola::yaml_to_string(const mrpt::containers::yaml& cfg)
 {
-    std::stringstream ss;
-    ss << cfg;
-    return ss.str();
+  std::stringstream ss;
+  ss << cfg;
+  return ss.str();
 }
 
 namespace
@@ -91,206 +93,196 @@ namespace
 
 bool line_pos_is_commented_out(const std::string& text, size_t pos)
 {
-    for (;;)
-    {
-        if (text[pos] == '#') return true;
-        if (!pos || text[pos] == '\n' || text[pos] == '\r') break;
-        pos--;
-    }
-    return false;
+  for (;;)
+  {
+    if (text[pos] == '#') return true;
+    if (!pos || text[pos] == '\n' || text[pos] == '\r') break;
+    pos--;
+  }
+  return false;
 }
 
-std::string parseVars(
-    const std::string& text, const mola::YAMLParseOptions& opts)
+std::string parseVars(const std::string& text, const mola::YAMLParseOptions& opts)
 {
-    using namespace std::string_literals;
+  using namespace std::string_literals;
 
-    MRPT_TRY_START
+  MRPT_TRY_START
 
-    const auto start = text.find("${");
-    if (start == std::string::npos) return text;
+  const auto start = text.find("${");
+  if (start == std::string::npos) return text;
+
+  const std::string pre  = text.substr(0, start);
+  const std::string post = text.substr(start + 2);
+
+  const auto post_end = findClosing(0, post, '}', '{');
+  if (post_end == std::string::npos)
+  {
+    THROW_EXCEPTION_FMT(
+        "Column=%u: Cannot find matching `}` for `${` in: `%s`", static_cast<unsigned int>(start),
+        text.c_str());
+  }
+
+  const auto varnameOrg = post.substr(0, post_end);
+
+  const auto [varname, defaultValue] = splitVerticalBar(varnameOrg);
+
+  if (line_pos_is_commented_out(text, start))
+  {
+    return parseVars(pre + "$ {"s + varname + "}"s + post.substr(post_end + 1), opts);
+  }
+
+  // 1st try:  match to env vars
+  std::string varvalue;
+  const char* v = ::getenv(varname.c_str());
+  if (v != nullptr)
+  {  // match:
+    varvalue = std::string(v);
+  }
+  else
+  {
+    // 2nd try: handle special variable names:
+    // ${CURRENT_YAML_FILE_PATH}
+    if (varname == "CURRENT_YAML_FILE_PATH")
+      varvalue = opts.includesBasePath;
+    else
+      // 3rd try: custom user variables
+      if (auto it = opts.variables.find(varname); it != opts.variables.end())
+      {
+        varvalue = it->second;
+      }
+      else
+        // 4th: default:
+        if (!defaultValue.empty())
+        {
+          varvalue = defaultValue;
+        }
+        else
+        {
+          THROW_EXCEPTION_FMT(
+              "YAML parseEnvVars(): Undefined environment variable: "
+              "${%s}",
+              varname.c_str());
+        }
+  }
+
+  return parseVars(pre + varvalue + post.substr(post_end + 1), opts);
+  MRPT_TRY_END
+}
+
+std::string parseCmdRuns(const std::string& text, const mola::YAMLParseOptions& opts)
+{
+  MRPT_TRY_START
+
+  const auto start = text.find("$(");
+  if (start == std::string::npos) return text;
+
+  const std::string pre  = text.substr(0, start);
+  const std::string post = text.substr(start + 2);
+
+  const auto post_end = findClosing(0, post, ')', '(');
+  if (post_end == std::string::npos)
+  {
+    THROW_EXCEPTION_FMT(
+        "Column=%u: Cannot find matching `)` for `$(` in: `%s`", static_cast<unsigned int>(start),
+        text.c_str());
+  }
+
+  const auto cmd = post.substr(0, post_end);
+
+  // Launch command and get console output:
+  std::string cmdOut;
+
+  int ret = mrpt::system::executeCommand(cmd, &cmdOut);
+  if (ret != 0)
+  {
+    THROW_EXCEPTION_FMT("Error (retval=%i) executing external command: `%s`", ret, cmd.c_str());
+  }
+  // Clear whitespaces:
+  cmdOut = trimWSNL(cmdOut);
+
+  return parseCmdRuns(pre + cmdOut + post.substr(post_end + 1), opts);
+  MRPT_TRY_END
+}
+
+void recursiveParseNodeForIncludes(yaml::node_t& n, const mola::YAMLParseOptions& opts)
+{
+  if (n.isScalar())
+  {
+    //
+    std::string text = n.as<std::string>();
+
+    const auto start = text.find("$include{");
+    if (start == std::string::npos) return;
 
     const std::string pre  = text.substr(0, start);
-    const std::string post = text.substr(start + 2);
+    const std::string post = text.substr(start + 9);
 
     const auto post_end = findClosing(0, post, '}', '{');
     if (post_end == std::string::npos)
     {
-        THROW_EXCEPTION_FMT(
-            "Column=%u: Cannot find matching `}` for `${` in: `%s`",
-            static_cast<unsigned int>(start), text.c_str());
+      THROW_EXCEPTION_FMT(
+          "Column=%u: Cannot find matching `{` for `$include{` in: `%s`",
+          static_cast<unsigned int>(start), text.c_str());
     }
 
-    const auto varnameOrg = post.substr(0, post_end);
+    auto expr = post.substr(0, post_end);
+    // Solve for possible variables, etc:
+    expr = trimWSNL(mola::parse_yaml(expr));
 
-    const auto [varname, defaultValue] = splitVerticalBar(varnameOrg);
-
-    if (line_pos_is_commented_out(text, start))
+    // Relative vs absolute paths:
+    std::string newIncludeBaseDir = opts.includesBasePath;
+    if (!opts.includesBasePath.empty())
     {
-        return parseVars(
-            pre + "$ {"s + varname + "}"s + post.substr(post_end + 1), opts);
+      fs::path f = expr;
+      if (f.is_relative())
+      {
+        f    = fs::path(opts.includesBasePath) / f;
+        expr = f;
+
+        newIncludeBaseDir = fs::path(f).remove_filename();
+      }
     }
 
-    // 1st try:  match to env vars
-    std::string varvalue;
-    const char* v = ::getenv(varname.c_str());
-    if (v != nullptr)
-    {  // match:
-        varvalue = std::string(v);
-    }
-    else
+    // Read external file:
+    if (!mrpt::system::fileExists(expr))
     {
-        // 2nd try: handle special variable names:
-        // ${CURRENT_YAML_FILE_PATH}
-        if (varname == "CURRENT_YAML_FILE_PATH")
-            varvalue = opts.includesBasePath;
-        else
-            // 3rd try: custom user variables
-            if (auto it = opts.variables.find(varname);
-                it != opts.variables.end())
-            {
-                varvalue = it->second;
-            }
-            else
-                // 4th: default:
-                if (!defaultValue.empty()) { varvalue = defaultValue; }
-                else
-                {
-                    THROW_EXCEPTION_FMT(
-                        "YAML parseEnvVars(): Undefined environment variable: "
-                        "${%s}",
-                        varname.c_str());
-                }
+      THROW_EXCEPTION_FMT("Error: cannot find $include{}'d YAML file with path `%s`", expr.c_str());
     }
 
-    return parseVars(pre + varvalue + post.substr(post_end + 1), opts);
-    MRPT_TRY_END
+    if (getenv("VERBOSE"))
+      std::cout << "[recursiveParseNodeForIncludes] Including yaml from `" << expr << "`\n";
+
+    auto filData = yaml::FromFile(expr);
+
+    // Handle possible recursive expressions & replace contents:
+    auto newOpts             = opts;
+    newOpts.includesBasePath = newIncludeBaseDir;
+
+    n = yaml::FromText(mola::parse_yaml(mola::yaml_to_string(filData), newOpts));
+
+    if (getenv("VERBOSE")) std::cout << "[recursiveParseNodeForIncludes] Include done ok.\n";
+  }
+  else if (n.isSequence())
+  {
+    for (auto& e : n.asSequence()) recursiveParseNodeForIncludes(e, opts);
+  }
+  else if (n.isMap())
+  {
+    for (auto& e : n.asMap()) recursiveParseNodeForIncludes(e.second, opts);
+  }
 }
 
-std::string parseCmdRuns(
-    const std::string& text, const mola::YAMLParseOptions& opts)
+std::string parseIncludes(const std::string& text, const mola::YAMLParseOptions& opts)
 {
-    MRPT_TRY_START
+  MRPT_TRY_START
 
-    const auto start = text.find("$(");
-    if (start == std::string::npos) return text;
+  yaml root = yaml::FromText(text);
 
-    const std::string pre  = text.substr(0, start);
-    const std::string post = text.substr(start + 2);
+  recursiveParseNodeForIncludes(root.node(), opts);
 
-    const auto post_end = findClosing(0, post, ')', '(');
-    if (post_end == std::string::npos)
-    {
-        THROW_EXCEPTION_FMT(
-            "Column=%u: Cannot find matching `)` for `$(` in: `%s`",
-            static_cast<unsigned int>(start), text.c_str());
-    }
+  return mola::yaml_to_string(root);
 
-    const auto cmd = post.substr(0, post_end);
-
-    // Launch command and get console output:
-    std::string cmdOut;
-
-    int ret = mrpt::system::executeCommand(cmd, &cmdOut);
-    if (ret != 0)
-    {
-        THROW_EXCEPTION_FMT(
-            "Error (retval=%i) executing external command: `%s`", ret,
-            cmd.c_str());
-    }
-    // Clear whitespaces:
-    cmdOut = trimWSNL(cmdOut);
-
-    return parseCmdRuns(pre + cmdOut + post.substr(post_end + 1), opts);
-    MRPT_TRY_END
-}
-
-void recursiveParseNodeForIncludes(
-    yaml::node_t& n, const mola::YAMLParseOptions& opts)
-{
-    if (n.isScalar())
-    {
-        //
-        std::string text = n.as<std::string>();
-
-        const auto start = text.find("$include{");
-        if (start == std::string::npos) return;
-
-        const std::string pre  = text.substr(0, start);
-        const std::string post = text.substr(start + 9);
-
-        const auto post_end = findClosing(0, post, '}', '{');
-        if (post_end == std::string::npos)
-        {
-            THROW_EXCEPTION_FMT(
-                "Column=%u: Cannot find matching `{` for `$include{` in: `%s`",
-                static_cast<unsigned int>(start), text.c_str());
-        }
-
-        auto expr = post.substr(0, post_end);
-        // Solve for possible variables, etc:
-        expr = trimWSNL(mola::parse_yaml(expr));
-
-        // Relative vs absolute paths:
-        std::string newIncludeBaseDir = opts.includesBasePath;
-        if (!opts.includesBasePath.empty())
-        {
-            fs::path f = expr;
-            if (f.is_relative())
-            {
-                f    = fs::path(opts.includesBasePath) / f;
-                expr = f;
-
-                newIncludeBaseDir = fs::path(f).remove_filename();
-            }
-        }
-
-        // Read external file:
-        if (!mrpt::system::fileExists(expr))
-        {
-            THROW_EXCEPTION_FMT(
-                "Error: cannot find $include{}'d YAML file with path `%s`",
-                expr.c_str());
-        }
-
-        if (getenv("VERBOSE"))
-            std::cout << "[recursiveParseNodeForIncludes] Including yaml from `"
-                      << expr << "`\n";
-
-        auto filData = yaml::FromFile(expr);
-
-        // Handle possible recursive expressions & replace contents:
-        auto newOpts             = opts;
-        newOpts.includesBasePath = newIncludeBaseDir;
-
-        n = yaml::FromText(
-            mola::parse_yaml(mola::yaml_to_string(filData), newOpts));
-
-        if (getenv("VERBOSE"))
-            std::cout << "[recursiveParseNodeForIncludes] Include done ok.\n";
-    }
-    else if (n.isSequence())
-    {
-        for (auto& e : n.asSequence()) recursiveParseNodeForIncludes(e, opts);
-    }
-    else if (n.isMap())
-    {
-        for (auto& e : n.asMap()) recursiveParseNodeForIncludes(e.second, opts);
-    }
-}
-
-std::string parseIncludes(
-    const std::string& text, const mola::YAMLParseOptions& opts)
-{
-    MRPT_TRY_START
-
-    yaml root = yaml::FromText(text);
-
-    recursiveParseNodeForIncludes(root.node(), opts);
-
-    return mola::yaml_to_string(root);
-
-    MRPT_TRY_END
+  MRPT_TRY_END
 }
 
 }  // namespace
@@ -298,25 +290,23 @@ std::string parseIncludes(
 mrpt::containers::yaml mola::parse_yaml(
     const mrpt::containers::yaml& input, const mola::YAMLParseOptions& opts)
 {
-    return mrpt::containers::yaml::FromText(
-        parse_yaml(yaml_to_string(input), opts));
+  return mrpt::containers::yaml::FromText(parse_yaml(yaml_to_string(input), opts));
 }
 
-std::string mola::parse_yaml(
-    const std::string& text, const YAMLParseOptions& opts)
+std::string mola::parse_yaml(const std::string& text, const YAMLParseOptions& opts)
 {
-    std::string s = text;
+  std::string s = text;
 
-    // 1) Parse "$include{}"s
-    if (opts.doIncludes) s = parseIncludes(s, opts);
+  // 1) Parse "$include{}"s
+  if (opts.doIncludes) s = parseIncludes(s, opts);
 
-    // 2) Parse "$()"s
-    if (opts.doCmdRuns) s = parseCmdRuns(s, opts);
+  // 2) Parse "$()"s
+  if (opts.doCmdRuns) s = parseCmdRuns(s, opts);
 
-    // 3) Parse "${}"s
-    if (opts.doEnvVars) s = parseVars(s, opts);
+  // 3) Parse "${}"s
+  if (opts.doEnvVars) s = parseVars(s, opts);
 
-    return s;
+  return s;
 }
 
 /* This is equivalent to calling mrpt::containers::yaml::FromFile(), setting the
@@ -326,13 +316,12 @@ std::string mola::parse_yaml(
 mrpt::containers::yaml mola::load_yaml_file(
     const std::string& fileName, const YAMLParseOptions& opts)
 {
-    MRPT_START
-    const auto rawYaml = mrpt::containers::yaml::FromFile(fileName);
+  MRPT_START
+  const auto rawYaml = mrpt::containers::yaml::FromFile(fileName);
 
-    auto optsMod             = opts;
-    optsMod.includesBasePath = mrpt::system::extractFileDirectory(fileName);
+  auto optsMod             = opts;
+  optsMod.includesBasePath = mrpt::system::extractFileDirectory(fileName);
 
-    return mrpt::containers::yaml::FromText(
-        parse_yaml(yaml_to_string(rawYaml), optsMod));
-    MRPT_END
+  return mrpt::containers::yaml::FromText(parse_yaml(yaml_to_string(rawYaml), optsMod));
+  MRPT_END
 }

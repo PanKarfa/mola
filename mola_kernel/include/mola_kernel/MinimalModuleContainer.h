@@ -29,35 +29,34 @@ namespace mola
  */
 class MinimalModuleContainer
 {
-   public:
-    MinimalModuleContainer() = default;
-    ~MinimalModuleContainer();
+ public:
+  MinimalModuleContainer() = default;
+  ~MinimalModuleContainer();
 
-    MinimalModuleContainer(const std::vector<mola::ExecutableBase::Ptr>& mods)
-        : modules_(mods)
+  MinimalModuleContainer(const std::vector<mola::ExecutableBase::Ptr>& mods) : modules_(mods)
+  {
+    for (auto& m : modules_)
     {
-        for (auto& m : modules_)
-        {
-            ASSERT_(m);
-            installNameServer(*m);
-        }
+      ASSERT_(m);
+      installNameServer(*m);
     }
+  }
 
-    void add(const mola::ExecutableBase::Ptr& m)
-    {
-        ASSERT_(m);
-        modules_.push_back(m);
-        installNameServer(*m);
-    }
+  void add(const mola::ExecutableBase::Ptr& m)
+  {
+    ASSERT_(m);
+    modules_.push_back(m);
+    installNameServer(*m);
+  }
 
-    const auto& modules() const { return modules_; }
+  const auto& modules() const { return modules_; }
 
-   private:
-    std::vector<mola::ExecutableBase::Ptr> modules_;
+ private:
+  std::vector<mola::ExecutableBase::Ptr> modules_;
 
-    void installNameServer(mola::ExecutableBase& m);
+  void installNameServer(mola::ExecutableBase& m);
 
-    ExecutableBase::Ptr nameServerImpl(const std::string& name);
+  ExecutableBase::Ptr nameServerImpl(const std::string& name);
 };
 
 /** @} */

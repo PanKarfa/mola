@@ -24,41 +24,40 @@ FilterBase::FilterBase() = default;
 // Virtual interface of any RawDataSource
 void FilterBase::initialize_rds(const Yaml& cfg)
 {
-    if (!cfg.empty())
-    {
-        MRPT_LOG_WARN_STREAM(
-            "`initialize()` not reimplemented by derived class. "
-            "Ignoring YAML config block:\n"
-            << cfg);
-    }
+  if (!cfg.empty())
+  {
+    MRPT_LOG_WARN_STREAM(
+        "`initialize()` not reimplemented by derived class. "
+        "Ignoring YAML config block:\n"
+        << cfg);
+  }
 }
 
 void FilterBase::spinOnce()
 {
-    // Nothing to do by default. We work data-driven via the worker thread.
-    // See onNewObservation().
+  // Nothing to do by default. We work data-driven via the worker thread.
+  // See onNewObservation().
 }
 
 // Virtual interface of any RawDataConsumer
 void FilterBase::onNewObservation(const CObservation::Ptr& o)
 {
-    const auto obsFut = thread_pool_.enqueue(
-        [this](const CObservation::Ptr& in)
+  const auto obsFut = thread_pool_.enqueue(
+      [this](const CObservation::Ptr& in)
+      {
+        try
         {
-            try
-            {
-                // Process the observation:
-                CObservation::Ptr out = this->doFilter(in);
-                // Forward it:
-                if (out) this->sendObservationsToFrontEnds(out);
-            }
-            catch (const std::exception& e)
-            {
-                MRPT_LOG_ERROR_STREAM(
-                    "[FilterBase::onNewObservation] Error: "
-                    << std::endl
-                    << mrpt::exception_to_str(e));
-            }
-        },
-        o);
+          // Process the observation:
+          CObservation::Ptr out = this->doFilter(in);
+          // Forward it:
+          if (out) this->sendObservationsToFrontEnds(out);
+        }
+        catch (const std::exception& e)
+        {
+          MRPT_LOG_ERROR_STREAM(
+              "[FilterBase::onNewObservation] Error: " << std::endl
+                                                       << mrpt::exception_to_str(e));
+        }
+      },
+      o);
 }

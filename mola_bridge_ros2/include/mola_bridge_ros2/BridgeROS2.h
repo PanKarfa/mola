@@ -94,273 +94,276 @@ namespace mola
  */
 class BridgeROS2 : public RawDataSourceBase, public mola::RawDataConsumer
 {
-    DEFINE_MRPT_OBJECT(BridgeROS2, mola)
+  DEFINE_MRPT_OBJECT(BridgeROS2, mola)
 
-   public:
-    BridgeROS2();
-    ~BridgeROS2() override;
+ public:
+  BridgeROS2();
+  ~BridgeROS2() override;
 
-    // See docs in base class
-    void spinOnce() override;
+  // See docs in base class
+  void spinOnce() override;
 
-    // RawDataConsumer implementation:
-    void onNewObservation(const CObservation::Ptr& o) override;
+  // RawDataConsumer implementation:
+  void onNewObservation(const CObservation::Ptr& o) override;
 
-   protected:
-    // See docs in base class
-    void initialize_rds(const Yaml& cfg) override;
+ protected:
+  // See docs in base class
+  void initialize_rds(const Yaml& cfg) override;
 
-   private:
-    std::thread rosNodeThread_;
+ private:
+  std::thread rosNodeThread_;
 
-    struct Params
+  struct Params
+  {
+    /// tf frame name with respect to sensor poses are measured, and also used for publishing
+    /// SLAM/localization results (read below).
+    std::string base_link_frame = "base_link";
+
+    /// If not empty, the node will broadcast a static /tf from base_footprint to
+    /// base_link with the TF base_footprint_to_base_link_tf at start
+    /// up.
+    /// Normally: "base_footprint"
+    std::string base_footprint_frame;  // Disabled by default
+
+    /// YAML format: "[x y z yaw pitch roll]" (meters & degrees)
+    mrpt::math::TPose3D base_footprint_to_base_link_tf = {0, 0, 0, 0, 0, 0};
+
+    /// Used for:
+    /// (a) importing odometry to MOLA if ``forward_ros_tf_as_mola_odometry_observations=true``
+    /// (b) querying ``${odom_frame} => ${base_link_frame}`` when
+    ///     ``publish_localization_following_rep105=true``.
+    std::string odom_frame = "odom";
+
+    /// tf frame used for:
+    /// (a) See ``publish_tf_from_robot_pose_observations``
+    /// (b) To follow REP105 (``publish_localization_following_rep105``), this must match
+    ///     the frame used as reference in the LocalizationSource (e.g. mola_lidar_odometry)
+    std::string reference_frame = "map";
+
+    /// How to publish localization to /tf:
+    /// - ``false``(direct mode): reference_frame ("map") -> base_link ("base_link")
+    ///   Note that reference_frame in this case comes from the localization source module
+    ///   (e.g. mola_lida_odometry), it is not configured here.
+    ///
+    ///  - ``true`` (indirect mode), following ROS [REP
+    ///  105](https://ros.org/reps/rep-0105.html):
+    ///   ``map -> odom``  (such as "map -> odom -> base_link" = "map -> base_link")
+    bool publish_localization_following_rep105 = true;
+
+    /// If enabled, during spinOnce(), the tf ``${odom_frame} => ${base_link_frame}`` will
+    /// be queried and forwarded as an `CObservationOdometry` reading to the MOLA subsystem:
+    bool forward_ros_tf_as_mola_odometry_observations = false;
+
+    /// If enabled, SLAM/Localization results will be published as nav_msgs/Odometry messages.
+    bool publish_odometry_msgs_from_slam = true;
+
+    // Which source will be forwarded (empty=any)
+    std::string publish_odometry_msgs_from_slam_source = {};
+
+    /// If enabled, SLAM/Localization results will be published as tf messages, for frames
+    /// according to explained above for `publish_localization_following_rep105`.
+    bool publish_tf_from_slam = true;
+
+    // Which source will be forwarded (empty=any)
+    std::string publish_tf_from_slam_source = {};
+
+    /// If enabled, robot pose observations (typically, ground truth from datasets), will be
+    /// forwarded to ROS as /tf messages: ``${reference_frame} => ${base_link}``
+    bool publish_tf_from_robot_pose_observations = true;
+
+    std::string relocalize_from_topic = "/initialpose";  //!< Default in RViz
+
+    /// If true, the original dataset timestamps will be used to publish.
+    /// Otherwise, the wallclock time will be used.
+    bool publish_in_sim_time = false;
+
+    double period_publish_new_localization = 0.2;  // [s]
+    double period_publish_new_map          = 5.0;  // [s]
+    double period_publish_static_tfs       = 1.0;  // [s]
+    double period_publish_diagnostics      = 1.0;  // [s]
+
+    double period_check_new_mola_subs = 1.0;  // [s]
+
+    int wait_for_tf_timeout_milliseconds = 100;
+
+    std::string georef_map_reference_frame = "map";
+    std::string georef_map_utm_frame       = "utm";
+    std::string georef_map_enu_frame       = "enu";
+  };
+
+  Params params_;
+
+  // Yaml is NOT a reference on purpose.
+  void ros_node_thread_main(Yaml cfg);
+
+  // std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
+  std::shared_ptr<tf2::BufferCore>            tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  std::shared_ptr<tf2_ros::TransformBroadcaster>       tf_bc_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_bc_;
+
+  rclcpp::Clock::SharedPtr ros_clock_;
+  std::mutex               ros_clock_mtx_;
+
+  std::shared_ptr<rclcpp::Node> rosNode_;
+  std::mutex                    rosNodeMtx_;
+
+  /// Returns a copy of the shared_ptr to the ROS 2 node, or empty if not
+  /// initialized yet.
+  std::shared_ptr<rclcpp::Node> rosNode()
+  {
+    auto lck = mrpt::lockHelper(rosNodeMtx_);
+    return rosNode_;
+  }
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subsPointCloud_;
+
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr> subsLaserScan_;
+
+  std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> subsOdometry_;
+
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr> subsImu_;
+
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr> subsGNSS_;
+
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subInitPose_;
+
+  void callbackOnPointCloud2(
+      const sensor_msgs::msg::PointCloud2& o, const std::string& outSensorLabel,
+      const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+
+  void callbackOnLaserScan(
+      const sensor_msgs::msg::LaserScan& o, const std::string& outSensorLabel,
+      const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+
+  void callbackOnImu(
+      const sensor_msgs::msg::Imu& o, const std::string& outSensorLabel,
+      const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+
+  void callbackOnNavSatFix(
+      const sensor_msgs::msg::NavSatFix& o, const std::string& outSensorLabel,
+      const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+
+  void callbackOnOdometry(const nav_msgs::msg::Odometry& o, const std::string& outSensorLabel);
+
+  void callbackOnRelocalizeTopic(const geometry_msgs::msg::PoseWithCovarianceStamped& o);
+
+  bool waitForTransform(
+      mrpt::poses::CPose3D& des, const std::string& target_frame, const std::string& source_frame,
+      bool printErrors);
+
+  void importRosOdometryToMOLA();
+
+  /// Returns either the wallclock "now" (params_.use_sim_time = false)
+  /// or the equivalent of the passed argument in ROS 2 format otherwise.
+  rclcpp::Time myNow(const mrpt::Clock::time_point& observationStamp);
+
+  /// Generic Map <topic> => publisher
+  std::map<std::string, rclcpp::PublisherBase::SharedPtr> rosPubs_;
+  std::recursive_mutex                                    rosPubsMtx_;
+
+  /// Gets or creates (upon first use) a publisher for a given type:
+  template <typename MSG_TYPE>
+  [[nodiscard]] auto get_publisher(const std::string& topic, const rclcpp::QoS& qos)
+      -> std::shared_ptr<rclcpp::Publisher<MSG_TYPE>>
+  {
+    auto lck = mrpt::lockHelper(rosPubsMtx_);
+
+    // Create the publisher the first time an observation arrives:
+    const bool is_1st_pub = rosPubs_.find(topic) == rosPubs_.end();
+    auto&      pub        = rosPubs_[topic];
+
+    if (is_1st_pub)
     {
-        /// tf frame name with respect to sensor poses are measured, and also used for publishing
-        /// SLAM/localization results (read below).
-        std::string base_link_frame = "base_link";
-
-        /// If not empty, the node will broadcast a static /tf from base_footprint to
-        /// base_link with the TF base_footprint_to_base_link_tf at start
-        /// up.
-        /// Normally: "base_footprint"
-        std::string base_footprint_frame;  // Disabled by default
-
-        /// YAML format: "[x y z yaw pitch roll]" (meters & degrees)
-        mrpt::math::TPose3D base_footprint_to_base_link_tf = {0, 0, 0, 0, 0, 0};
-
-        /// Used for:
-        /// (a) importing odometry to MOLA if ``forward_ros_tf_as_mola_odometry_observations=true``
-        /// (b) querying ``${odom_frame} => ${base_link_frame}`` when
-        ///     ``publish_localization_following_rep105=true``.
-        std::string odom_frame = "odom";
-
-        /// tf frame used for:
-        /// (a) See ``publish_tf_from_robot_pose_observations``
-        /// (b) To follow REP105 (``publish_localization_following_rep105``), this must match
-        ///     the frame used as reference in the LocalizationSource (e.g. mola_lidar_odometry)
-        std::string reference_frame = "map";
-
-        /// How to publish localization to /tf:
-        /// - ``false``(direct mode): reference_frame ("map") -> base_link ("base_link")
-        ///   Note that reference_frame in this case comes from the localization source module
-        ///   (e.g. mola_lida_odometry), it is not configured here.
-        ///
-        ///  - ``true`` (indirect mode), following ROS [REP
-        ///  105](https://ros.org/reps/rep-0105.html):
-        ///   ``map -> odom``  (such as "map -> odom -> base_link" = "map -> base_link")
-        bool publish_localization_following_rep105 = true;
-
-        /// If enabled, during spinOnce(), the tf ``${odom_frame} => ${base_link_frame}`` will
-        /// be queried and forwarded as an `CObservationOdometry` reading to the MOLA subsystem:
-        bool forward_ros_tf_as_mola_odometry_observations = false;
-
-        /// If enabled, SLAM/Localization results will be published as nav_msgs/Odometry messages.
-        bool publish_odometry_msgs_from_slam = true;
-
-        // Which source will be forwarded (empty=any)
-        std::string publish_odometry_msgs_from_slam_source = {};
-
-        /// If enabled, SLAM/Localization results will be published as tf messages, for frames
-        /// according to explained above for `publish_localization_following_rep105`.
-        bool publish_tf_from_slam = true;
-
-        // Which source will be forwarded (empty=any)
-        std::string publish_tf_from_slam_source = {};
-
-        /// If enabled, robot pose observations (typically, ground truth from datasets), will be
-        /// forwarded to ROS as /tf messages: ``${reference_frame} => ${base_link}``
-        bool publish_tf_from_robot_pose_observations = true;
-
-        std::string relocalize_from_topic = "/initialpose";  //!< Default in RViz
-
-        /// If true, the original dataset timestamps will be used to publish.
-        /// Otherwise, the wallclock time will be used.
-        bool publish_in_sim_time = false;
-
-        double period_publish_new_localization = 0.2;  // [s]
-        double period_publish_new_map          = 5.0;  // [s]
-        double period_publish_static_tfs       = 1.0;  // [s]
-        double period_publish_diagnostics      = 1.0;  // [s]
-
-        double period_check_new_mola_subs = 1.0;  // [s]
-
-        int wait_for_tf_timeout_milliseconds = 100;
-
-        std::string georef_map_reference_frame = "map";
-        std::string georef_map_utm_frame       = "utm";
-        std::string georef_map_enu_frame       = "enu";
-    };
-
-    Params params_;
-
-    // Yaml is NOT a reference on purpose.
-    void ros_node_thread_main(Yaml cfg);
-
-    // std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
-    std::shared_ptr<tf2::BufferCore>            tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-    std::shared_ptr<tf2_ros::TransformBroadcaster>       tf_bc_;
-    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_bc_;
-
-    rclcpp::Clock::SharedPtr ros_clock_;
-    std::mutex               ros_clock_mtx_;
-
-    std::shared_ptr<rclcpp::Node> rosNode_;
-    std::mutex                    rosNodeMtx_;
-
-    /// Returns a copy of the shared_ptr to the ROS 2 node, or empty if not
-    /// initialized yet.
-    std::shared_ptr<rclcpp::Node> rosNode()
-    {
-        auto lck = mrpt::lockHelper(rosNodeMtx_);
-        return rosNode_;
+      pub = rosNode()->create_publisher<MSG_TYPE>(topic, qos);
     }
-    std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> subsPointCloud_;
+    lck.unlock();
 
-    std::vector<rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr> subsLaserScan_;
+    auto ret = std::dynamic_pointer_cast<rclcpp::Publisher<MSG_TYPE>>(pub);
+    ASSERT_(ret);
+    return ret;
+  }
 
-    std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> subsOdometry_;
+  struct MolaSubs
+  {
+    // MOLA subscribers:
+    std::set<mola::RawDataSourceBase::Ptr>                  dataSources;
+    std::set<std::shared_ptr<mola::LocalizationSourceBase>> locSources;
+    std::set<std::shared_ptr<mola::MapSourceBase>>          mapSources;
+    std::set<std::shared_ptr<mola::Relocalization>>         relocalization;
+    std::set<std::shared_ptr<mola::MapServer>>              mapServers;
+  };
 
-    std::vector<rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr> subsImu_;
+  MolaSubs   molaSubs_;
+  std::mutex molaSubsMtx_;
 
-    std::vector<rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr> subsGNSS_;
+  // ROS services:
+  rclcpp::Service<mola_msgs::srv::RelocalizeFromStateEstimator>::SharedPtr srvRelocSE_;
+  rclcpp::Service<mola_msgs::srv::RelocalizeNearPose>::SharedPtr           srvRelocPose_;
+  rclcpp::Service<mola_msgs::srv::MapLoad>::SharedPtr                      srvMapLoad_;
+  rclcpp::Service<mola_msgs::srv::MapSave>::SharedPtr                      srvMapSave_;
+  rclcpp::Service<mola_msgs::srv::MolaRuntimeParamGet>::SharedPtr          srvParamGet_;
+  rclcpp::Service<mola_msgs::srv::MolaRuntimeParamSet>::SharedPtr          srvParamSet_;
 
-    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subInitPose_;
+  void service_relocalize_from_se(
+      const std::shared_ptr<mola_msgs::srv::RelocalizeFromStateEstimator::Request> request,
+      std::shared_ptr<mola_msgs::srv::RelocalizeFromStateEstimator::Response>      response);
 
-    void callbackOnPointCloud2(
-        const sensor_msgs::msg::PointCloud2& o, const std::string& outSensorLabel,
-        const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+  void service_relocalize_near_pose(
+      const std::shared_ptr<mola_msgs::srv::RelocalizeNearPose::Request> request,
+      std::shared_ptr<mola_msgs::srv::RelocalizeNearPose::Response>      response);
 
-    void callbackOnLaserScan(
-        const sensor_msgs::msg::LaserScan& o, const std::string& outSensorLabel,
-        const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+  void service_map_load(
+      const std::shared_ptr<mola_msgs::srv::MapLoad::Request> request,
+      std::shared_ptr<mola_msgs::srv::MapLoad::Response>      response);
 
-    void callbackOnImu(
-        const sensor_msgs::msg::Imu& o, const std::string& outSensorLabel,
-        const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+  void service_map_save(
+      const std::shared_ptr<mola_msgs::srv::MapSave::Request> request,
+      std::shared_ptr<mola_msgs::srv::MapSave::Response>      response);
 
-    void callbackOnNavSatFix(
-        const sensor_msgs::msg::NavSatFix& o, const std::string& outSensorLabel,
-        const std::optional<mrpt::poses::CPose3D>& fixedSensorPose);
+  void service_param_get(
+      const std::shared_ptr<mola_msgs::srv::MolaRuntimeParamGet::Request> request,
+      std::shared_ptr<mola_msgs::srv::MolaRuntimeParamGet::Response>      response);
 
-    void callbackOnOdometry(const nav_msgs::msg::Odometry& o, const std::string& outSensorLabel);
+  void service_param_set(
+      const std::shared_ptr<mola_msgs::srv::MolaRuntimeParamSet::Request> request,
+      std::shared_ptr<mola_msgs::srv::MolaRuntimeParamSet::Response>      response);
 
-    void callbackOnRelocalizeTopic(const geometry_msgs::msg::PoseWithCovarianceStamped& o);
+  void onNewLocalization(const mola::LocalizationSourceBase::LocalizationUpdate& l);
 
-    bool waitForTransform(
-        mrpt::poses::CPose3D& des, const std::string& target_frame, const std::string& source_frame,
-        bool printErrors);
+  void onNewMap(const mola::MapSourceBase::MapUpdate& m);
 
-    void importRosOdometryToMOLA();
+  std::mutex                                                         lastLocMapMtx_;
+  std::vector<mola::LocalizationSourceBase::LocalizationUpdate>      lastLocUpdates_;
+  std::map<std::string /*map_name*/, mola::MapSourceBase::MapUpdate> lastMaps_;
 
-    /// Returns either the wallclock "now" (params_.use_sim_time = false)
-    /// or the equivalent of the passed argument in ROS 2 format otherwise.
-    rclcpp::Time myNow(const mrpt::Clock::time_point& observationStamp);
+  void timerPubLocalization();
+  void timerPubMap();
 
-    /// Generic Map <topic> => publisher
-    std::map<std::string, rclcpp::PublisherBase::SharedPtr> rosPubs_;
-    std::recursive_mutex                                    rosPubsMtx_;
+  double lastTimeCheckMolaSubs_ = 0;
+  void   doLookForNewMolaSubs();
 
-    /// Gets or creates (upon first use) a publisher for a given type:
-    template <typename MSG_TYPE>
-    [[nodiscard]] auto get_publisher(const std::string& topic, const rclcpp::QoS& qos)
-        -> std::shared_ptr<rclcpp::Publisher<MSG_TYPE>>
-    {
-        auto lck = mrpt::lockHelper(rosPubsMtx_);
+  void internalOn(const mrpt::obs::CObservationImage& obs);
+  void internalOn(const mrpt::obs::CObservation2DRangeScan& obs);
+  void internalOn(const mrpt::obs::CObservationPointCloud& obs);
+  void internalOn(const mrpt::obs::CObservationRobotPose& obs);
+  void internalOn(const mrpt::obs::CObservationGPS& obs);
+  void internalOn(const mrpt::obs::CObservationIMU& obs);
 
-        // Create the publisher the first time an observation arrives:
-        const bool is_1st_pub = rosPubs_.find(topic) == rosPubs_.end();
-        auto&      pub        = rosPubs_[topic];
+  void internalOn(
+      const mrpt::obs::CObservationPointCloud& obs, bool isSensorTopic,
+      const std::string& sSensorFrameId);
 
-        if (is_1st_pub) { pub = rosNode()->create_publisher<MSG_TYPE>(topic, qos); }
-        lck.unlock();
+  void internalPublishGridMap(
+      const mrpt::maps::COccupancyGridMap2D& m, const std::string& sMapTopicName,
+      const std::string& sReferenceFrame);
 
-        auto ret = std::dynamic_pointer_cast<rclcpp::Publisher<MSG_TYPE>>(pub);
-        ASSERT_(ret);
-        return ret;
-    }
+  void internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& ds_subscribe);
 
-    struct MolaSubs
-    {
-        // MOLA subscribers:
-        std::set<mola::RawDataSourceBase::Ptr>                  dataSources;
-        std::set<std::shared_ptr<mola::LocalizationSourceBase>> locSources;
-        std::set<std::shared_ptr<mola::MapSourceBase>>          mapSources;
-        std::set<std::shared_ptr<mola::Relocalization>>         relocalization;
-        std::set<std::shared_ptr<mola::MapServer>>              mapServers;
-    };
-
-    MolaSubs   molaSubs_;
-    std::mutex molaSubsMtx_;
-
-    // ROS services:
-    rclcpp::Service<mola_msgs::srv::RelocalizeFromStateEstimator>::SharedPtr srvRelocSE_;
-    rclcpp::Service<mola_msgs::srv::RelocalizeNearPose>::SharedPtr           srvRelocPose_;
-    rclcpp::Service<mola_msgs::srv::MapLoad>::SharedPtr                      srvMapLoad_;
-    rclcpp::Service<mola_msgs::srv::MapSave>::SharedPtr                      srvMapSave_;
-    rclcpp::Service<mola_msgs::srv::MolaRuntimeParamGet>::SharedPtr          srvParamGet_;
-    rclcpp::Service<mola_msgs::srv::MolaRuntimeParamSet>::SharedPtr          srvParamSet_;
-
-    void service_relocalize_from_se(
-        const std::shared_ptr<mola_msgs::srv::RelocalizeFromStateEstimator::Request> request,
-        std::shared_ptr<mola_msgs::srv::RelocalizeFromStateEstimator::Response>      response);
-
-    void service_relocalize_near_pose(
-        const std::shared_ptr<mola_msgs::srv::RelocalizeNearPose::Request> request,
-        std::shared_ptr<mola_msgs::srv::RelocalizeNearPose::Response>      response);
-
-    void service_map_load(
-        const std::shared_ptr<mola_msgs::srv::MapLoad::Request> request,
-        std::shared_ptr<mola_msgs::srv::MapLoad::Response>      response);
-
-    void service_map_save(
-        const std::shared_ptr<mola_msgs::srv::MapSave::Request> request,
-        std::shared_ptr<mola_msgs::srv::MapSave::Response>      response);
-
-    void service_param_get(
-        const std::shared_ptr<mola_msgs::srv::MolaRuntimeParamGet::Request> request,
-        std::shared_ptr<mola_msgs::srv::MolaRuntimeParamGet::Response>      response);
-
-    void service_param_set(
-        const std::shared_ptr<mola_msgs::srv::MolaRuntimeParamSet::Request> request,
-        std::shared_ptr<mola_msgs::srv::MolaRuntimeParamSet::Response>      response);
-
-    void onNewLocalization(const mola::LocalizationSourceBase::LocalizationUpdate& l);
-
-    void onNewMap(const mola::MapSourceBase::MapUpdate& m);
-
-    std::mutex                                                         lastLocMapMtx_;
-    std::vector<mola::LocalizationSourceBase::LocalizationUpdate>      lastLocUpdates_;
-    std::map<std::string /*map_name*/, mola::MapSourceBase::MapUpdate> lastMaps_;
-
-    void timerPubLocalization();
-    void timerPubMap();
-
-    double lastTimeCheckMolaSubs_ = 0;
-    void   doLookForNewMolaSubs();
-
-    void internalOn(const mrpt::obs::CObservationImage& obs);
-    void internalOn(const mrpt::obs::CObservation2DRangeScan& obs);
-    void internalOn(const mrpt::obs::CObservationPointCloud& obs);
-    void internalOn(const mrpt::obs::CObservationRobotPose& obs);
-    void internalOn(const mrpt::obs::CObservationGPS& obs);
-    void internalOn(const mrpt::obs::CObservationIMU& obs);
-
-    void internalOn(
-        const mrpt::obs::CObservationPointCloud& obs, bool isSensorTopic,
-        const std::string& sSensorFrameId);
-
-    void internalPublishGridMap(
-        const mrpt::maps::COccupancyGridMap2D& m, const std::string& sMapTopicName,
-        const std::string& sReferenceFrame);
-
-    void internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& ds_subscribe);
-
-    void publishStaticTFs();
-    void publishDiagnostics();
-    void publishMetricMapGeoreferencingData(
-        const mola::Georeferencing& g, const std::string& georefTopic);
+  void publishStaticTFs();
+  void publishDiagnostics();
+  void publishMetricMapGeoreferencingData(
+      const mola::Georeferencing& g, const std::string& georefTopic);
 };
 
 }  // namespace mola

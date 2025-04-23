@@ -21,9 +21,9 @@ namespace mola
  */
 class EntityRelativeBase : public EntityBase
 {
-   public:
-    /** The ID of the base keyframe (entity) */
-    mola::id_t base_id_{mola::INVALID_ID};
+ public:
+  /** The ID of the base keyframe (entity) */
+  mola::id_t base_id_{mola::INVALID_ID};
 };
 
 }  // namespace mola
