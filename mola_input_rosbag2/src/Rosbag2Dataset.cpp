@@ -113,9 +113,13 @@ void Rosbag2Dataset::initialize_rds(const Yaml& c)
     {
       auto ext = mrpt::system::extractFileExtension(rosbag_filename_);
       if (ext == "mcap")
+      {
         rosbag_storage_id_ = "mcap";
+      }
       else if (ext == "db3")
+      {
         rosbag_storage_id_ = "sqlite3";
+      }
       else
       {
         THROW_EXCEPTION_FMT(
@@ -406,13 +410,11 @@ void Rosbag2Dataset::spinOnce()
         "quit)");
     return;
   }
-  else
-  {
-    MRPT_LOG_THROTTLE_INFO_FMT(
-        5.0, "Dataset replay progress: %lu / %lu  (%4.02f%%)",
-        static_cast<unsigned long>(rosbag_next_idx_), static_cast<unsigned long>(bagMessageCount_),
-        (100.0 * rosbag_next_idx_) / bagMessageCount_);
-  }
+
+  MRPT_LOG_THROTTLE_INFO_FMT(
+      5.0, "Dataset replay progress: %lu / %lu  (%4.02f%%)",
+      static_cast<unsigned long>(rosbag_next_idx_), static_cast<unsigned long>(bagMessageCount_),
+      (100.0 * rosbag_next_idx_) / bagMessageCount_);
 
   // Publish observations up to current time:
   for (;;)
@@ -423,7 +425,10 @@ void Rosbag2Dataset::spinOnce()
     }
 
     // EOF?
-    if (rosbag_next_idx_ >= read_ahead_.size()) break;
+    if (rosbag_next_idx_ >= read_ahead_.size())
+    {
+      break;
+    }
 
     // current dataset entry:
     auto& de = read_ahead_.at(rosbag_next_idx_);
@@ -433,7 +438,10 @@ void Rosbag2Dataset::spinOnce()
     // First rawlog timestamp?
     if (auto& de_tim = de->timestamp; de_tim)
     {
-      if (!rosbag_begin_time_) rosbag_begin_time_ = de_tim.value();
+      if (!rosbag_begin_time_)
+      {
+        rosbag_begin_time_ = de_tim.value();
+      }
 
       double thisTim = timeDifference(*rosbag_begin_time_, de_tim.value());
 
@@ -453,10 +461,16 @@ void Rosbag2Dataset::spinOnce()
       }
 
       // Reset time after a "teleport"?
-      if (last_dataset_time_ == 0) last_dataset_time_ = thisTim;
+      if (last_dataset_time_ == 0)
+      {
+        last_dataset_time_ = thisTim;
+      }
 
       // end of playback for now?
-      if (last_dataset_time_ < thisTim) break;
+      if (last_dataset_time_ < thisTim)
+      {
+        break;
+      }
     }
 
     // Send observations out:
@@ -513,9 +527,13 @@ void Rosbag2Dataset::doReadAhead(const std::optional<size_t>& requestedIndex, bo
   if (requestedIndex)
   {
     if (skipBufferAhead)
+    {
       endIdx = *requestedIndex;
+    }
     else
+    {
       endIdx = *requestedIndex + read_ahead_length_;
+    }
   }
   else
   {
@@ -528,7 +546,10 @@ void Rosbag2Dataset::doReadAhead(const std::optional<size_t>& requestedIndex, bo
   {
     unload_queue_.push_back(idx);  // mark as recently accessed
 
-    if (read_ahead_.at(idx).has_value()) continue;  // already read:
+    if (read_ahead_.at(idx).has_value())
+    {
+      continue;  // already read:
+    }
 
     // serialized data
     ASSERT_EQUAL_(rosbag_next_idx_write_, idx);
@@ -536,7 +557,10 @@ void Rosbag2Dataset::doReadAhead(const std::optional<size_t>& requestedIndex, bo
 
     auto serialized_message = reader_->read_next();
 
-    if (skipBufferAhead && idx != endIdx) continue;
+    if (skipBufferAhead && idx != endIdx)
+    {
+      continue;
+    }
 
     SF::Ptr sf = to_mrpt(*serialized_message);
     ASSERT_(sf);
@@ -919,8 +943,10 @@ Rosbag2Dataset::SF::Ptr Rosbag2Dataset::to_mrpt(const rosbag2_storage::Serialize
     {
       auto obs = callback(rosmsg);
 
-      for (const auto& o : obs)  // insert observation:
+      for (const auto& o : obs)
+      {  // insert observation:
         rets->insert(o);
+      }
     }
   }
   else
