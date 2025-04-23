@@ -22,7 +22,6 @@ class MapServer
 {
  public:
   MapServer();
-  virtual ~MapServer();
 
   /** @name Virtual interface of MapServer
    *{ */

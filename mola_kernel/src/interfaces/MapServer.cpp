@@ -14,6 +14,5 @@
 
 namespace mola
 {
-MapServer::MapServer()  = default;
-MapServer::~MapServer() = default;
+MapServer::MapServer() = default;
 }  // namespace mola

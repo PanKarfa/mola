@@ -329,6 +329,24 @@ void BridgeROS2::callbackOnPointCloud2(
     if (!mrpt::ros2bridge::fromROS(o, *p))
       throw std::runtime_error("Error converting ros->mrpt(?)");
 
+    // Fix timestamps for Livox driver:
+    // It uses doubles for timestamps, but they are actually nanoseconds!
+    auto ts = p->getPointsBufferRef_timestamp();
+    ASSERT_(ts);
+    if (!ts->empty())
+    {
+      const auto [minIt, maxIt] = std::minmax_element(ts->begin(), ts->end());
+      const float time_span     = *maxIt - *minIt;
+      if (time_span > 1e5F)
+      {
+        // they must be nanoseconds, convert to seconds:
+        for (auto& t : *ts)
+        {
+          t *= 1e-9F;
+        }
+      }
+    }
+
     mapPtr = p;
   }
   else if (fields.count("intensity"))
@@ -1550,8 +1568,7 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
     else if (type == "Odometry")
     {
       subsOdometry_.emplace_back(rosNode_->create_subscription<nav_msgs::msg::Odometry>(
-          topic_name, qos,
-          [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
+          topic_name, qos, [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
           { this->callbackOnOdometry(o, output_sensor_label); }));
     }
     else

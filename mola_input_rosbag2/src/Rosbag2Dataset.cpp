@@ -303,7 +303,8 @@ void Rosbag2Dataset::initialize_rds(const Yaml& c)
     }
     else if (sensorType == "CObservationRotatingScan")
     {
-      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m) {
+      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m)
+      {
         return catchExceptions([=]() { return toRotatingScan(sensorLabel, m, fixedSensorPose); });
       };
       lookup_[topic].emplace_back(callback);
@@ -655,6 +656,24 @@ Rosbag2Dataset::Obs Rosbag2Dataset::toPointCloud2(
       THROW_EXCEPTION(
           "Could not convert pointcloud from ROS to "
           "CPointsMapXYZIRT");
+    }
+
+    // Fix timestamps for Livox driver:
+    // It uses doubles for timestamps, but they are actually nanoseconds!
+    auto ts = mrptPts->getPointsBufferRef_timestamp();
+    ASSERT_(ts);
+    if (!ts->empty())
+    {
+      const auto [minIt, maxIt] = std::minmax_element(ts->begin(), ts->end());
+      const float time_span     = *maxIt - *minIt;
+      if (time_span > 1e5F)
+      {
+        // they must be nanoseconds, convert to seconds:
+        for (auto& t : *ts)
+        {
+          t *= 1e-9F;
+        }
+      }
     }
 
     // converted ok:
