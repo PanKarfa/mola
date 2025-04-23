@@ -2,8 +2,8 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.6.4 (2025-04-23)
+------------------
 * robin-map: Update to v1.4.0
 * modernize clang-format
 * Contributors: Jose Luis Blanco-Claraco
