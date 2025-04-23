@@ -3,6 +3,13 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* more clang-tidy fixes
+* fix: Correctly handling Livox cloud timestamps ("double"s, but in nanoseconds) in BridgeROS2 and bag2 data sources. They are automatically detected, no need to change any parameter.
+* modernize clang-format
+* Contributors: Jose Luis Blanco-Claraco
+
 1.6.3 (2025-03-15)
 ------------------
 * rosbag2 input: update C++ default value to "base_link" (all launch files were already like that, here only the default value changes)

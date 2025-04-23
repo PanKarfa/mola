@@ -2,6 +2,11 @@
 Changelog for package mola_yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* modernize clang-format
+* Contributors: Jose Luis Blanco-Claraco
+
 1.6.3 (2025-03-15)
 ------------------
 

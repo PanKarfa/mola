@@ -3,6 +3,18 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* fix: Correctly handling Livox cloud timestamps ("double"s, but in nanoseconds) in BridgeROS2 and bag2 data sources. They are automatically detected, no need to change any parameter.
+* modernize clang-format
+* Merge pull request `#82 <https://github.com/MOLAorg/mola/issues/82>`_ from ahpinder/develop
+  Add Support for Voxel Map ROS2 Publishing Via Point Map Conversion
+* fixed Clang formatting
+* Clean up voxel map publishing code
+* Added voxel map point cloud publishing
+  Added code to timerPubMap to publish the occupied voxels of a mrpt::maps::CVoxelMap as a point cloud to ROS2, allowing for real-time ROS2 visualization of 2D map capture
+* Contributors: Jose Luis Blanco-Claraco, ahpinder
+
 1.6.3 (2025-03-15)
 ------------------
 * clang-tidy: const correctness

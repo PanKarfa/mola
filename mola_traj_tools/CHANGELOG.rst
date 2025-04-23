@@ -2,6 +2,11 @@
 Changelog for package mola_traj_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* modernize clang-format
+* Contributors: Jose Luis Blanco-Claraco
+
 1.6.3 (2025-03-15)
 ------------------
 
