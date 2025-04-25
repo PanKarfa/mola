@@ -19,6 +19,7 @@
   <depend>mola_input_mulran_dataset</depend>
   <depend>mola_input_paris_luco_dataset</depend>
   <depend>mola_input_rawlog</depend>
+  <depend>mola_input_video</depend>
   <depend>mola_input_rosbag2</depend>
   <depend>mola_kernel</depend>
   <depend>mola_launcher</depend>
