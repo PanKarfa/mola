@@ -21,13 +21,12 @@ namespace mola
 class Relocalization
 {
  public:
-  Relocalization();
-  virtual ~Relocalization();
+  Relocalization() = default;
 
   /** @name Virtual interface of Relocalization
    *{ */
 
-  /** Re-localize near this pose, including uncetainty.
+  /** Re-localize near this pose, including uncertainty.
    *  \param[in] pose The pose, in the local map frame.
    *  There is no return value from this method.
    */

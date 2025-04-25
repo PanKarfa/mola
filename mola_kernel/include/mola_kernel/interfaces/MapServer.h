@@ -21,7 +21,7 @@ namespace mola
 class MapServer
 {
  public:
-  MapServer();
+  MapServer() = default;
 
   /** @name Virtual interface of MapServer
    *{ */

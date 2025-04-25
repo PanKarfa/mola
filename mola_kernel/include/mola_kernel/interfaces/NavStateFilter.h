@@ -31,8 +31,7 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 struct NavState
 {
-  NavState()  = default;
-  ~NavState() = default;
+  NavState() = default;
 
   /** SE(3) pose estimation, including information matrix, given
    *  in the requested frame_id.
@@ -62,7 +61,6 @@ class NavStateFilter : public mola::ExecutableBase
 {
  public:
   NavStateFilter();
-  ~NavStateFilter();
 
   /** Resets the estimator state to an initial state */
   virtual void reset() = 0;

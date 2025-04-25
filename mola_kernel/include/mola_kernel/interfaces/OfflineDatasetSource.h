@@ -15,7 +15,6 @@
 #include <mrpt/poses/CPose3DInterpolator.h>
 
 #include <cstdlib>
-#include <memory>
 
 namespace mola
 {
@@ -28,8 +27,7 @@ using trajectory_t = mrpt::poses::CPose3DInterpolator;
 class OfflineDatasetSource
 {
  public:
-  OfflineDatasetSource()          = default;
-  virtual ~OfflineDatasetSource() = default;
+  OfflineDatasetSource() = default;
 
   /** @name Virtual interface of any OfflineDatasetSource
    *{ */

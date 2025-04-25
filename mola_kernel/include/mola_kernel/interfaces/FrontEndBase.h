@@ -42,7 +42,6 @@ class FrontEndBase : public ExecutableBase, public RawDataConsumer
 
  public:
   FrontEndBase();
-  virtual ~FrontEndBase() = default;
 
   /** Loads common parameters for all front-ends.
    *

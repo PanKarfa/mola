@@ -36,8 +36,6 @@ NavStateFilter::NavStateFilter()
   this->mrpt::system::COutputLogger::setLoggerName("NavStateFilter");
 }
 
-NavStateFilter::~NavStateFilter() = default;
-
 std::string NavState::asString() const
 {
   std::ostringstream ss;

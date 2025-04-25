@@ -35,8 +35,7 @@ namespace mola
 class LocalizationSourceBase
 {
  public:
-  LocalizationSourceBase()          = default;
-  virtual ~LocalizationSourceBase() = default;
+  LocalizationSourceBase() = default;
 
   struct LocalizationUpdate
   {

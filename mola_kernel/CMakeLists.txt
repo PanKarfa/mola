@@ -37,14 +37,11 @@ set(LIB_SRCS
   src/factors/SmartFactorIMU.cpp
   src/factors/SmartFactorStereoProjectionPose.cpp
   src/interfaces/BackEndBase.cpp
-  src/interfaces/Dataset_UI.cpp
   src/interfaces/ExecutableBase.cpp
   src/interfaces/FilterBase.cpp
   src/interfaces/FrontEndBase.cpp
-  src/interfaces/MapServer.cpp
   src/interfaces/NavStateFilter.cpp
   src/interfaces/RawDataSourceBase.cpp
-  src/interfaces/Relocalization.cpp
   src/LazyLoadResource.cpp
   src/MinimalModuleContainer.cpp
   src/pretty_print_exception.cpp

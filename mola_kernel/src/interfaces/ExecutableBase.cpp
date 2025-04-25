@@ -23,8 +23,10 @@ ExecutableBase::Ptr ExecutableBase::Factory(const std::string& name)
   auto o = mrpt::rtti::classFactory(name);
 
   if (!o)
+  {
     THROW_EXCEPTION_FMT(
         "[ExecutableBase::Factory] Request for unregistered class: `%s`", name.c_str());
+  }
   return mrpt::ptr_cast<ExecutableBase>::from(o);
 }
 

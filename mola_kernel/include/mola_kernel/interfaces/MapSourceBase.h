@@ -29,8 +29,7 @@ namespace mola
 class MapSourceBase
 {
  public:
-  MapSourceBase()          = default;
-  virtual ~MapSourceBase() = default;
+  MapSourceBase() = default;
 
   struct MapUpdate
   {

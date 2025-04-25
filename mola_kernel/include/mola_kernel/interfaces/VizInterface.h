@@ -33,8 +33,7 @@ namespace mola
 class VizInterface
 {
  public:
-  VizInterface()          = default;
-  virtual ~VizInterface() = default;
+  VizInterface() = default;
 
   using Ptr = std::shared_ptr<VizInterface>;
 

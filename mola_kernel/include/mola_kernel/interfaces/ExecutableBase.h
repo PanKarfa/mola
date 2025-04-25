@@ -49,6 +49,14 @@ class ExecutableBase : public mrpt::system::COutputLogger,  // for logging
   ExecutableBase();
   virtual ~ExecutableBase();
 
+  // Delete copy constructor and copy assignment operator
+  ExecutableBase(const ExecutableBase&)            = delete;
+  ExecutableBase& operator=(const ExecutableBase&) = delete;
+
+  // Define move constructor and move assignment operator
+  ExecutableBase(ExecutableBase&&) noexcept            = delete;
+  ExecutableBase& operator=(ExecutableBase&&) noexcept = delete;
+
   /** Class factory. Register using MOLA_REGISTER_MODULE() */
   static Ptr Factory(const std::string& classname);
 

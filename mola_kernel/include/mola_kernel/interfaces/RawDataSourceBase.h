@@ -40,6 +40,14 @@ class RawDataSourceBase : public mola::ExecutableBase
   RawDataSourceBase();
   virtual ~RawDataSourceBase();
 
+  // Delete copy constructor and copy assignment operator
+  RawDataSourceBase(const RawDataSourceBase&)            = delete;
+  RawDataSourceBase& operator=(const RawDataSourceBase&) = delete;
+
+  // Delete move constructor and move assignment operator
+  RawDataSourceBase(RawDataSourceBase&&)            = delete;
+  RawDataSourceBase& operator=(RawDataSourceBase&&) = delete;
+
   /** Attach this object to a consumer. A shared_ptr is created to keep a
    * reference to the object. */
   void attachToDataConsumer(RawDataConsumer& rdc);

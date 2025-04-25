@@ -20,8 +20,7 @@ namespace mola
 class Dataset_UI
 {
  public:
-  Dataset_UI();
-  virtual ~Dataset_UI();
+  Dataset_UI() = default;
 
   /** @name Virtual interface of Dataset_UI
    *{ */

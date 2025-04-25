@@ -21,8 +21,6 @@
 #include <dlfcn.h>
 #endif
 
-MRPT_TODO("Improvement: automatic scanning libraries and extract their classes");
-
 /** From internal_load_lib_modules() */
 static std::map<std::string, LoadedModules> loaded_lib_handled;
 

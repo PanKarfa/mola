@@ -13,8 +13,6 @@
 
 #include <mrpt/obs/CObservation.h>
 
-#include <memory>
-
 namespace mola
 {
 using CObservation = mrpt::obs::CObservation;
@@ -24,8 +22,7 @@ using CObservation = mrpt::obs::CObservation;
 class RawDataConsumer
 {
  public:
-  RawDataConsumer()          = default;
-  virtual ~RawDataConsumer() = default;
+  RawDataConsumer() = default;
 
   /** @name Virtual interface of any RawDataConsumer
    *{ */

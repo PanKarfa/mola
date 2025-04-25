@@ -45,7 +45,6 @@ class BackEndBase : public ExecutableBase
 
  public:
   BackEndBase();
-  virtual ~BackEndBase() = default;
 
   /** Loads common parameters for all back-ends. */
   void initialize(const Yaml& cfg) override final;

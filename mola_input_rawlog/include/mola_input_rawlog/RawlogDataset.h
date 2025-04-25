@@ -29,7 +29,6 @@ class RawlogDataset : public RawDataSourceBase, public OfflineDatasetSource, pub
 
  public:
   RawlogDataset();
-  ~RawlogDataset() override = default;
 
   void spinOnce() override;
 
