@@ -279,8 +279,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
-    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt)
-    { obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0}); };
+    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt) {
+      obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
+    };
     this->visitAllPoints(lambdaVisitPoints);
 
     if (renderOptions.points_colormap == mrpt::img::cmNONE)
