@@ -43,7 +43,7 @@
 
 constexpr size_t HARD_MAX_MATCHES = 3;
 
-//#define USE_DEBUG_PROFILER
+// #define USE_DEBUG_PROFILER
 
 #ifdef USE_DEBUG_PROFILER
 #include <mrpt/system/CTimeLogger.h>
@@ -70,10 +70,14 @@ void HashedVoxelPointCloud::TMapDefinition::loadFromConfigFile_map_specific(
   insertionOpts.loadFromConfigFile(s, sectionPrefix + "_insertOpts"s);
 
   if (s.sectionExists(sectionPrefix + "_likelihoodOpts"s))
+  {
     likelihoodOpts.loadFromConfigFile(s, sectionPrefix + "_likelihoodOpts"s);
+  }
 
   if (s.sectionExists(sectionPrefix + "_renderOpts"s))
+  {
     renderOpts.loadFromConfigFile(s, sectionPrefix + "_renderOpts"s);
+  }
 }
 
 void HashedVoxelPointCloud::TMapDefinition::dumpToTextStream_map_specific(std::ostream& out) const
@@ -224,7 +228,12 @@ void HashedVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
 
     // handle planar maps (avoids error in histogram below):
     for (int i = 0; i < 3; i++)
-      if (bb.max[i] - bb.min[i] < 0.1f) bb.max[i] = bb.min[i] + 0.1f;
+    {
+      if (bb.max[i] - bb.min[i] < 0.1f)
+      {
+        bb.max[i] = bb.min[i] + 0.1f;
+      }
+    }
 
     // Use a histogram to discard outliers from the colormap extremes:
     constexpr size_t nBins = 100;
@@ -240,7 +249,11 @@ void HashedVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
     {
       // x y z R G B [A]
       obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
-      for (int i = 0; i < 3; i++) hists[i].add(pt[i]);
+      for (int i = 0; i < 3; i++)
+      {
+        hists[i].add(pt[i]);
+      }
+
       nPoints++;
     };
 
@@ -265,6 +278,18 @@ void HashedVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
 
       obj->recolorizeByCoordinate(
           min, max, renderOptions.recolorizeByCoordinateIndex, renderOptions.colormap);
+
+      // Set alpha:
+      if (renderOptions.color.A != 1.0f)
+      {
+        const uint8_t alpha = static_cast<uint8_t>(255 * renderOptions.color.A);
+        for (size_t i = 0; i < nPoints; i++)
+        {
+          uint8_t r, g, b;
+          obj->getPointColor_fast(i, r, g, b);
+          obj->setPointColor_u8_fast(i, r, g, b, alpha);
+        }
+      }
     }
     outObj.insert(obj);
   }
@@ -308,9 +333,13 @@ bool HashedVoxelPointCloud::internal_insertObservation(
           std::abs(it->first.cz - idxCurObs.cz));
 
       if (dist > distInGrid)
+      {
         it = voxels_.erase(it);
+      }
       else
+      {
         ++it;
+      }
     }
   }
 
@@ -1006,6 +1035,7 @@ void HashedVoxelPointCloud::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(color.R, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.G, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.A, float, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
   MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
 }

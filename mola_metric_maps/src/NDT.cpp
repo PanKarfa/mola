@@ -49,7 +49,7 @@
 
 #include <cmath>
 
-//#define USE_DEBUG_PROFILER
+// #define USE_DEBUG_PROFILER
 
 #ifdef USE_DEBUG_PROFILER
 #include <mrpt/system/CTimeLogger.h>
@@ -217,14 +217,22 @@ std::string NDT::asString() const
 void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
 {
   MRPT_START
-  if (!genericMapParams.enableSaveAs3DObject) return;
+  if (!genericMapParams.enableSaveAs3DObject)
+  {
+    return;
+  }
 
   // Calculate histograms / stats:
   auto bb = this->boundingBox();
 
   // handle planar maps (avoids error in histogram below):
   for (int i = 0; i < 3; i++)
-    if (bb.max[i] - bb.min[i] < 0.1f) bb.max[i] = bb.min[i] + 0.1f;
+  {
+    if (bb.max[i] - bb.min[i] < 0.1f)
+    {
+      bb.max[i] = bb.min[i] + 0.1f;
+    }
+  }
 
   // Use a histogram to discard outliers from the colormap extremes:
   constexpr size_t nBins = 100;
@@ -238,7 +246,10 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
 
   const auto lambdaVisitPointsForHist = [&hists, &nPoints](const mrpt::math::TPoint3Df& pt)
   {
-    for (int i = 0; i < 3; i++) hists[i].add(pt[i]);
+    for (int i = 0; i < 3; i++)
+    {
+      hists[i].add(pt[i]);
+    }
     nPoints++;
   };
 
@@ -268,19 +279,34 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
-    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt) {
-      obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
-    };
+    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt)
+    { obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0}); };
     this->visitAllPoints(lambdaVisitPoints);
 
     if (renderOptions.points_colormap == mrpt::img::cmNONE)
+    {
       obj->setColor(renderOptions.points_color);
+    }
     else
     {
       if (!obj->empty())
+      {
         obj->recolorizeByCoordinate(
             recolorMin, recolorMax, renderOptions.recolorizeByCoordinateIndex,
             renderOptions.points_colormap);
+
+        // Set alpha:
+        if (renderOptions.points_color.A != 1.0f)
+        {
+          const uint8_t alpha = static_cast<uint8_t>(255 * renderOptions.points_color.A);
+          for (size_t i = 0; i < nPoints; i++)
+          {
+            uint8_t r, g, b;
+            obj->getPointColor_fast(i, r, g, b);
+            obj->setPointColor_u8_fast(i, r, g, b, alpha);
+          }
+        }
+      }
     }
 
     obj->setPointSize(renderOptions.point_size);
@@ -314,7 +340,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
       mrpt::opengl::TTriangle t;
 
       if (renderOptions.planes_colormap == mrpt::img::cmNONE)
+      {
         t.setColor(renderOptions.planes_color);
+      }
       else
       {
         t.setColor(mrpt::img::colormap(

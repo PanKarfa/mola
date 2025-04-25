@@ -333,8 +333,10 @@ void gui_handler_point_cloud(
       if (obj3D->points3D_isExternallyStored()) obj3D->load();
 
       for (size_t i = 0; i < obj3D->points3D_x.size(); i++)
+      {
         glPc->insertPoint(
             {obj3D->points3D_x[i], obj3D->points3D_y[i], obj3D->points3D_z[i], 0, 0, 0});
+      }
     }
     else
     {
@@ -389,13 +391,15 @@ void gui_handler_point_cloud(
         });
   }
   else
+  {
     return;
+  }
 
   // viz options:
   if (recolorizeAtEnd)
   {
     const auto bb = glPc->getBoundingBox();
-    glPc->recolorizeByCoordinate(bb.min.z, bb.max.z);
+    glPc->recolorizeByCoordinate(static_cast<float>(bb.min.z), static_cast<float>(bb.max.z));
   }
 }
 

@@ -41,7 +41,7 @@
 
 #include <cmath>
 
-//#define USE_DEBUG_PROFILER
+// #define USE_DEBUG_PROFILER
 
 #ifdef USE_DEBUG_PROFILER
 #include <mrpt/system/CTimeLogger.h>
@@ -637,9 +637,8 @@ void SparseTreesPointCloud::nn_radius_search(
   // Used to sort all candidates by distance:
   std::map<float /*distSqr*/, std::pair<mrpt::math::TPoint3Df, uint64_t /*id*/>> candidates;
 
-  auto lmbAddCandidate = [&](const float distSqr, const mrpt::math::TPoint3Df& pt, uint64_t id) {
-    candidates[distSqr] = {pt, id};
-  };
+  auto lmbAddCandidate = [&](const float distSqr, const mrpt::math::TPoint3Df& pt, uint64_t id)
+  { candidates[distSqr] = {pt, id}; };
 
   auto lambdaCheckCell = [&](const outer_index3d_t& p)
   {
@@ -868,6 +867,7 @@ void SparseTreesPointCloud::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(color.R, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.G, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.A, float, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
   MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
 }

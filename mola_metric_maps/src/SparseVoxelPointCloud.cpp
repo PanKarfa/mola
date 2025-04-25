@@ -41,7 +41,7 @@
 
 #include <cmath>
 
-//#define USE_DEBUG_PROFILER
+// #define USE_DEBUG_PROFILER
 
 #ifdef USE_DEBUG_PROFILER
 #include <mrpt/system/CTimeLogger.h>
@@ -971,6 +971,7 @@ void SparseVoxelPointCloud::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(color.R, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.G, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.A, float, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
   MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
 }
