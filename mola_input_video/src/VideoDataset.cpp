@@ -100,13 +100,22 @@ void VideoDataset::initialize_rds(const Yaml& params)
   }
   else if (input_mode_ == InputMode::VideoFile)
   {
-    THROW_EXCEPTION("TO-DO!");
     cam_ = std::make_shared<mrpt::hwdrivers::CCameraSensor>();
 
+    const auto video_uri = cfg["video_uri"].as<std::string>();
+    if (video_uri.empty())
+    {
+      THROW_EXCEPTION("Missing 'video_uri' parameter");
+    }
     mrpt::config::CConfigFileMemory cfgMem;
+    cfgMem.write("camera", "grabber_type", "ffmpeg");
+    cfgMem.write("camera", "ffmpeg_url", video_uri);
 
     cam_->loadConfig(cfgMem, "camera");
+
+    MRPT_LOG_INFO_STREAM("Trying to open video stream from '" << video_uri << "'...");
     cam_->initialize();
+    MRPT_LOG_INFO_STREAM("Successful.");
   }
   else if (input_mode_ == InputMode::LiveCamera)
   {
@@ -133,18 +142,49 @@ void VideoDataset::initialize_rds(const Yaml& params)
 
 void VideoDataset::spinOnce()
 {
+  auto lambdaSetObsFields = [this](mrpt::obs::CObservationImage& obs)
+  {
+    // TODO(jlbc): More accurate timestamp:
+    obs.timestamp    = mrpt::Clock::now();
+    obs.sensorLabel  = sensor_label_;
+    obs.cameraParams = camera_model_;
+  };
+
+  if (paused_)
+  {
+    return;
+  }
+
   if (input_mode_ == InputMode::LiveCamera)
   {
     cam_->doProcess();
 
     auto obs = cam_->getNextFrame();
-    if (obs)
+    if (auto o = std::dynamic_pointer_cast<mrpt::obs::CObservationImage>(obs))
     {
-      this->sendObservationsToFrontEnds(obs);
+      lambdaSetObsFields(*o);
+      this->sendObservationsToFrontEnds(o);
     }
     return;
   }
 
+  if (input_mode_ == InputMode::VideoFile)
+  {
+    // Read next video frame:
+    auto obs = cam_->getNextFrame();
+    if (auto o = std::dynamic_pointer_cast<mrpt::obs::CObservationImage>(obs))
+    {
+      lambdaSetObsFields(*o);
+      this->sendObservationsToFrontEnds(o);
+    }
+    else
+    {
+      MRPT_LOG_THROTTLE_INFO(5.0, "End of video file reached.");
+    }
+    return;
+  }
+
+  // Image directory mode:
   auto tNow = mrpt::Clock::now();
 
   std::scoped_lock lck(dataset_ui_mtx_);
@@ -158,11 +198,6 @@ void VideoDataset::spinOnce()
   }
   teleport_here_.reset();
 
-  if (paused_)
-  {
-    return;
-  }
-
   last_dataset_time_ += dt;
 
   const double frame_period = 1.0 / image_publish_rate_;
@@ -172,14 +207,9 @@ void VideoDataset::spinOnce()
   {
     MRPT_LOG_DEBUG_STREAM("Publishing image: " << image_index_ << " / " << image_files_.size());
 
-    auto obs         = std::make_shared<mrpt::obs::CObservationImage>();
-    obs->sensorLabel = sensor_label_;
-
-    // TODO(jlbc): More accurate timestamp:
-    obs->timestamp = mrpt::Clock::now();
+    auto obs = std::make_shared<mrpt::obs::CObservationImage>();
     obs->image.setExternalStorage(
         mrpt::system::pathJoin({image_base_dir_, image_files_[image_index_]}));
-    obs->cameraParams = camera_model_;
     sendObservationsToFrontEnds(obs);
 
     image_index_++;
