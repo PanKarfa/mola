@@ -2,8 +2,8 @@
 Changelog for package mola
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.7.0 (2025-05-06)
+------------------
 * Merge pull request `#85 <https://github.com/MOLAorg/mola/issues/85>`_ from MOLAorg/feat/video-input-module
   Feature: new video input MOLA module
 * Feature: new video input MOLA module. For now, implements "image directory" input.

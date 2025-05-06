@@ -2,8 +2,8 @@
 Changelog for package mola_input_video
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.7.0 (2025-05-06)
+------------------
 * Implement live camera mode too
 * video input from video files also implemented now
 * Merge pull request `#85 <https://github.com/MOLAorg/mola/issues/85>`_ from MOLAorg/feat/video-input-module

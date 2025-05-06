@@ -2,8 +2,8 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.7.0 (2025-05-06)
+------------------
 * fix clang-format
 * Metric maps can now be rendered as semitransparent pointclouds
 * Contributors: Jose Luis Blanco-Claraco
