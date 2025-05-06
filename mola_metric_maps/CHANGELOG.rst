@@ -2,6 +2,12 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix clang-format
+* Metric maps can now be rendered as semitransparent pointclouds
+* Contributors: Jose Luis Blanco-Claraco
+
 1.6.4 (2025-04-23)
 ------------------
 * robin-map: Update to v1.4.0

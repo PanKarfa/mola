@@ -2,6 +2,9 @@
 Changelog for package mola_pose_list
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.6.4 (2025-04-23)
 ------------------
 * modernize clang-format
