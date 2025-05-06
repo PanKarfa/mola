@@ -119,14 +119,17 @@ void VideoDataset::initialize_rds(const Yaml& params)
   }
   else if (input_mode_ == InputMode::LiveCamera)
   {
-    THROW_EXCEPTION("TO-DO!");
-
     cam_ = std::make_shared<mrpt::hwdrivers::CCameraSensor>();
 
     mrpt::config::CConfigFileMemory cfgMem;
-    for (const auto& [key, value] : cfg.asMapRange())
+    cfgMem.write("camera", "grabber_type", "opencv");
+
+    if (cfg.has("camera_options") && cfg["camera_options"].isMap())
     {
-      cfgMem.write("camera", key.as<std::string>(), value.as<std::string>());
+      for (const auto& [key, value] : cfg["camera_options"].asMapRange())
+      {
+        cfgMem.write("camera", key.as<std::string>(), value.as<std::string>());
+      }
     }
 
     cam_->loadConfig(cfgMem, "camera");
