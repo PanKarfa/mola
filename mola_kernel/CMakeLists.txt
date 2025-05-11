@@ -42,6 +42,7 @@ set(LIB_SRCS
   src/interfaces/FrontEndBase.cpp
   src/interfaces/NavStateFilter.cpp
   src/interfaces/RawDataSourceBase.cpp
+  src/utils/Synchronizer.cpp
   src/LazyLoadResource.cpp
   src/MinimalModuleContainer.cpp
   src/pretty_print_exception.cpp
@@ -85,6 +86,7 @@ set(LIB_PUBLIC_HDRS
   include/mola_kernel/interfaces/RawDataSourceBase.h
   include/mola_kernel/interfaces/Relocalization.h
   include/mola_kernel/interfaces/VizInterface.h
+  include/mola_kernel/utils/Synchronizer.h
   include/mola_kernel/LazyLoadResource.h
   include/mola_kernel/MinimalModuleContainer.h
   include/mola_kernel/pretty_print_exception.h
