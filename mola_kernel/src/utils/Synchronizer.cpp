@@ -64,9 +64,9 @@ std::optional<Synchronizer::NamedObservationSet> Synchronizer::getObservationGro
     {
       // Criteria: labels
       const bool have_them_all = std::all_of(
-          found_entries.begin(), found_entries.end(),
-          [this](const auto& kv)
-          { return parameters.expected_observation_labels.count(kv.first) == 1; });
+          parameters.expected_observation_labels.begin(),
+          parameters.expected_observation_labels.end(),
+          [&](const auto& expected_label) { return found_entries.count(expected_label) == 1; });
       if (!have_them_all)
       {
         continue;  // not full yet
