@@ -227,7 +227,13 @@ Write me!
 ----------------------------
 One way to use rosbags from ROS 1 with MOLA is to port them to ROS 2 bags.
 
-You can use the Python package ``rosbags`` to `perform the conversion <https://ternaris.gitlab.io/rosbags/topics/convert.html>`_.
+You can use the Python package ``rosbags`` to `perform the conversion <https://ternaris.gitlab.io/rosbags/topics/convert.html>`_,
+like in this example:
+
+  .. code-block:: bash
+    
+    rosbags-convert --src my_ros1.bag --dst my_ros2.mcap --dst-storage mcap
+
 
 An alternative is to use :ref:`rosbag2rawlog <rosbag2rawlog>` (the ROS 1 version!) to convert them to RawLogs, then use them as input to MOLA.
 
