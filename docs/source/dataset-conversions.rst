@@ -45,12 +45,12 @@ Each robotic framework or library has defined its own formats over time:
 
 2. rosbag ⇒ rawlog
 ----------------------------
-To convert a ROS bag into a RawLog, you need two items: 
-- The program ``rosbag2rawlog``,
-- And a configuration file specifying what ROS messages should be converted.
+To convert a ROS bag into a RawLog, you need two items:
 
-There are two versions of ``rosbag2rawlog`` and the correct one must be installed
-depending on whether you need to convert **ROS 1 or ROS 2 bags**:
+- The program ``rosbag2rawlog``, and
+- the **configuration file** specifying what ROS messages should be converted.
+
+There are two versions of ``rosbag2rawlog``, for **ROS 1** and **ROS 2 bags**:
 
 .. tab-set::
 
@@ -72,6 +72,10 @@ depending on whether you need to convert **ROS 1 or ROS 2 bags**:
       your ROS 1 environment, or install the Ubuntu package ``mrpt-apps``, which already ships ``rosbag2rawlog``
       for Ubuntu versions <=22.04 (In Ubuntu 24.04, ROS 1 packages were removed upstream).
       To ensure having the latest version, consider installing it from `the PPA <https://launchpad.net/~joseluisblancoc/+archive/ubuntu/mrpt-stable>`_.
+
+.. note::
+   As of 2025, there is an ongoing effort to move all ROS-related apps and bridge libraries into `its own repository <https://github.com/MRPT/mrpt_ros_bridge>`_,
+   which will be the single repository for all MRPT-ROS stuff after the release of `MRPT 3.0.0 <https://github.com/MRPT/mrpt/issues/1330>`_.
 
 |
 
