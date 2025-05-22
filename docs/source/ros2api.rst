@@ -379,3 +379,46 @@ Documented parameters:
       ros2 service call /mola_runtime_param_set mola_msgs/srv/MolaRuntimeParamSet \
          "{parameters: \"mola::LidarOdometry:lidar_odom:\n  reset_state: true\n\"}"
 
+----
+
+.. _mola_ros2_initial_localization:
+
+8. Initial localization
+--------------------------------------
+
+8.1. Lidar-Odometry (LO)
+============================================
+When the LO system is started, there are different situations: 
+
+1. The system is started **without any former map**. Here, the default is starting at the identity SE(3) pose,
+   that is, at the origin (0,0,0), and that should be enough in most common cases.
+
+2. The system is started **with a former known map**. Here, correctly localizing within that map before trying to update
+   it is critical to avoid ruining the map. Also, finding the correct initial pose is a non trivial problem and requires
+   specific methods.
+
+For the latter case, it is important to disable mapping at start up (see the ``start_mapping_enabled:=False`` launch 
+argument :ref:`above <ros2_node_lo_docs>`) and only enable mapping once the system is correctly localized, and if
+the user really wants to update the map. Keeping mapping disabled for the whole run is actually desired for robots
+operating in a known, pre-mapped environment.
+
+Then, the user can choose between: 
+
+- Requesting re-localization in a given area or from GNSS readings, as described in
+  :ref:`this section <mola_ros2api_relocalization>` above.
+- Selecting one of the available initial localization methods directly set in the pipeline configuration file,
+  or via a ROS2 launch argument, so that method is used straight away at startup.
+
+These are the available initial localization methods, that can be used in the launch argument 
+``initial_localization_method:=xxxx`` launch argument (listed :ref:`above <ros2_node_lo_docs>`):
+
+- ``mola::InitLocalization::FixedPose``: Initializes around a given SE(3) pose with covariance.
+
+- ``mola::InitLocalization::FromStateEstimator``: In combination with the smoother state estimator,
+  can be used to initialize based on accumulated evidence of geo-referenced positioning based on low-cost 
+  GNSS readings, wheels odometry, IMU, or any sensible combination of sensors. See :ref:`smoother state estimator <mola_sta_est_index>`.
+
+- ``mola::InitLocalization::PitchAndRollFromIMU``: Without using the external state estimator, this method
+  uses the IMU to estimate the pitch and roll angles of the robot, and then initializes the localization
+  system with that information **assuming sensor is roughly stationary at startup**.
+  This is useful for systems that are not perfectly level, such as hand-held devices, drones, etc.
