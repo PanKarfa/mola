@@ -412,13 +412,13 @@ Then, the user can choose between:
 These are the available initial localization methods, that can be used in the launch argument 
 ``initial_localization_method:=xxxx`` launch argument (listed :ref:`above <ros2_node_lo_docs>`):
 
-- ``mola::InitLocalization::FixedPose``: Initializes around a given SE(3) pose with covariance.
+- ``InitLocalization::FixedPose``: Initializes around a given SE(3) pose with covariance.
 
-- ``mola::InitLocalization::FromStateEstimator``: In combination with the smoother state estimator,
+- ``InitLocalization::FromStateEstimator``: In combination with the smoother state estimator,
   can be used to initialize based on accumulated evidence of geo-referenced positioning based on low-cost 
   GNSS readings, wheels odometry, IMU, or any sensible combination of sensors. See :ref:`smoother state estimator <mola_sta_est_index>`.
 
-- ``mola::InitLocalization::PitchAndRollFromIMU``: Without using the external state estimator, this method
+- ``InitLocalization::PitchAndRollFromIMU``: Without using the external state estimator, this method
   uses the IMU to estimate the pitch and roll angles of the robot, and then initializes the localization
   system with that information **assuming sensor is roughly stationary at startup**.
   This is useful for systems that are not perfectly level, such as hand-held devices, drones, etc.
