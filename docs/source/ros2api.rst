@@ -412,6 +412,20 @@ Then, the user can choose between:
 These are the available initial localization methods, that can be used in the launch argument 
 ``initial_localization_method:=xxxx`` launch argument (listed :ref:`above <ros2_node_lo_docs>`):
 
+.. dropdown:: How to select initial localization without ROS API
+
+   If LO is launched independently of a ROS2 system, e.g. using the 
+   :ref:`command-line <mola_lidar_odometry_cli>` or :ref:`GUI <mola_lo_apps>` LO tools,
+   the initial localization method can be set via the environment variable
+   ``MOLA_LO_INITIAL_LOCALIZATION_METHOD`` which should be set to any of the options
+   listed below. For example, to set the initial localization method to ``FromStateEstimator``:
+
+   .. code-block:: bash
+
+      MOLA_LO_INITIAL_LOCALIZATION_METHOD="InitLocalization::FromStateEstimator" \
+      mola_lidar_odometry_cli ... \ # the rest as usual
+
+
 - ``InitLocalization::FixedPose``: Initializes around a given SE(3) pose with covariance.
 
 - ``InitLocalization::FromStateEstimator``: In combination with the smoother state estimator,
@@ -422,3 +436,4 @@ These are the available initial localization methods, that can be used in the la
   uses the IMU to estimate the pitch and roll angles of the robot, and then initializes the localization
   system with that information **assuming sensor is roughly stationary at startup**.
   This is useful for systems that are not perfectly level, such as hand-held devices, drones, etc.
+  since it will remove the apparent tilt of the ground plane.
