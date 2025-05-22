@@ -9,7 +9,7 @@
   <description>CLI tools to manipulate trajectory files as a complement to the evo package</description>
 
   <maintainer email="joseluisblancoc@gmail.com">Jose-Luis Blanco-Claraco</maintainer>
-  <license file="LICENSE">BSD</license>
+  <license file="LICENSE">BSD-3-Clause</license>
 
   <url type="website">https://github.com/MOLAorg/mola/tree/develop/mola_traj_tools</url>
 
