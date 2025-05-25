@@ -22,7 +22,7 @@
 // Was: #include <mrpt/gui/CDisplayWindowGUI.h>  // nanogui
 // clang-format off
 namespace nanogui { class Window; }
-namespace mrpt::opengl { class CSetOfObjects; }
+namespace mrpt::opengl { class CSetOfObjects; class Scene; }
 // clang-format on
 
 namespace mola
@@ -67,6 +67,18 @@ class VizInterface
   virtual std::future<bool> update_viewport_camera_azimuth(
       const double azimuth, bool absolute_falseForRelative = true,
       const std::string& viewportName = "main", const std::string& parentWindow = "main") = 0;
+
+  virtual std::future<bool> update_viewport_camera_orthographic(
+      const bool orthographic, const std::string& viewportName = "main",
+      const std::string& parentWindow = "main") = 0;
+
+  /// Executes arbitrary user code on the 3D Scene in the background of the main window space.
+  /// This can be used to modify the viewport, create new sub-viewports, etc.
+  /// \note The user-provided code will be executed in the main GUI thread, so mutexes must be used
+  ///        as needed.
+  virtual std::future<bool> execute_custom_code_on_background_scene(
+      const std::function<void(mrpt::opengl::Scene&)>& userCode,
+      const std::string&                               parentWindow = "main") = 0;
 
   virtual std::future<void> enqueue_custom_nanogui_code(
       const std::function<void(void)>& userCode) = 0;
