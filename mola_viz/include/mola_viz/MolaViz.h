@@ -106,6 +106,14 @@ class MolaViz : public ExecutableBase, public VizInterface
       const double azimuth, bool absolute_falseForRelative = true,
       const std::string& viewportName = "main", const std::string& parentWindow = "main") override;
 
+  std::future<bool> update_viewport_camera_orthographic(
+      const bool orthographic, const std::string& viewportName = "main",
+      const std::string& parentWindow = "main") override;
+
+  std::future<bool> execute_custom_code_on_background_scene(
+      const std::function<void(mrpt::opengl::Scene&)>& userCode,
+      const std::string&                               parentWindow = "main") override;
+
   std::future<bool> output_console_message(
       const std::string& msg, const std::string& parentWindow = "main") override;
 

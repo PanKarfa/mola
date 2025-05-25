@@ -1064,6 +1064,75 @@ std::future<bool> MolaViz::update_viewport_camera_azimuth(
   return task->get_future();
 }
 
+std::future<bool> MolaViz::update_viewport_camera_orthographic(
+    const bool orthographic, const std::string& viewportName, const std::string& parentWindow)
+{
+  using return_type = bool;
+
+  auto task = std::make_shared<std::packaged_task<return_type()>>(
+      [this, orthographic, viewportName, parentWindow]()
+      {
+        MRPT_LOG_DEBUG_STREAM(
+            "update_viewport_camera_orthographic() orthographic=" << orthographic);
+
+        ASSERT_(windows_.count(parentWindow));
+        auto topWin = windows_.at(parentWindow).win;
+        ASSERT_(topWin);
+
+        // No need to acquire the mutex, since this task will be run
+        // in the proper moment in the proper thread:
+        ASSERT_(topWin->background_scene);
+
+        topWin->camera().setCameraProjective(!orthographic);
+        return true;
+      });
+
+  auto lck = mrpt::lockHelper(guiThreadPendingTasksMtx_);
+  guiThreadPendingTasks_.emplace_back([=]() { (*task)(); });
+  guiThreadMustReLayoutTheseWindows_.insert(parentWindow);
+  return task->get_future();
+}
+
+std::future<bool> MolaViz::execute_custom_code_on_background_scene(
+    const std::function<void(mrpt::opengl::Scene&)>& userCode, const std::string& parentWindow)
+{
+  using return_type = bool;
+
+  // Make a copy of the const ref object:
+  const auto userCodeCopy = userCode;
+
+  auto task = std::make_shared<std::packaged_task<return_type()>>(
+      [this, userCodeCopy, parentWindow]()
+      {
+        MRPT_LOG_DEBUG_STREAM("execute_custom_code_on_background_scene()");
+
+        ASSERT_(windows_.count(parentWindow));
+        auto topWin = windows_.at(parentWindow).win;
+        ASSERT_(topWin);
+
+        // No need to acquire the mutex, since this task will be run
+        // in the proper moment in the proper thread:
+        ASSERT_(topWin->background_scene);
+
+        try
+        {
+          userCodeCopy(*topWin->background_scene);
+          return true;
+        }
+        catch (const std::exception& e)
+        {
+          MRPT_LOG_ERROR_STREAM(
+              "Exception in execute_custom_code_on_background_scene():\n"
+              << e.what());
+          return false;
+        }
+      });
+
+  auto lck = mrpt::lockHelper(guiThreadPendingTasksMtx_);
+  guiThreadPendingTasks_.emplace_back([=]() { (*task)(); });
+  return task->get_future();
+}
+
 std::future<bool> MolaViz::output_console_message(
     const std::string& msg, const std::string& parentWindow)
 {
