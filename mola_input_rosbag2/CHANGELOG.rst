@@ -3,6 +3,12 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* remove useless commented out dependency
+* Update copyright year
+* Contributors: Jose Luis Blanco-Claraco
+
 1.7.0 (2025-05-06)
 ------------------
 

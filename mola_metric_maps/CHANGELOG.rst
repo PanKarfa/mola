@@ -2,6 +2,11 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update copyright year
+* Contributors: Jose Luis Blanco-Claraco
+
 1.7.0 (2025-05-06)
 ------------------
 * fix clang-format

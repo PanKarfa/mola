@@ -2,6 +2,12 @@
 Changelog for package mola
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update license tag to "BSD-3-Clause"
+* Fix: "mola" metapackage warning if using CMAKE_EXPORT_COMPILE_COMMANDS
+* Contributors: Jose Luis Blanco-Claraco
+
 1.7.0 (2025-05-06)
 ------------------
 * Merge pull request `#85 <https://github.com/MOLAorg/mola/issues/85>`_ from MOLAorg/feat/video-input-module

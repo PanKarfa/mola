@@ -2,6 +2,13 @@
 Changelog for package mola_demos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* silent cmake warning when using CMAKE_EXPORT_COMPILE_COMMANDS
+* Update license tag to "BSD-3-Clause"
+* Update copyright year
+* Contributors: Jose Luis Blanco-Claraco
+
 1.7.0 (2025-05-06)
 ------------------
 * Implement live camera mode too

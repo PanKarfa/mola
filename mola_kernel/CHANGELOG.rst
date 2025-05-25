@@ -2,6 +2,15 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update Viz interface: add methods to run arbitrary Scene manipulation and camera orthographic mode
+* Update copyright year
+* fix reversed logic
+* clang-format fix
+* Add mola::Synchronizer for grouping observations
+* Contributors: Jose Luis Blanco-Claraco
+
 1.7.0 (2025-05-06)
 ------------------
 * code clean up: remove useless dtors, and mark the required copy ctors as deleted
