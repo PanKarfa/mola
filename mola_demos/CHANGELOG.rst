@@ -2,8 +2,8 @@
 Changelog for package mola_demos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.8.0 (2025-05-25)
+------------------
 * silent cmake warning when using CMAKE_EXPORT_COMPILE_COMMANDS
 * Update license tag to "BSD-3-Clause"
 * Update copyright year

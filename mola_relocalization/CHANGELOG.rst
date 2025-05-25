@@ -3,8 +3,8 @@ Changelog for package mola_relocalization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+1.8.0 (2025-05-25)
+------------------
 * Update copyright year
 * Contributors: Jose Luis Blanco-Claraco
 

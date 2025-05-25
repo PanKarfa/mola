@@ -2,8 +2,8 @@
 Changelog for package mola
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.8.0 (2025-05-25)
+------------------
 * Update license tag to "BSD-3-Clause"
 * Fix: "mola" metapackage warning if using CMAKE_EXPORT_COMPILE_COMMANDS
 * Contributors: Jose Luis Blanco-Claraco

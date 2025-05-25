@@ -2,8 +2,8 @@
 Changelog for package mola_viz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.8.0 (2025-05-25)
+------------------
 * Implement new virtual Viz methods
 * Update copyright year
 * Contributors: Jose Luis Blanco-Claraco
