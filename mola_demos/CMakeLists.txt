@@ -47,3 +47,7 @@ if(DETECTED_ROS2)
 
   ament_package()
 endif()
+
+# Silent warning on unused variable:
+set(ignored CMAKE_EXPORT_COMPILE_COMMANDS)
+unset(ignored)
