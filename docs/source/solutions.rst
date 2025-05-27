@@ -11,13 +11,41 @@ Solutions
 ------------------------------------------------
 :ref:`LiDAR odometry <mola_lidar_odometry>` is one of the most advanced and flexible LIDAR odometry modules out there.
 Check out the tutorials: :ref:`building-maps`, and :ref:`tutorial-mola-lo-map-and-localize`.
+It provides:
+
+- LiDAR-only odometry (LO, no IMU).
+- LiDAR-inertial odometry (LIO, with IMU): **pending**.
+
+in two modes: mapping, and localization based on a prebuilt map.
 
 .. image:: https://mrpt.github.io/imgs/mola-slam-kitti-demo.gif
+
+|
+
+2. LO/LIO + GNSS + kinematics localization
+------------------------------------------------------------
+
+Based on the :ref:`smoother state estimator <mola_sta_est_index>`, this solution allows
+for improved localization in a prebuilt map by fusing the output of LiDAR odometry (LO or LIO) 
+with GNSS and kinematic data.
+
+Write me!
+
+|
+
+3. Map-less georeferenced localization: LO/LIO + GNSS + IMU + kinematics localization
+---------------------------------------------------------------------------------------
+
+Based on the :ref:`smoother state estimator <mola_sta_est_index>`, this solution allows
+to localize a vehicle in geodetic or UTM coordinates without the need of a prebuilt map.
+
+Write me!
 
 
 |
 
-2. Full 3D SLAM solution (GNSS, submapping, loop closures)
+
+4. Full 3D SLAM solution (GNSS, submapping, loop closures)
 ------------------------------------------------------------
 
 Build **georeferenced** consistent global maps, even mixing indoor and outdoor scenarios.
@@ -26,23 +54,24 @@ This functionality is provided by:
 - ``mola_sm_loop_closure``: At present, this package is not open-sourced, see: :ref:`mola_licenses`.
 
   - **Geo-referencing** metric maps with consumer-grade GNSS sensors. See: :ref:`geo-referencing`.
-  - Off-line **loop closure** for consistent global maps. (TO-DO: Write docs!)
+  - Off-line **loop closure** for consistent global maps. (TO-DO: Write docs)
 
-- ``mola_3d_mapper``: Full live/offline SLAM solution. (Coming soon!)
+- ``mola_3d_mapper``: Full live/offline SLAM solution. (Future work)
 
 
 .. image:: https://mrpt.github.io/imgs/kaist01_georef_sample.png
 
 
-|
 
-3. Full 2D SLAM solution
-----------------------------
-
-Build **georeferenced** consistent global 2D maps from 2D LiDARs.
-This functionality is provided by:
-
-- ``mola_2d_mapper``: Full live/offline SLAM solution for 2D LiDARs. (Coming soon!)
+.. |
+.. 
+.. 3. Full 2D SLAM solution
+.. ----------------------------
+.. 
+.. Build **georeferenced** consistent global 2D maps from 2D LiDARs.
+.. This functionality is provided by:
+.. 
+.. - ``mola_2d_mapper``: Full live/offline SLAM solution for 2D LiDARs. (Coming soon!)
 
 
 |
