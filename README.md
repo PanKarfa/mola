@@ -4,13 +4,13 @@
 
 | Distro | Build dev | Release |
 | --- | --- | --- |
-| ROS 2 Humble (u22.04) | [![Build Status](https://build.ros2.org/job/Hdev__mola__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Hdev__mola__ubuntu_jammy_amd64/) | [![Version](https://img.shields.io/ros/v/humble/mola)](https://index.ros.org/search/?term=mola) |
-| ROS 2 Jazzy (u24.04) | [![Build Status](https://build.ros2.org/job/Jdev__mola__ubuntu_noble_amd64/badge/icon)](https://build.ros2.org/job/Jdev__mola__ubuntu_noble_amd64/) | [![Version](https://img.shields.io/ros/v/jazzy/mola)](https://index.ros.org/search/?term=mola) |
-| ROS 2 Rolling (u24.04) | [![Build Status](https://build.ros2.org/job/Rdev__mola__ubuntu_noble_amd64/badge/icon)](https://build.ros2.org/job/Rdev__mola__ubuntu_noble_amd64/) | [![Version](https://img.shields.io/ros/v/rolling/mola)](https://index.ros.org/search/?term=mola) |
+| ROS 2 Humble (u22.04) | [![Build Status](https://build.ros2.org/job/Hdev__mola__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Hdev__mola__ubuntu_jammy_amd64/) | [![Version](https://img.shields.io/ros/v/humble/mola)](https://index.ros.org/?search_packages=true&pkgs=mola) |
+| ROS 2 Jazzy (u24.04) | [![Build Status](https://build.ros2.org/job/Jdev__mola__ubuntu_noble_amd64/badge/icon)](https://build.ros2.org/job/Jdev__mola__ubuntu_noble_amd64/) | [![Version](https://img.shields.io/ros/v/jazzy/mola)](https://index.ros.org/?search_packages=true&pkgs=mola) |
+| ROS 2 Rolling (u24.04) | [![Build Status](https://build.ros2.org/job/Rdev__mola__ubuntu_noble_amd64/badge/icon)](https://build.ros2.org/job/Rdev__mola__ubuntu_noble_amd64/) | [![Version](https://img.shields.io/ros/v/rolling/mola)](https://index.ros.org/?search_packages=true&pkgs=mola) |
 
 | EOL Distro | Last Release |
 | --- | ---
-| ROS 2 Iron (u22.04) | [![Version](https://img.shields.io/ros/v/iron/mola)](https://index.ros.org/search/?term=mola) |
+| ROS 2 Iron (u22.04) | [![Version](https://img.shields.io/ros/v/iron/mola)](https://index.ros.org/?search_packages=true&pkgs=mola) |
 
 # MOLA
 A Modular Optimization framework for Localization and mApping (MOLA).
