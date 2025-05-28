@@ -80,9 +80,5 @@ if(DETECTED_ROS2)
   # find dependencies
   find_package(ament_cmake REQUIRED)
 
-  #ament_target_dependencies(MY_TARGET
-  #  rclcpp...
-  #)
-
   ament_package()
 endif()

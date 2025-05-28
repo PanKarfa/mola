@@ -56,20 +56,18 @@ mola_add_library(
     mola::mola_kernel
     mrpt::maps
     mrpt::ros2bridge
+  PUBLIC_LINK_LIBRARIES
+    rclcpp::rclcpp
+    tf2::tf2
+    ${geometry_msgs_TARGETS}
+    ${nav_msgs_TARGETS}
+    ${sensor_msgs_TARGETS}
+    ${tf2_geometry_msgs_TARGETS}
+    ${mrpt_nav_interfaces_TARGETS}
+    ${mola_msgs_TARGETS}
   CMAKE_DEPENDENCIES
     mola_kernel
     mrpt-maps
-)
-
-ament_target_dependencies(${PROJECT_NAME} PUBLIC
-  geometry_msgs
-  nav_msgs
-  rclcpp
-  sensor_msgs
-  tf2
-  tf2_geometry_msgs
-  mrpt_nav_interfaces
-  mola_msgs
 )
 
 ament_export_dependencies()
