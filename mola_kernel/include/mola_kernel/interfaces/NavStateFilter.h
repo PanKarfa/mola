@@ -12,6 +12,7 @@
 #pragma once
 
 #include <mola_kernel/interfaces/ExecutableBase.h>
+#include <mola_kernel/interfaces/RawDataConsumer.h>
 #include <mrpt/containers/yaml.h>
 #include <mrpt/core/Clock.h>
 #include <mrpt/math/TTwist3D.h>
@@ -21,6 +22,9 @@
 #include <mrpt/poses/CPose3DPDFGaussianInf.h>
 #include <mrpt/system/COutputLogger.h>
 #include <mrpt/topography/data_types.h>
+
+#include <set>
+#include <string>
 
 #pragma once
 
@@ -57,7 +61,7 @@ struct NavState
  *  in [the docs](https://docs.mola-slam.org/)
  *
  * \ingroup mola_kernel_interfaces_grp */
-class NavStateFilter : public mola::ExecutableBase
+class NavStateFilter : public mola::ExecutableBase, public RawDataConsumer
 {
  public:
   NavStateFilter();
@@ -65,8 +69,10 @@ class NavStateFilter : public mola::ExecutableBase
   /** Resets the estimator state to an initial state */
   virtual void reset() = 0;
 
-  // initialize(): inherited from ExecutableBase. Must be implemented to load
-  // parameters, etc.
+  /** initialize(): loads "raw_data_source".
+   * If reimplemented in a derived class, remember to call the base class.
+   */
+  void initialize(const Yaml& cfg) override;
 
   /** Integrates new SE(3) pose estimation of the vehicle wrt a given
    * frame_id.
@@ -108,12 +114,16 @@ class NavStateFilter : public mola::ExecutableBase
    *          requested time interval.
    */
   virtual std::optional<mrpt::poses::CPose3DInterpolator> estimated_trajectory(
-      [[maybe_unused]] const mrpt::Clock::time_point& start_time,
+      [[maybe_unused]] const mrpt::Clock::time_point& start_time,  // NOLINT
       [[maybe_unused]] const mrpt::Clock::time_point& end_time,
       [[maybe_unused]] const std::string&             frame_id)
   {
     return {};  // Default: none
   }
+
+ private:
+  /// A list of one or multiple MOLA **module names** to which to subscribe
+  std::set<std::string> navstate_source_names_;
 };
 
 }  // namespace mola

@@ -69,7 +69,10 @@ void RawDataSourceBase::initialize(const Yaml& cfg)
       const auto win_pos = sensor.getOrDefault<std::string>("win_pos", "");
 
       // Allow quickly disabling sections:
-      if (!sensor.getOrDefault("enabled", true)) continue;
+      if (!sensor.getOrDefault("enabled", true))
+      {
+        continue;
+      }
 
       ASSERTMSG_(
           sensor_preview_gui_.find(label) == sensor_preview_gui_.end(),
@@ -89,7 +92,9 @@ void RawDataSourceBase::initialize(const Yaml& cfg)
   {
     MRPT_LOG_INFO_STREAM("Exporting to rawlog file: " << fil);
     if (!export_to_rawlog_out_.open(fil))
+    {
       THROW_EXCEPTION_FMT("Error opening for write: `%s`", fil.c_str());
+    }
   }
 
   // Optional force load lazy-load observations:
@@ -114,7 +119,10 @@ void RawDataSourceBase::sendObservationsToFrontEnds(const mrpt::obs::CObservatio
     prepareObservationBeforeFrontEnds(obs);
 
     // Forward data:
-    for (auto& subscriber : rdc_) subscriber->onNewObservation(obs);
+    for (auto& subscriber : rdc_)
+    {
+      subscriber->onNewObservation(obs);
+    }
   }
   else
   {

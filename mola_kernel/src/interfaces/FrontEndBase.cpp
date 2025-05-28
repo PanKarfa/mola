@@ -31,7 +31,10 @@ void FrontEndBase::initialize(const Yaml& cfg)
 
     if (cfg.isSequence())
     {
-      for (const auto& v : cfg.asSequence()) front_end_source_names_.insert(v.as<std::string>());
+      for (const auto& v : cfg.asSequence())
+      {
+        front_end_source_names_.insert(v.as<std::string>());
+      }
     }
     else
     {
@@ -41,20 +44,22 @@ void FrontEndBase::initialize(const Yaml& cfg)
     for (const auto& src_name : front_end_source_names_)
     {
       MRPT_LOG_DEBUG_STREAM(
-          "initialize_common(): subscribing to '" << src_name << "' for raw sensor input.");
+          "FrontEndBase::initialize(): subscribing to '" << src_name << "' for raw sensor input.");
 
       ASSERT_(this->nameServer_);
 
       auto data_src = nameServer_(src_name);
       if (!data_src)
+      {
         THROW_EXCEPTION_FMT("Cannot find data source module named `%s`", src_name.c_str());
+      }
 
       auto rdsb = std::dynamic_pointer_cast<RawDataSourceBase>(data_src);
       if (!rdsb)
+      {
         THROW_EXCEPTION_FMT(
-            "Could not cast data source module named `%s` to "
-            "RawDataSourceBase",
-            src_name.c_str());
+            "Could not cast data source module named `%s` to RawDataSourceBase", src_name.c_str());
+      }
 
       // Subscribe:
       rdsb->attachToDataConsumer(*this);

@@ -23,7 +23,7 @@ namespace mola
  * immediately send them to a worker thread that works on it, possibly
  * publishing the output via `sendObservationsToFrontEnds()`.
  * \ingroup mola_kernel_interfaces_grp */
-class FilterBase : public RawDataSourceBase, RawDataConsumer
+class FilterBase : public RawDataSourceBase, public RawDataConsumer
 {
 #if MRPT_VERSION < 0x020e00
   DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase)

@@ -58,6 +58,7 @@ class FrontEndBase : public ExecutableBase, public RawDataConsumer
    * to one or more sensor sources, and use descriptive names in the case of
    * multiple sensors.
    *
+   *
    */
   void initialize(const Yaml& cfg) override final;
 
