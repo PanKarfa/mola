@@ -2,6 +2,9 @@
 Changelog for package mola_yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.8.0 (2025-05-25)
 ------------------
 * Update license tag to "BSD-3-Clause"

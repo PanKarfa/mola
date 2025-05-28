@@ -3,6 +3,9 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 1.8.0 (2025-05-25)
 ------------------
 * remove useless commented out dependency

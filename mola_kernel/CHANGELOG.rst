@@ -2,6 +2,9 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.8.0 (2025-05-25)
 ------------------
 * Update Viz interface: add methods to run arbitrary Scene manipulation and camera orthographic mode

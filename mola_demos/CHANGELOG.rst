@@ -2,6 +2,11 @@
 Changelog for package mola_demos
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix: Do not use the deprecated ament_target_dependencies()
+* Contributors: Jose Luis Blanco-Claraco
+
 1.8.0 (2025-05-25)
 ------------------
 * silent cmake warning when using CMAKE_EXPORT_COMPILE_COMMANDS

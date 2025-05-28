@@ -3,6 +3,11 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Fix: Do not use the deprecated ament_target_dependencies()
+* Contributors: Jose Luis Blanco-Claraco
+
 1.8.0 (2025-05-25)
 ------------------
 * Update license tag to "BSD-3-Clause"
