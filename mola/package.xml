@@ -8,8 +8,6 @@
   <maintainer email="jlblanco@ual.es">Jose-Luis Blanco-Claraco</maintainer>
   <license file="LICENSE">BSD-3-Clause</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-
   <depend>kitti_metrics_eval</depend>
   <depend>mola_bridge_ros2</depend>
   <depend>mola_demos</depend>
@@ -30,11 +28,10 @@
   <depend>mola_viz</depend>
   <depend>mola_yaml</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_cmake_xmllint</test_depend>
-  <test_depend>ament_lint_cmake</test_depend>
-
+  <!-- Minimum entries to release non-catkin packages -->
+  <buildtool_depend>cmake</buildtool_depend>
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>cmake</build_type>
   </export>
+  <!-- End -->
 </package>

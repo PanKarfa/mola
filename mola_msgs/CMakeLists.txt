@@ -11,7 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake REQUIRED)
+# Find for these packages, and skip the package if we are not using ROS 2:
+find_package(ament_cmake QUIET)
+if(NOT ament_cmake_FOUND)
+  message(STATUS "Skipping mola_msgs: ament_cmake not found, it seems we are not using ROS 2.")
+  return()
+endif()
+
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 

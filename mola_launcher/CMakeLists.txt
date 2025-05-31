@@ -62,8 +62,6 @@ add_subdirectory(apps)
 #  ROS2
 # -----------------------------------------------------------------------------
 if(DETECTED_ROS2)
-
-
   # Mark executables and/or libraries for installation
   set(CATKIN_PACKAGE_LIB_DESTINATION lib)
   set(CATKIN_PACKAGE_BIN_DESTINATION lib/${PROJECT_NAME})
