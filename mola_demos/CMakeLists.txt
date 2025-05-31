@@ -45,5 +45,5 @@ if(DETECTED_ROS2)
 endif()
 
 # Silent warning on unused variable:
-set(ignored CMAKE_EXPORT_COMPILE_COMMANDS)
+set(ignored ${CMAKE_EXPORT_COMPILE_COMMANDS})
 unset(ignored)

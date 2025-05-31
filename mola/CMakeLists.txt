@@ -9,5 +9,5 @@ find_package(mola_common REQUIRED)
 
 
 # Silent warning on unused variable:
-set(ignored CMAKE_EXPORT_COMPILE_COMMANDS)
+set(ignored ${CMAKE_EXPORT_COMPILE_COMMANDS})
 unset(ignored)
