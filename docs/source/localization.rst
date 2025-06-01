@@ -47,8 +47,8 @@ pose in the environment:
 
 ----
 
-2. Localization with LiDAR odometry
---------------------------------------
+2. Localization with LiDAR odometry (LO) and a reference map
+---------------------------------------------------------------
 See the step-by-step instructions in :ref:`this tutorial <tutorial-mola-lo-map-and-localize>`.
 As a summary, you need to:
 
@@ -69,8 +69,34 @@ This video shows the steps in the tutorial:
 
 ----
 
-3. Localization with particle filtering
-----------------------------------------
+.. _localization-lo_gnss_kinematics:
+
+3. LO/LIO + GNSS + kinematics localization
+---------------------------------------------------------------
+Based on the smoother state estimator, this solution allows for improved localization in a prebuilt map
+by fusing the output of LiDAR odometry (LO or LIO) with GNSS and kinematic data.
+
+Write me!
+
+|
+
+----
+
+.. _localization-lo_georef_gnss_imu_kinematics:
+
+4. Map-less georeferenced localization: LO/LIO + GNSS + IMU + kinematics localization
+-----------------------------------------------------------------------------------------
+Based on the smoother state estimator, this solution allows to localize a vehicle in geodetic or UTM coordinates without the need of a prebuilt map.
+
+Write me!
+
+|
+
+----
+
+
+5. Localization with particle filtering and a reference map
+------------------------------------------------------------
 To localize with a particle filter (PF) you will need:
 
 1. A metric map (the ``.mm`` file) of the environment. Built as described in: :ref:`building-maps`.
@@ -85,7 +111,7 @@ To localize with a particle filter (PF) you will need:
    We can use `mrpt_pointcloud_pipeline <https://github.com/mrpt-ros-pkg/mrpt_navigation/tree/ros2/mrpt_pointcloud_pipeline>`_
    for such task, as can be seen in the tutorial below.
 
-3.1. PF localization tutorial
+5.1. PF localization tutorial
 ================================
 A complete demonstration has been put together on: https://github.com/MOLAorg/mola_warehouse_pf_tutorial
 
