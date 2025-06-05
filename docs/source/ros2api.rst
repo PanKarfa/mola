@@ -249,27 +249,36 @@ Write me!
 
 6. Map publishing
 --------------------------------------
-There are two ways of publishing maps to ROS:
+There are three ways of publishing maps to ROS:
 
-* Using ``mrpt_map_server`` (`github <https://github.com/mrpt-ros-pkg/mrpt_navigation/tree/ros2/mrpt_map_server/>`_):
-  the recommended way for static, previously-built maps. In this case, one ROS topic
-  will be published for each map layer, as described in the package documentation.
-  See also :ref:`this tutorial <tutorial-pub-map-server-to-ros>`.
+1. Using ``mrpt_map_server`` (`github <https://github.com/mrpt-ros-pkg/mrpt_navigation/tree/ros2/mrpt_map_server/>`_):
+   the recommended way for static, previously-built maps, if you are **not** using MOLA for localization but want the 
+   map published for localization using the :ref:`particle filter method <localization-only>` or for your own purposes,
+   e.g. for visualization in RViz, processing in a custom node, etc.
+   In this case, one ROS topic will be published for each map layer, as described in the package documentation.
+   See also :ref:`this tutorial <tutorial-pub-map-server-to-ros>`.
 
-* During a live map building process (e.g. MOLA-LO).
+2. During a live map building process (e.g. MOLA-LO).
 
-In this latter case, BridgeROS2 will look for modules implementing
-:ref:`MapSourceBase <doxid-classmola_1_1_map_source_base>` and will publish
-one **topic** named ``<METHOD>/<LAYER_NAME>`` for each map layer.
-The metric map layer C++ class will determine the ROS topic type to use.
+.. dropdown:: Topics
 
-.. note::
-
-   Using the default MOLA LiDAR odometry pipeline, only one map topic will
-   be generated during mapping:
+   Using the default MOLA LiDAR odometry pipeline, only one map topic will be generated during live mapping:
 
    * Name: ``/lidar_odometry/localmap_points``
    * Type: ``sensor_msgs/PointCloud2``
+
+
+3. If using MOLA-LO for localization-only, it will send out the loaded map.
+   In this case, there will be as many topics as map layers in the ``*.mm`` file.
+   See also :ref:`this tutorial <tutorial-pub-map-server-to-ros>`.
+
+In cases (2)-(3), ``BridgeROS2`` will look for modules implementing
+:ref:`MapSourceBase <doxid-classmola_1_1_map_source_base>` and will publish
+one **topic** named ``<METHOD>/<LAYER_NAME>`` for each map layer.
+The metric map layer C++ class will determine the ROS topic type to use.
+Map topics are "latched" (so that new subscribers will receive the last
+published map immediately after subscribing), and will be re-published only
+if mapping is enabled and the map has changed since the last publication.
 
 |
 
