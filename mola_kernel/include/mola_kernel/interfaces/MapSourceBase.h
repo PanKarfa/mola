@@ -56,6 +56,13 @@ class MapSourceBase
      *  \note Added in MOLA 1.7.0
      */
     std::optional<Georeferencing> georeferencing;
+
+    /** Optional metadata associated to the map, e.g. a JSON or YAML string.
+     * It will contain the information in the "metadata" field of mp2p_icp::metric_map_t
+     * when loading a ``*.mm`` metric map file and publishing it.
+     *  \note Added in MOLA 1.9.0
+     */
+    std::optional<std::string> map_metadata;
   };
 
   using map_updates_callback_t = std::function<void(const MapUpdate&)>;
