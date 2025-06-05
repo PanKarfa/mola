@@ -1266,7 +1266,10 @@ void BridgeROS2::timerPubLocalization()
     ls       = lastLocUpdates_;
     lastLocUpdates_.clear();
   }
-  if (ls.empty()) return;
+  if (ls.empty())
+  {
+    return;
+  }
 
   for (const auto& l : ls)
   {
@@ -1356,7 +1359,7 @@ void BridgeROS2::timerPubLocalization()
     // And always publish quality:
     {
       std_msgs::msg::Float32 msg;
-      msg.data = l.quality;
+      msg.data = static_cast<float>(l.quality);
       pubOdoQuality->publish(msg);
     }
   }
@@ -1373,7 +1376,10 @@ void BridgeROS2::timerPubMap()
     m         = std::move(lastMaps_);
     lastMaps_ = {};
   }
-  if (m.empty()) return;
+  if (m.empty())
+  {
+    return;
+  }
 
   MRPT_LOG_DEBUG_STREAM("New map layers (" << m.size() << ") received");
 
@@ -1426,6 +1432,21 @@ void BridgeROS2::timerPubMap()
       const std::string georefTopic =
           (mu.method.empty() ? "slam"s : mu.method) + "/geo_ref_metadata"s;
       publishMetricMapGeoreferencingData(*mu.georeferencing, georefTopic);
+    }
+
+    // If it has metadata, publish it:
+    if (mu.map_metadata.has_value())
+    {
+      const std::string metadataTopic = (mu.method.empty() ? "slam"s : mu.method) + "/metadata"s;
+
+      auto lck = mrpt::lockHelper(rosPubsMtx_);
+
+      // Publish it as transient local:
+      auto mapQos      = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
+      auto pubMetadata = get_publisher<std_msgs::msg::String>(metadataTopic, mapQos);
+      std_msgs::msg::String msg;
+      msg.data = *mu.map_metadata;
+      pubMetadata->publish(msg);
     }
   }
 }
@@ -1568,8 +1589,7 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
     else if (type == "Odometry")
     {
       subsOdometry_.emplace_back(rosNode_->create_subscription<nav_msgs::msg::Odometry>(
-          topic_name, qos,
-          [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
+          topic_name, qos, [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
           { this->callbackOnOdometry(o, output_sensor_label); }));
     }
     else
