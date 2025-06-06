@@ -3,6 +3,12 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Fix usage of mola_version_to_hexadecimal()
+* cmake: replace local mrpt_version_to_hex() with new mrpt_common mola_version_to_hexadecimal()
+* Contributors: Jose Luis Blanco-Claraco
+
 1.8.1 (2025-05-28)
 ------------------
 

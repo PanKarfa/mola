@@ -3,6 +3,12 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* fix clang-format
+* Implement publishing of optional "metadata" map field too
+* Contributors: Jose Luis Blanco-Claraco
+
 1.8.1 (2025-05-28)
 ------------------
 * Fix: Do not use the deprecated ament_target_dependencies()

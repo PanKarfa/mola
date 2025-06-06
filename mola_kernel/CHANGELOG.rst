@@ -2,6 +2,12 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* MapSourceBase: add a new optional field "metadata"
+* NavStateFilter interface: Now is a RawDataConsumer too
+* Contributors: Jose Luis Blanco-Claraco
+
 1.8.1 (2025-05-28)
 ------------------
 
