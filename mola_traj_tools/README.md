@@ -20,20 +20,37 @@ To install from the ROS repositories:
 
 ### traj_ypr2tum
 
-This tool can be used to convert a TXT file with a trajectory in this format:
+This tool can be used to convert a TXT file with a trajectory in this format (X,Y,Z, Yaw, Pitch, Roll):
 
 ```
 # t [unix timestamp, double]  x y z [meters]  yaw pitch roll [radians]
 t x y z yaw pitch roll
 ```
 
-into the [TUM format](https://github.com/MichaelGrupp/evo/wiki/Formats#tum---tum-rgb-d-dataset-trajectory-format).
+into the [TUM format](https://github.com/MichaelGrupp/evo/wiki/Formats#tum---tum-rgb-d-dataset-trajectory-format) with orientation as a quaternion.
 
 Usage:
 
 ```bash
   traj_ypr2tum INPUT.ypr OUTPUT.tum
 ```
+
+### traj_tum2ypr
+
+This tool converts a trajectory from [TUM format](https://github.com/MichaelGrupp/evo/wiki/Formats#tum---tum-rgb-d-dataset-trajectory-format),
+with orientation as a quaternion, into a TXT file with orientation as Yaw, Pitch, and Roll angles:
+
+```
+# t [unix timestamp, double]  x y z [meters]  yaw pitch roll [radians]
+t x y z yaw pitch roll
+```
+
+Usage:
+
+```bash
+  traj_tum2ypr INPUT.tum OUTPUT.ypr
+```
+
 
 ### traj_tf_left
 

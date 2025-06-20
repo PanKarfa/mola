@@ -30,6 +30,13 @@ mola_add_executable(
 )
 
 mola_add_executable(
+  TARGET  traj_tum2ypr
+  SOURCES src/traj_tum2ypr.cpp
+  LINK_LIBRARIES
+    mrpt::poses
+)
+
+mola_add_executable(
   TARGET  traj_tf_left
   SOURCES src/traj_tf_left.cpp
   LINK_LIBRARIES
