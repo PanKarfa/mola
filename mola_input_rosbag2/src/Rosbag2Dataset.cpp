@@ -35,9 +35,10 @@
 #include <mrpt/ros2bridge/pose.h>
 #include <mrpt/ros2bridge/time.h>
 #include <mrpt/system/filesystem.h>
-#include <tf2/buffer_core.h>
-#include <tf2/convert.h>
-#include <tf2/exceptions.h>
+
+#include <tf2/buffer_core.hpp>
+#include <tf2/convert.hpp>
+#include <tf2/exceptions.hpp>
 
 #if CV_BRIDGE_VERSION < 0x030400
 #include <cv_bridge/cv_bridge.h>
@@ -307,7 +308,8 @@ void Rosbag2Dataset::initialize_rds(const Yaml& c)
     }
     else if (sensorType == "CObservationRotatingScan")
     {
-      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m) {
+      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m)
+      {
         return catchExceptions([=]() { return toRotatingScan(sensorLabel, m, fixedSensorPose); });
       };
       lookup_[topic].emplace_back(callback);
