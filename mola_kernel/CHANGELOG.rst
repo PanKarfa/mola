@@ -2,6 +2,9 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.9.0 (2025-06-06)
 ------------------
 * MapSourceBase: add a new optional field "metadata"

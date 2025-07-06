@@ -2,6 +2,9 @@
 Changelog for package mola_input_video
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.9.0 (2025-06-06)
 ------------------
 

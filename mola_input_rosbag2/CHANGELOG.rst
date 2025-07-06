@@ -3,6 +3,11 @@ Changelog for package mola_input_rosbag2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* fix build against latest tf2
+* Contributors: Jose Luis Blanco-Claraco
+
 1.9.0 (2025-06-06)
 ------------------
 * Fix usage of mola_version_to_hexadecimal()

@@ -3,6 +3,9 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 1.9.0 (2025-06-06)
 ------------------
 * fix clang-format
