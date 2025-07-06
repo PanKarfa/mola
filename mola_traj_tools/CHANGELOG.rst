@@ -2,8 +2,8 @@
 Changelog for package mola_traj_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.9.1 (2025-07-07)
+------------------
 * Add new cli tool: traj_tum2ypr to convert from TUM to Yaw/Pitch/Roll trajectories
 * Contributors: Jose Luis Blanco-Claraco
 
