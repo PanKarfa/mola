@@ -1,15 +1,23 @@
+# cmake-lint: disable=convention/filename
+
 # This is from https://github.com/vector-of-bool/pitchfork/blob/develop/cmake/FindFilesystem.cmake
 
 include(CMakePushCheckState)
 include(CheckIncludeFileCXX)
 include(CheckCXXSourceCompiles)
+include(FindPackageHandleStandardArgs)
 
 cmake_push_check_state(RESET)
+
+find_package_handle_standard_args(FILESYSTEM
+  REQUIRED_VARS FILESYSTEM_LIBRARIES FILESYSTEM_INCLUDE_DIR
+  VERSION_VAR FILESYSTEM_VERSION
+)
 
 # this seems not to affect check_cxx_source_compiles()...
 set(CMAKE_CXX_STANDARD 17)
 
-if (CMAKE_COMPILER_IS_GNUCXX OR (${CMAKE_CXX_COMPILER_ID}  STREQUAL "Clang"))
+if(CMAKE_COMPILER_IS_GNUCXX OR (${CMAKE_CXX_COMPILER_ID}  STREQUAL "Clang"))
     set(CMAKE_REQUIRED_LINK_OPTIONS -std=c++17)
     set(CMAKE_REQUIRED_FLAGS -std=c++17)
 endif()
@@ -52,7 +60,11 @@ if(have_fs)
     if(NOT ${CMAKE_VERSION} VERSION_LESS "3.16.0")
         target_compile_definitions(CXX::Filesystem INTERFACE STD_FS_IS_EXPERIMENTAL=$<NOT:$<BOOL:${HAVE_STD_FILESYSTEM}>>)
     else()
-        set_property(TARGET CXX::Filesystem APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS STD_FS_IS_EXPERIMENTAL=$<NOT:$<BOOL:${HAVE_STD_FILESYSTEM}>>)
+        set_property(
+          TARGET CXX::Filesystem
+          APPEND
+          PROPERTY INTERFACE_COMPILE_DEFINITIONS
+          STD_FS_IS_EXPERIMENTAL=$<NOT:$<BOOL:${HAVE_STD_FILESYSTEM}>>)
     endif()
 
     if(CAN_COMPILE_FS_WITHOUT_LINK)
