@@ -100,6 +100,10 @@ The complete framework comprises these software repositories:
 .. _mola_state_estimation: https://github.com/MOLAorg/mola_state_estimation/
 .. |mola_state_estimation| replace:: **mola_state_estimation**
 
+.. _mola_sm_loop_closure: https://github.com/MOLAorg/mola_sm_loop_closure/
+.. |mola_sm_loop_closure| replace:: **mola_sm_loop_closure**
+
+
 .. list-table:: Software repositories and modules
    :widths: 75 25
    :header-rows: 1
@@ -154,12 +158,12 @@ The complete framework comprises these software repositories:
 
      - GNU-GPLv3
 
-   * - **mola_sm_loop_closure**
+   * - |mola_sm_loop_closure|_
        
        |
        
        Map geo-referencing, SLAM with loop-closure for consistent large maps.
-     - Upon licensing only
+     - GNU-GPLv3
 
 |
 
