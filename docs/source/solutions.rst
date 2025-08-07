@@ -51,7 +51,7 @@ Write me!
 Build **georeferenced** consistent global maps, even mixing indoor and outdoor scenarios.
 This functionality is provided by:
 
-- ``mola_sm_loop_closure``: At present, this package is not open-sourced, see: :ref:`mola_licenses`.
+- ``mola_sm_loop_closure``:
 
   - **Geo-referencing** metric maps with consumer-grade GNSS sensors. See: :ref:`geo-referencing`.
   - Off-line **loop closure** for consistent global maps. (TO-DO: Write docs)
