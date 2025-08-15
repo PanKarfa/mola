@@ -27,23 +27,15 @@ void mola::pretty_print_exception(
 
   const auto setFormatRed = [=](const ConsoleTextStyle style)
   {
-#if MRPT_VERSION >= 0x233
     consoleColorAndStyle(
         ConsoleForegroundColor::RED, ConsoleBackgroundColor::DEFAULT, style, use_std_cerr);
-#else
-    setConsoleColor(CONCOL_RED, use_std_cerr);
-#endif
   };
 
   const auto resetFormat = [=]()
   {
-#if MRPT_VERSION >= 0x233
     consoleColorAndStyle(
         ConsoleForegroundColor::DEFAULT, ConsoleBackgroundColor::DEFAULT, ConsoleTextStyle::REGULAR,
         use_std_cerr);
-#else
-    setConsoleColor(CONCOL_NORMAL, use_std_cerr);
-#endif
   };
 
   if (!headerLine.empty())

@@ -41,10 +41,13 @@ class RawlogDataset : public RawDataSourceBase, public OfflineDatasetSource, pub
   size_t datasetUI_size() const override
   {
     if (read_all_first_)
+    {
       return datasetSize();
-    else
-      return 10000000;  // we just don't know...
+    }
+
+    return 10000000;  // we just don't know...
   }
+
   size_t datasetUI_lastQueriedTimestep() const override
   {
     auto lck = mrpt::lockHelper(dataset_ui_mtx_);

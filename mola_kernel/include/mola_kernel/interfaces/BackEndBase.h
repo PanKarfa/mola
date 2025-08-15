@@ -37,11 +37,7 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class BackEndBase : public ExecutableBase
 {
-#if MRPT_VERSION < 0x020e00
-  DEFINE_VIRTUAL_MRPT_OBJECT(BackEndBase)
-#else
   DEFINE_VIRTUAL_MRPT_OBJECT(BackEndBase, mola)
-#endif
 
  public:
   BackEndBase();

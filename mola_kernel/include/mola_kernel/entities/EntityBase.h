@@ -15,7 +15,6 @@
 #include <mola_kernel/id.h>
 #include <mrpt/core/Clock.h>
 #include <mrpt/serialization/CSerializable.h>
-#include <mrpt/version.h>
 
 #include <map>
 
@@ -33,11 +32,7 @@ using annotations_data_t = std::map<std::string, LazyLoadResource>;
  */
 class EntityBase : public mrpt::serialization::CSerializable
 {
-#if MRPT_VERSION < 0x020e00
-  DEFINE_VIRTUAL_SERIALIZABLE(EntityBase);
-#else
   DEFINE_VIRTUAL_SERIALIZABLE(EntityBase, mola);
-#endif
 
  public:
   EntityBase();

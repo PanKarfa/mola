@@ -34,11 +34,7 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class FrontEndBase : public ExecutableBase, public RawDataConsumer
 {
-#if MRPT_VERSION < 0x020e00
-  DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase)
-#else
   DEFINE_VIRTUAL_MRPT_OBJECT(FrontEndBase, mola)
-#endif
 
  public:
   FrontEndBase();

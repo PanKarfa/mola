@@ -25,11 +25,7 @@ namespace mola
  * \ingroup mola_kernel_interfaces_grp */
 class FilterBase : public RawDataSourceBase, public RawDataConsumer
 {
-#if MRPT_VERSION < 0x020e00
-  DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase)
-#else
   DEFINE_VIRTUAL_MRPT_OBJECT(FilterBase, mola)
-#endif
  public:
   FilterBase();
 

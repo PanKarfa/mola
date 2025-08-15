@@ -35,51 +35,20 @@ std::map<double, mrpt::math::TPose2D> mola::find_best_poses_se2(
   ASSERT_GT_(percentile, 0.0);
   ASSERT_LT_(percentile, 1.0);
 
-#if MRPT_VERSION < 0x020c01
-  const size_t nX   = grid.getSizeX();
-  const size_t nY   = grid.getSizeY();
-  const size_t nPhi = grid.getSizePhi();
-
-  double maxLik = .0;
-  for (size_t iX = 0; iX < nX; iX++)
-    for (size_t iY = 0; iY < nY; iY++)
-      for (size_t iPhi = 0; iPhi < nPhi; iPhi++)
-      {
-        const double& cell = *grid.getByIndex(iX, iY, iPhi);
-        mrpt::keep_max(maxLik, cell);
-      }
-#else
   const double maxLik = *std::max_element(grid.data().begin(), grid.data().end());
-#endif
 
   const double threshold = percentile * maxLik;
 
   std::map<double, mrpt::math::TPose2D> best;
 
-#if MRPT_VERSION < 0x020c01
-  for (size_t iX = 0; iX < nX; iX++)
-  {
-    const double x = grid.idx2x(iX);
-    for (size_t iY = 0; iY < nY; iY++)
-    {
-      for (size_t iPhi = 0; iPhi < nPhi; iPhi++)
-      {
-        const double& cell = *grid.getByIndex(iX, iY, iPhi);
-        if (cell < threshold) continue;
-
-        const double y   = grid.idx2y(iY);
-        const double phi = grid.idx2phi(iPhi);
-
-        best[cell] = {x, y, phi};
-      }
-    }
-  }
-#else
-  const size_t N      = grid.data().size();
+  const size_t N = grid.data().size();
   for (size_t i = 0; i < N; i++)
   {
     const double cell = grid.data()[i];
-    if (cell < threshold) continue;
+    if (cell < threshold)
+    {
+      continue;
+    }
 
     const auto [ix, iy, iphi] = grid.absidx2idx(i);
     const double x            = grid.idx2x(ix);
@@ -87,6 +56,5 @@ std::map<double, mrpt::math::TPose2D> mola::find_best_poses_se2(
     const double phi          = grid.idx2phi(iphi);
     best[cell]                = {x, y, phi};
   }
-#endif
   return best;
 }

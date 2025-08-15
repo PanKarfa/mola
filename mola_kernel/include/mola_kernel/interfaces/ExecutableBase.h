@@ -39,11 +39,7 @@ class ExecutableBase : public mrpt::system::COutputLogger,  // for logging
                        std::enable_shared_from_this<ExecutableBase>
 {
   // This macro defines `Ptr=shared_ptr<T>`, among other types and methods.
-#if MRPT_VERSION < 0x020e00
-  DEFINE_VIRTUAL_MRPT_OBJECT(ExecutableBase)
-#else
   DEFINE_VIRTUAL_MRPT_OBJECT(ExecutableBase, mola)
-#endif
 
  public:
   ExecutableBase();

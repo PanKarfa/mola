@@ -148,11 +148,16 @@ void RawDataSourceBase::sendObservationsToFrontEnds(const mrpt::obs::CObservatio
     auto fut = worker_pool_export_rawlog_.enqueue(
         [this](mrpt::obs::CObservation::Ptr o)
         {
-          if (!o) return;
+          if (!o)
+          {
+            return;
+          }
           auto a = mrpt::serialization::archiveFrom(this->export_to_rawlog_out_);
           a << o;
         },
         obs);
+
+    (void)fut;
   }
 
   // Send this observation for GUI preview, if enabled:
@@ -171,7 +176,10 @@ void RawDataSourceBase::sendObservationsToFrontEnds(const mrpt::obs::CObservatio
         using namespace mrpt::opengl;
 
         // GUI update decimation:
-        if (++sv->decim_counter < sv->decimation) return;
+        if (++sv->decim_counter < sv->decimation)
+        {
+          return;
+        }
         sv->decim_counter = 0;
 
         // Create subwindow now:
@@ -199,6 +207,7 @@ void RawDataSourceBase::sendObservationsToFrontEnds(const mrpt::obs::CObservatio
             if ((ss >> x) && (ss >> y) && (ss >> w) && (ss >> h))
             {
               auto futMove = viz->subwindow_move_resize(sv->sensor_label, {x, y}, {w, h});
+              (void)futMove;
             }
           }
         }
@@ -215,6 +224,7 @@ void RawDataSourceBase::sendObservationsToFrontEnds(const mrpt::obs::CObservatio
     };
 
     auto fut = gui_updater_threadpool_.enqueue(func);
+    (void)fut;
   }
 
   MRPT_TRY_END
@@ -262,7 +272,10 @@ void RawDataSourceBase::prepareObservationBeforeFrontEnds(const CObservation::Pt
 
 void RawDataSourceBase::onDatasetPlaybackEnds()
 {
-  if (!quit_mola_app_on_dataset_end_) return;  // do nothing
+  if (!quit_mola_app_on_dataset_end_)
+  {
+    return;  // do nothing
+  }
 
   this->requestShutdown();  // Quit mola app
 }
