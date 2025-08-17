@@ -274,3 +274,78 @@ with corresponding MOLA cli launch files in the `mola-cli-launchs <https://githu
 
   Refer to the :ref:`complete tutorial <tutorial-mulran-replay-to-ros2>`.
 
+|
+
+.. _pointcloud-to-mm:
+
+6. Point-cloud files ⇒ ``.mm`` metric maps
+--------------------------------------------
+
+In some cases, you may want to **import point-cloud files** in popular formats (e.g. PCD, LAS, etc.)
+as a **layer within a metric map** in :ref:`mp2p_icp's metric map format <mp2p_icp_basics>` (``*.mm`` files).
+Providing specialized converter programs for each format would require depending on many larger libraries
+so, instead of that approach, ``mp2p_icp`` provides one single program (:ref:`app_txt2mm`) to **import
+point-cloud files in text format** (e.g. ``.txt``, ``.csv``).
+
+Therefore, the remaining step is to convert your point-cloud files to text format. Common cases are described below:
+
+6.1. PCD files
+===============
+
+PCD files are serialized point-clouds as defined in the `PCL <https://pointclouds.org/>`_ library.
+
+.. dropdown:: Example python script to convert PCD to text
+
+  .. code-block:: python
+
+    #!/bin/env python3
+    # Save as 'pcd2txt.py'
+
+    import open3d as o3d
+    import numpy as np
+    import pandas as pd
+
+    import sys
+
+    # Load PCD file
+    pcd = o3d.io.read_point_cloud(sys.argv[1])
+
+    # Convert to numpy array
+    points = np.asarray(pcd.points)
+
+    # If colors exist
+    if pcd.has_colors():
+        colors = np.asarray(pcd.colors)
+        data = np.hstack((points, colors))
+        header = "# x y z r g b"
+    else:
+        data = points
+        header = "# x y z"
+
+    # Save to TXT
+    np.savetxt(sys.argv[1] + ".txt", data, fmt="%.6f", header=header, comments='')
+
+
+  Then, you can convert a PCD file to text format with:
+
+  .. code-block:: bash
+
+      ./pcd2txt.py input.pcd
+
+
+6.2. LAS files
+===============
+
+LAS files can be converted to text format using the ``las2txt`` (or ``las2txt64``) program,
+which is part of the `LAStools <https://rapidlasso.com/lastools/>`_ library.
+
+Once installed or built from sources, you can convert a LAS file to text format with:
+
+.. code-block:: bash
+
+    # If you only want XYZ coordinates (no color):
+    las2txt64 -i input.las -o output.txt -parse xyz
+
+    # For .las files with RGB color:
+    las2txt64 -i input.las -o output.txt -parse xyzRGB -scale_RGB_to_8bit
+
