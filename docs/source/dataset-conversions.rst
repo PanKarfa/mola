@@ -172,6 +172,40 @@ The rest will be discarded, after emitting a warning to the terminal.
         image_topic: '/alphasense_driver_ros/cam0/compressed'
         fixed_sensor_pose: "0 0 0 0 0 0"  # 'x y z yaw_deg pitch_deg roll_deg''
 
+
+.. dropdown:: Example: Oxford Spires Dataset
+
+  To import sequences from the `Oxford Spires dataset <https://dynamic.robots.ox.ac.uk/datasets/oxford-spires/>`_ to MRPT format:
+
+  .. code-block:: yaml
+
+    # Config file for rosbag2rawlog. It must contain a top-level "sensors" node
+    sensors:
+      # Then, one node per sensor to convert. This name will be used as
+      # sensorLabel in MRPT observations.
+      lidar:
+        # Type: C++ class name (see mrpt::obs)
+        type: "CObservationPointCloud"
+        # Parameters for this particular type of sensor.
+        # Topic to subscribe for the pointcloud:
+        topic: "/hesai/pandar"
+        fixed_sensor_pose: "0.0 0.0 0.124 180 0 0" # 'x y z yaw_deg pitch_deg roll_deg'
+
+        # pCL_CI             : (x,y,z,yaw,pitch,roll)=(-0.0078,-0.0190,0.0705,90.63deg,-0.13deg,0.17deg)
+        #T_base_imu_t_xyz_q_xyzw: [-0.018, 0.006, 0.058, 0.0, 0.0, 0.707, 0.707]   # qx qy qz qw
+        #T_base_lidar_t_xyz_q_xyzw: [0.0, 0.0, 0.124, 0.0, 0.0, 1.0, 0.0]   # qx qy qz qw
+
+      imu:
+        type: "CObservationIMU"
+        topic: "/alphasense_driver_ros/imu"
+        fixed_sensor_pose: "-0.018 0.006 0.058 90 0 0" # 'x y z yaw_deg pitch_deg roll_deg'
+
+    #  cam0:
+    #    type: "CObservationImage"
+    #    image_topic: "/alphasense_driver_ros/cam0/debayered/image/compressed"
+    #    fixed_sensor_pose: "0 0 0 0 0 0" # 'x y z yaw_deg pitch_deg roll_deg'' # COMPUTE PROPERLY!
+
+
 .. dropdown:: Example: LiDAR + wheels odometry from /odom
 
   .. code-block:: yaml
