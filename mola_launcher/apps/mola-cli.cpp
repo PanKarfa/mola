@@ -194,11 +194,10 @@ int mola_cli_rtti_list_child(Cli& cli)
   const mrpt::rtti::TRuntimeClassId* id_parent = mrpt::rtti::findRegisteredClass(parentName);
 
   if (id_parent == nullptr)
-    throw std::runtime_error(
-        mrpt::format(
-            "Cannot find any registered class named `%s`.\nTry using "
-            "`mola-cli --rtti-list-all`",
-            parentName.c_str()));
+    throw std::runtime_error(mrpt::format(
+        "Cannot find any registered class named `%s`.\nTry using "
+        "`mola-cli --rtti-list-all`",
+        parentName.c_str()));
 
   const auto lst = mrpt::rtti::getAllRegisteredClassesChildrenOf(id_parent);
   for (const auto& c : lst) std::cout << c->className << "\n";

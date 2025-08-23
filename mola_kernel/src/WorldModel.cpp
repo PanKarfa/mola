@@ -332,8 +332,9 @@ std::set<mola::id_t> WorldModel::entity_neighbors(const mola::id_t id) const
     const auto& f = data_.factors_->by_id(fid);
     std::visit(
         overloaded{
-            [&adder](const FactorBase& b) { adder(b); }, [&adder](const FactorOther& o)
-            { adder(*o); }, [](std::monostate) { THROW_EXCEPTION("Empty variant!"); }},
+            [&adder](const FactorBase& b) { adder(b); },
+            [&adder](const FactorOther& o) { adder(*o); },
+            [](std::monostate) { THROW_EXCEPTION("Empty variant!"); }},
         f);
   }
   return ids;

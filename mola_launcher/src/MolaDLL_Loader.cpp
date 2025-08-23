@@ -82,9 +82,8 @@ void internal_load_lib_modules(
       {
         const char* err = dlerror();
         if (!err) err = "(error calling dlerror())";
-        THROW_EXCEPTION(
-            mrpt::format(
-                "Error loading module: `%s`\ndlerror(): `%s`", lib.wholePath.c_str(), err));
+        THROW_EXCEPTION(mrpt::format(
+            "Error loading module: `%s`\ndlerror(): `%s`", lib.wholePath.c_str(), err));
       }
 
       app.logStr(
