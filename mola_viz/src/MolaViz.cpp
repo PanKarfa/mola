@@ -161,7 +161,7 @@ void gui_handler_show_common_sensor_info(
 // CObservationImage
 void gui_handler_images(
     const mrpt::rtti::CObject::Ptr& o, nanogui::Window* w, MolaViz::window_name_t parentWin,
-    MolaViz* instance)
+    MolaViz* instance, [[maybe_unused]] const mrpt::containers::yaml* extra_parameters)
 {
   mrpt::img::CImage imgToShow;
 
@@ -227,7 +227,7 @@ void gui_handler_images(
 // CObservationVelodyneScan
 void gui_handler_point_cloud(
     const mrpt::rtti::CObject::Ptr& o, nanogui::Window* w, MolaViz::window_name_t parentWin,
-    MolaViz* instance)
+    MolaViz* instance, const mrpt::containers::yaml* extra_parameters)
 {
   using namespace mrpt::obs;
 
@@ -235,7 +235,14 @@ void gui_handler_point_cloud(
   mrpt::opengl::CPointCloudColoured::Ptr      glPc;
   mrpt::opengl::CSetOfObjects::Ptr            glCornerRef, glCornerSensor;
   std::optional<mrpt::LockHelper<std::mutex>> lck;
-  bool                                        recolorizeAtEnd = true;
+
+  bool  color_from_z = true;
+  float point_size   = 3.0f;
+  if (extra_parameters)
+  {
+    point_size   = extra_parameters->getOrDefault("point_size", point_size);
+    color_from_z = extra_parameters->getOrDefault("color_from_z", color_from_z);
+  }
 
   if (w->children().size() == 1)
   {
@@ -254,7 +261,7 @@ void gui_handler_point_cloud(
     glControl->scene->insert(glCornerRef);
     glControl->scene->insert(glCornerSensor);
 
-    glPc->setPointSize(3.0);
+    glPc->setPointSize(point_size);
     instance->markWindowForReLayout(parentWin);
   }
   else
@@ -317,7 +324,10 @@ void gui_handler_point_cloud(
       for (size_t c = 0; c < objRS->columnCount; c++)
       {
         const auto range = objRS->rangeImage(r, c);
-        if (!range) continue;  // invalid pt
+        if (!range)
+        {
+          continue;  // invalid pt
+        }
 
         const auto& pt = objRS->organizedPoints(r, c);
 
@@ -334,7 +344,10 @@ void gui_handler_point_cloud(
   {
     if (obj3D->hasPoints3D)
     {
-      if (obj3D->points3D_isExternallyStored()) obj3D->load();
+      if (obj3D->points3D_isExternallyStored())
+      {
+        obj3D->load();
+      }
 
       for (size_t i = 0; i < obj3D->points3D_x.size(); i++)
       {
@@ -356,7 +369,7 @@ void gui_handler_point_cloud(
 
         obj3D->unprojectInto(*pointMapCol, pp);
         glPc->loadFromPointsMap(pointMapCol.get());
-        recolorizeAtEnd = false;
+        color_from_z = false;
       }
       else
       {
@@ -375,7 +388,10 @@ void gui_handler_point_cloud(
   }
   else if (auto objVel = std::dynamic_pointer_cast<CObservationVelodyneScan>(o); objVel)
   {
-    if (objVel->point_cloud.size() == 0) return;
+    if (objVel->point_cloud.size() == 0)
+    {
+      return;
+    }
 
     mrpt::maps::CPointsMapXYZI pts;
     const auto&                pc = objVel->point_cloud;
@@ -400,7 +416,7 @@ void gui_handler_point_cloud(
   }
 
   // viz options:
-  if (recolorizeAtEnd)
+  if (color_from_z)
   {
     const auto bb = glPc->getBoundingBox();
     glPc->recolorizeByCoordinate(static_cast<float>(bb.min.z), static_cast<float>(bb.max.z));
@@ -410,19 +426,25 @@ void gui_handler_point_cloud(
 // CObservationGPS
 void gui_handler_gps(
     const mrpt::rtti::CObject::Ptr& o, nanogui::Window* w, MolaViz::window_name_t parentWin,
-    MolaViz* instance)
+    MolaViz* instance, [[maybe_unused]] const mrpt::containers::yaml* extra_parameters)
 {
   auto obj = std::dynamic_pointer_cast<mrpt::obs::CObservationGPS>(o);
-  if (!obj) return;
+  if (!obj)
+  {
+    return;
+  }
 
-  std::array<nanogui::Label*, 6> labels;
+  std::array<nanogui::Label*, 6> labels{};
   labels.fill(nullptr);
   if (w->children().size() == 1)
   {
     w->setLayout(new nanogui::GridLayout(
         nanogui::Orientation::Horizontal, 1, nanogui::Alignment::Fill, 2, 2));
 
-    for (size_t i = 0; i < labels.size(); i++) labels[i] = w->add<nanogui::Label>(" ");
+    for (size_t i = 0; i < labels.size(); i++)
+    {
+      labels[i] = w->add<nanogui::Label>(" ");
+    }
 
     const int winW = 250;
     w->setSize({winW, 0});
@@ -433,7 +455,9 @@ void gui_handler_gps(
   else
   {
     for (size_t i = 0; i < labels.size(); i++)
+    {
       labels[i] = dynamic_cast<nanogui::Label*>(w->children().at(1 + i));
+    }
   }
   for (size_t i = 0; i < labels.size(); i++)
   {
@@ -466,10 +490,13 @@ void gui_handler_gps(
 // CObservationIMU
 void gui_handler_imu(
     const mrpt::rtti::CObject::Ptr& o, nanogui::Window* w, MolaViz::window_name_t parentWin,
-    MolaViz* instance)
+    MolaViz* instance, [[maybe_unused]] const mrpt::containers::yaml* extra_parameters)
 {
   auto obj = std::dynamic_pointer_cast<mrpt::obs::CObservationIMU>(o);
-  if (!obj) return;
+  if (!obj)
+  {
+    return;
+  }
 
   mrpt::gui::MRPT2NanoguiGLCanvas* glControl;
   // mrpt::opengl::CSetOfObjects::Ptr            glCornerRef, glCornerSensor;
@@ -510,20 +537,28 @@ void gui_handler_imu(
   std::vector<std::string> txts;
 
   if (obj->has(mrpt::obs::IMU_WX))
+  {
     txts.push_back(
         mrpt::format(
             "omega=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_WX),
             obj->get(mrpt::obs::IMU_WY), obj->get(mrpt::obs::IMU_WZ)));
+  }
   else
+  {
     txts.push_back("omega=None");
+  }
 
   if (obj->has(mrpt::obs::IMU_X_ACC))
+  {
     txts.push_back(
         mrpt::format(
             "acc=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_X_ACC),
             obj->get(mrpt::obs::IMU_Y_ACC), obj->get(mrpt::obs::IMU_Z_ACC)));
+  }
   else
+  {
     txts.push_back("acc=None");
+  }
 
   gui_handler_show_common_sensor_info(*obj, w, txts);
 }
@@ -569,7 +604,10 @@ MolaViz::~MolaViz()
   instanceMtx_.unlock();
 
   nanogui::leave();
-  if (guiThread_.joinable()) guiThread_.join();
+  if (guiThread_.joinable())
+  {
+    guiThread_.join();
+  }
 }
 
 bool     MolaViz::IsRunning() { return Instance() != nullptr; }
@@ -633,7 +671,10 @@ void MolaViz::dataset_ui_check_new_modules()
     ASSERT_(modUI);
 
     auto& e = datasetUIs_[module->getModuleInstanceName()];
-    if (!e.first_time_seen) continue;  // an already known one
+    if (!e.first_time_seen)
+    {
+      continue;  // an already known one
+    }
 
     e.first_time_seen = false;
 
@@ -657,7 +698,10 @@ void MolaViz::dataset_ui_check_new_modules()
         [e](bool checked)
         {
           auto mod = e.module.lock();
-          if (mod) mod->datasetUI_paused(checked);
+          if (mod)
+          {
+            mod->datasetUI_paused(checked);
+          }
         });
 
     e.lbPlaybackPosition = e.ui->add<nanogui::Label>("Progress: ");
@@ -668,7 +712,10 @@ void MolaViz::dataset_ui_check_new_modules()
         [e](float pos)
         {
           auto mod = e.module.lock();
-          if (mod) mod->datasetUI_teleport(static_cast<size_t>(pos));
+          if (mod)
+          {
+            mod->datasetUI_teleport(static_cast<size_t>(pos));
+          }
         });
 
     e.ui->add<nanogui::Label>("Playback rate:");
@@ -679,11 +726,13 @@ void MolaViz::dataset_ui_check_new_modules()
     int          selIdx      = 4;
     const double initialRate = modUI->datasetUI_playback_speed();
     for (size_t i = 0; i < rates.size(); i++)
+    {
       if (rates[i] == initialRate)
       {
         selIdx = i;
         break;
       }
+    }
     e.cmRate->setSelectedIndex(selIdx);
     e.cmRate->setCallback(
         [rates, e](int idx)
@@ -705,10 +754,16 @@ void MolaViz::dataset_ui_update()
         [&kv]()
         {
           auto& e = kv.second;  // lambda capture structured bind is >C++20
-          if (e.module.expired()) return;
+          if (e.module.expired())
+          {
+            return;
+          }
 
           auto mod = e.module.lock();
-          if (!mod) return;
+          if (!mod)
+          {
+            return;
+          }
 
           const size_t pos = mod->datasetUI_lastQueriedTimestep();
           const size_t N   = mod->datasetUI_size();
@@ -803,7 +858,10 @@ void MolaViz::gui_thread()
         }
         lckHandlers.unlock();
 
-        for (const auto& winName : winsToReLayout) windows_.at(winName).win->performLayout();
+        for (const auto& winName : winsToReLayout)
+        {
+          windows_.at(winName).win->performLayout();
+        }
       });
 
   // A call to "nanogui::leave()" is required to end the infinite loop
@@ -822,12 +880,12 @@ void MolaViz::gui_thread()
 
 std::future<bool> MolaViz::subwindow_update_visualization(
     const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
-    const std::string& parentWindow)
+    const mrpt::containers::yaml* extra_parameters, const std::string& parentWindow)
 {
   using return_type = bool;
 
   auto task = std::make_shared<std::packaged_task<return_type()>>(
-      [this, obj, subWindowTitle, parentWindow]()
+      [this, obj, subWindowTitle, parentWindow, extra_parameters]()
       {
         try
         {
@@ -851,8 +909,7 @@ std::future<bool> MolaViz::subwindow_update_visualization(
           ASSERT_(subWin != nullptr);
 
           // Get object GUI handler:
-          // (Note: guiHandlersMtx_ is already locked by main render
-          // thread calling me)
+          // (Note: guiHandlersMtx_ is already locked by main render thread calling me)
           auto& hc = HandlersContainer::Instance();
 
           bool any = false;
@@ -860,24 +917,22 @@ std::future<bool> MolaViz::subwindow_update_visualization(
                ++it)
           {
             // Update GUI with object:
-            it->second(obj, subWin, parentWindow, this);
+            it->second(obj, subWin, parentWindow, this, extra_parameters);
             any = true;
           }
           if (any)
           {  // done
             return true;
           }
-          else
-          {
-            // No handler for this class:
-            MRPT_LOG_DEBUG_STREAM(
-                "subwindow_update_visualization() No known handler for "
-                "obj of "
-                "class: '"
-                << objClassName << "'");
 
-            return false;
-          }
+          // No handler for this class:
+          MRPT_LOG_DEBUG_STREAM(
+              "subwindow_update_visualization() No known handler for "
+              "obj of "
+              "class: '"
+              << objClassName << "'");
+
+          return false;
         }
         catch (const std::exception& e)
         {
@@ -922,8 +977,8 @@ std::future<nanogui::Window*> MolaViz::create_subwindow(
                       glControl)
                   {
                     auto s = glControl->size();
-                    s.x() *= 0.75;
-                    s.y() *= 0.75;
+                    s.x()  = mrpt::round(s.x() * 0.75);
+                    s.y()  = mrpt::round(s.y() * 0.75);
                     glControl->setSize(s);
                     glControl->setFixedSize(s);
                   }
@@ -941,8 +996,8 @@ std::future<nanogui::Window*> MolaViz::create_subwindow(
                       glControl)
                   {
                     auto s = glControl->size();
-                    s.x() *= 1.25;
-                    s.y() *= 1.25;
+                    s.x()  = mrpt::round(s.x() * 1.25);
+                    s.y()  = mrpt::round(s.y() * 1.25);
                     glControl->setSize(s);
                     glControl->setFixedSize(s);
                   }
@@ -1058,10 +1113,14 @@ std::future<bool> MolaViz::update_viewport_camera_azimuth(
         ASSERT_(topWin->background_scene);
 
         if (absolute_falseForRelative)
+        {
           topWin->camera().setAzimuthDegrees(mrpt::RAD2DEG(azimuth));
+        }
         else
+        {
           topWin->camera().setAzimuthDegrees(
               mrpt::RAD2DEG(azimuth) + topWin->camera().getAzimuthDegrees());
+        }
         return true;
       });
 
@@ -1178,7 +1237,7 @@ std::future<bool> MolaViz::output_console_message(
           fp.color.A = 1.0f;
           if (invIdx > 1 && invIdx + 3 >= max_console_lines_)
           {
-            fp.color.A = 1.0 - (invIdx - (max_console_lines_ * 1.0 - 3.5)) / 3.5;
+            fp.color.A = 1.0f - (invIdx - (max_console_lines_ * 1.0f - 3.5f)) / 3.5f;
           }
 
           topWin->background_scene->getViewport()->addTextMessage(

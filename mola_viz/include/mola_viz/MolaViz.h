@@ -89,7 +89,8 @@ class MolaViz : public ExecutableBase, public VizInterface
    */
   std::future<bool> subwindow_update_visualization(
       const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
-      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+      const mrpt::containers::yaml* extra_parameters = nullptr,
+      const std::string&            parentWindow     = DEFAULT_WINDOW_NAME) override;
 
   /** Update (or adds if not found) a 3D object in the main 3D view area.
    */
@@ -128,7 +129,7 @@ class MolaViz : public ExecutableBase, public VizInterface
 
   using update_handler_t = std::function<void(
       const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin, window_name_t parentWin,
-      MolaViz* instance)>;
+      MolaViz* instance, const mrpt::containers::yaml* extra_parameters)>;
   using class_name_t     = std::string;
 
   static void register_gui_handler(class_name_t name, update_handler_t handler);

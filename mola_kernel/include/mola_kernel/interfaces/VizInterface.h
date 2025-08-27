@@ -18,6 +18,7 @@
  */
 #pragma once
 
+#include <mrpt/containers/yaml_frwd.h>
 #include <mrpt/math/TPoint2D.h>
 #include <mrpt/math/TPoint3D.h>
 #include <mrpt/rtti/CObject.h>
@@ -61,7 +62,8 @@ class VizInterface
 
   virtual std::future<bool> subwindow_update_visualization(
       const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
-      const std::string& parentWindow = "main") = 0;
+      const mrpt::containers::yaml* extra_parameters = nullptr,
+      const std::string&            parentWindow     = "main") = 0;
 
   virtual std::future<bool> update_3d_object(
       const std::string& objName, const std::shared_ptr<mrpt::opengl::CSetOfObjects>& obj,
