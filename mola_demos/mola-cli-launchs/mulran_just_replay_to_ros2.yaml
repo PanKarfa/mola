@@ -17,6 +17,7 @@ modules:
       - raw_sensor_label: lidar
         decimation: 1
         win_pos: 5 70 400 400
+        color_from_z: false
       - raw_sensor_label: gps
         decimation: 1
         win_pos: 5 400 400 400
@@ -32,9 +33,10 @@ modules:
       publish_ground_truth: true
       publish_imu: true
       publish_gps: true
+      #normalize_intensity_channel_maximum: 6500
       #lidar_to_ground_truth_1to1: false
 
-# MOLA -> ROS 2 bridge  =====================
+  # MOLA -> ROS 2 bridge  =====================
   - type: mola::BridgeROS2
     name: ros2_bridge
     # In OutputROS2, this execution rate (Hz) is not relevant.
@@ -42,18 +44,17 @@ modules:
     #verbosity_level: INFO
     params:
       # Whenever a MOLA odometry/SLAM system publishes a new pose estimate
-      # it will be forwarded to /tf as a transformation between: 
+      # it will be forwarded to /tf as a transformation between:
       # `reference_frame` -> `base_link_frame`
       base_link_frame: base_link
       reference_frame: map
 
       # If true, an nav_msgs/Odometry message will be also published
-      # 
+      #
       publish_odometry_msgs_from_slam: true
 
       # Do not publish /tf from ground truth dataset observations:
       publish_tf_from_robot_pose_observations: false
-
 
   # =====================
   # MolaViz
