@@ -17,24 +17,16 @@
  * @date   Jun 22, 2019
  */
 
-#include <mola_kernel/Factor.h>
-#include <mola_kernel/WorldModel.h>
 #include <mrpt/core/initializer.h>
 
-using namespace mola;
-
 // To be run at .so/.dll load:
-MRPT_INITIALIZER(do_register_mrpt_kernel)
+MRPT_INITIALIZER(do_register_mola_kernel)
 {
+  // using namespace mola;
+
   // Register module:
-  MOLA_REGISTER_MODULE(WorldModel);
+  // MOLA_REGISTER_MODULE(WorldModel);
 
   // Register serializable classes:
-  mrpt::rtti::registerClass(CLASS_ID(mola::WorldModelData));
-
-  mrpt::rtti::registerClass(CLASS_ID(mola::FactorConstVelKinematics));
-  mrpt::rtti::registerClass(CLASS_ID(mola::FactorRelativePose3));
-  mrpt::rtti::registerClass(CLASS_ID(mola::FactorStereoProjectionPose));
-  mrpt::rtti::registerClass(CLASS_ID(mola::SmartFactorIMU));
-  mrpt::rtti::registerClass(CLASS_ID(mola::SmartFactorStereoProjectionPose));
+  // mrpt::rtti::registerClass(CLASS_ID(mola::WorldModelData));
 }

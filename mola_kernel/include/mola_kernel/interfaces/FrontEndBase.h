@@ -19,11 +19,13 @@
 #pragma once
 
 #include <mola_kernel/Yaml.h>
-#include <mola_kernel/interfaces/BackEndBase.h>
 #include <mola_kernel/interfaces/ExecutableBase.h>
 #include <mola_kernel/interfaces/RawDataConsumer.h>
 #include <mola_kernel/interfaces/VizInterface.h>
 #include <mrpt/version.h>
+
+#include <set>
+#include <string>
 
 namespace mola
 {
@@ -76,10 +78,7 @@ class FrontEndBase : public ExecutableBase, public RawDataConsumer
    */
   std::set<std::string> front_end_source_names_;
 
-  /** A reference to my associated SLAM backend.
-   * Populated by initialize_common() */
-  BackEndBase::Ptr  slam_backend_;
-  WorldModel::Ptr   worldmodel_;
+  /** References to other modules. Populated by initialize_common() */
   VizInterface::Ptr visualizer_;
 };
 
