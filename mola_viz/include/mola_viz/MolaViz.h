@@ -163,16 +163,18 @@ class MolaViz : public ExecutableBase, public VizInterface
   {
     DecayingCloud() = default;
     DecayingCloud(
-        const mrpt::Clock::time_point&                            insertion_stamp_,
+        const std::string& opengl_viewport_name_, const mrpt::Clock::time_point& insertion_stamp_,
         const std::shared_ptr<mrpt::opengl::CPointCloudColoured>& cloud_,
         double decay_time_seconds_, float initial_alpha_)  // NOLINT
-        : insertion_stamp(insertion_stamp_),
+        : opengl_viewport_name(opengl_viewport_name_),
+          insertion_stamp(insertion_stamp_),
           cloud(cloud_),
           decay_time_seconds(decay_time_seconds_),
           initial_alpha(initial_alpha_)
     {
     }
 
+    std::string                                        opengl_viewport_name;
     mrpt::Clock::time_point                            insertion_stamp;
     std::shared_ptr<mrpt::opengl::CPointCloudColoured> cloud;
     double                                             decay_time_seconds = 0;
@@ -214,6 +216,8 @@ class MolaViz : public ExecutableBase, public VizInterface
 
   void dataset_ui_check_new_modules();
   void dataset_ui_update();
+
+  void internal_handle_decaying_clouds();
 };
 
 }  // namespace mola

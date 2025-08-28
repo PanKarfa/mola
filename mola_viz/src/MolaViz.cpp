@@ -74,6 +74,9 @@ struct HandlersContainer
 
 namespace
 {
+
+constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
+
 void gui_handler_show_common_sensor_info(
     const mrpt::obs::CObservation& obs, nanogui::Window* w,
     const std::vector<std::string>& additionalMsgs = {})
@@ -859,10 +862,14 @@ void MolaViz::gui_thread()
         }
         lckHandlers.unlock();
 
+        // Pending GUI re-layouts
         for (const auto& winName : winsToReLayout)
         {
           windows_.at(winName).win->performLayout();
         }
+
+        // Handle decaying point clouds
+        internal_handle_decaying_clouds();
       });
 
   // A call to "nanogui::leave()" is required to end the infinite loop
@@ -1090,8 +1097,6 @@ std::future<bool> MolaViz::insert_point_cloud_with_decay(
         // in the proper moment in the proper thread:
         ASSERT_(topWin->background_scene);
 
-        constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
-
         mrpt::opengl::CSetOfObjects::Ptr glContainer;
 
         if (auto o = topWin->background_scene->getByName(DECAY_CLOUDS_NAME, viewportName); o)
@@ -1115,7 +1120,7 @@ std::future<bool> MolaViz::insert_point_cloud_with_decay(
 
         windows_.at(parentWindow)
             .decaying_clouds.emplace_back(
-                mrpt::Clock::now(), cloud, decay_time_seconds, initial_alpha);
+                viewportName, mrpt::Clock::now(), cloud, decay_time_seconds, initial_alpha);
 
         return true;
       });
@@ -1143,8 +1148,6 @@ std::future<bool> MolaViz::clear_all_point_clouds_with_decay(
         // No need to acquire the mutex, since this task will be run
         // in the proper moment in the proper thread:
         ASSERT_(topWin->background_scene);
-
-        constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
 
         mrpt::opengl::CSetOfObjects::Ptr glContainer;
 
@@ -1433,4 +1436,63 @@ std::future<void> MolaViz::subwindow_move_resize(
         itSubWin->second->setPosition({location.x, location.y});
         itSubWin->second->setSize({size.x, size.y});
       });
+}
+
+void MolaViz::internal_handle_decaying_clouds()
+{
+  // This will be always called from the OpenGL thread, so no need to worry about mutexes.
+
+  constexpr float DECAY_FADE_OUT_TIME = 1.0f;
+
+  const auto tNow = mrpt::Clock::now();
+
+  for (auto& [winName, winData] : windows_)
+  {
+    for (auto it = winData.decaying_clouds.begin(); it != winData.decaying_clouds.end();)
+    {
+      auto& decay_cloud = *it;
+
+      const float delta_time =
+          static_cast<float>(mrpt::system::timeDifference(decay_cloud.insertion_stamp, tNow));
+
+      const float threshold_time =
+          static_cast<float>(decay_cloud.decay_time_seconds) - DECAY_FADE_OUT_TIME;
+
+      if (delta_time > threshold_time && decay_cloud.decay_time_seconds > 0)
+      {
+        const auto  decay_time = static_cast<float>(decay_cloud.decay_time_seconds);
+        const float new_alpha  = mrpt::saturate_val(
+            decay_cloud.initial_alpha *
+                (1.0f - (decay_time - threshold_time) / DECAY_FADE_OUT_TIME),
+            0.0f, 1.0f);
+        decay_cloud.cloud->setAllPointsAlpha(mrpt::f2u8(new_alpha));
+      }
+
+      // clouds to be deleted?
+      if (delta_time > static_cast<float>(decay_cloud.decay_time_seconds))
+      {
+        // Delete clouds from the actual GL container, otherwise they will keep consuming rendering
+        // resources forever!
+        mrpt::opengl::CSetOfObjects::Ptr glContainer;
+        if (auto o = winData.win->background_scene->getByName(
+                DECAY_CLOUDS_NAME, decay_cloud.opengl_viewport_name);
+            o)
+        {
+          glContainer = std::dynamic_pointer_cast<mrpt::opengl::CSetOfObjects>(o);
+        }
+        if (glContainer)
+        {
+          glContainer->removeObject(it->cloud);
+        }
+
+        // and delete from this list:
+        it = winData.decaying_clouds.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }  // end for each decaying cloud in this window
+
+  }  // end for each window
 }
