@@ -470,10 +470,9 @@ void gui_handler_gps(
     labels[1]->setCaption(mrpt::format("Longitude: %.06f deg", gga->fields.longitude_degrees));
     labels[2]->setCaption(mrpt::format("Altitude: %.02f m", gga->fields.altitude_meters));
     labels[3]->setCaption(mrpt::format("HDOP: %.02f", gga->fields.HDOP));
-    labels[4]->setCaption(
-        mrpt::format(
-            "GGA UTC time: %02u:%02u:%02.03f", static_cast<unsigned int>(gga->fields.UTCTime.hour),
-            static_cast<unsigned int>(gga->fields.UTCTime.minute), gga->fields.UTCTime.sec));
+    labels[4]->setCaption(mrpt::format(
+        "GGA UTC time: %02u:%02u:%02.03f", static_cast<unsigned int>(gga->fields.UTCTime.hour),
+        static_cast<unsigned int>(gga->fields.UTCTime.minute), gga->fields.UTCTime.sec));
   }
   if (obj->covariance_enu.has_value())
   {
@@ -538,10 +537,9 @@ void gui_handler_imu(
 
   if (obj->has(mrpt::obs::IMU_WX))
   {
-    txts.push_back(
-        mrpt::format(
-            "omega=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_WX),
-            obj->get(mrpt::obs::IMU_WY), obj->get(mrpt::obs::IMU_WZ)));
+    txts.push_back(mrpt::format(
+        "omega=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_WX), obj->get(mrpt::obs::IMU_WY),
+        obj->get(mrpt::obs::IMU_WZ)));
   }
   else
   {
@@ -550,10 +548,9 @@ void gui_handler_imu(
 
   if (obj->has(mrpt::obs::IMU_X_ACC))
   {
-    txts.push_back(
-        mrpt::format(
-            "acc=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_X_ACC),
-            obj->get(mrpt::obs::IMU_Y_ACC), obj->get(mrpt::obs::IMU_Z_ACC)));
+    txts.push_back(mrpt::format(
+        "acc=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_X_ACC),
+        obj->get(mrpt::obs::IMU_Y_ACC), obj->get(mrpt::obs::IMU_Z_ACC)));
   }
   else
   {
