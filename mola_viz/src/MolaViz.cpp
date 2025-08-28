@@ -1126,6 +1126,55 @@ std::future<bool> MolaViz::insert_point_cloud_with_decay(
   return task->get_future();
 }
 
+std::future<bool> MolaViz::clear_all_point_clouds_with_decay(
+    const std::string& viewportName, const std::string& parentWindow)
+{
+  using return_type = bool;
+
+  auto task = std::make_shared<std::packaged_task<return_type()>>(
+      [this, viewportName, parentWindow]()
+      {
+        MRPT_LOG_DEBUG("clear_all_point_clouds_with_decay() called");
+
+        ASSERT_(windows_.count(parentWindow));
+        auto topWin = windows_.at(parentWindow).win;
+        ASSERT_(topWin);
+
+        // No need to acquire the mutex, since this task will be run
+        // in the proper moment in the proper thread:
+        ASSERT_(topWin->background_scene);
+
+        constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
+
+        mrpt::opengl::CSetOfObjects::Ptr glContainer;
+
+        if (auto o = topWin->background_scene->getByName(DECAY_CLOUDS_NAME, viewportName); o)
+        {
+          glContainer = std::dynamic_pointer_cast<mrpt::opengl::CSetOfObjects>(o);
+          ASSERT_(glContainer);
+        }
+        else
+        {
+          glContainer = mrpt::opengl::CSetOfObjects::Create();
+          topWin->background_scene->insert(glContainer, viewportName);
+          glContainer->setName(DECAY_CLOUDS_NAME);
+        }
+
+        // Clear the container:
+        glContainer->clear();
+
+        // and our own struct:
+        windows_.at(parentWindow).decaying_clouds.clear();
+
+        return true;
+      });
+
+  auto lck = mrpt::lockHelper(guiThreadPendingTasksMtx_);
+  guiThreadPendingTasks_.emplace_back([=]() { (*task)(); });
+  guiThreadMustReLayoutTheseWindows_.insert(parentWindow);
+  return task->get_future();
+}
+
 std::future<bool> MolaViz::update_viewport_look_at(
     const mrpt::math::TPoint3Df& lookAt, const std::string& viewportName,
     const std::string& parentWindow)
@@ -1280,7 +1329,9 @@ std::future<bool> MolaViz::output_console_message(
         winData.console_messages.push_back(msg);
         // remove older ones:
         while (winData.console_messages.size() > max_console_lines_)
+        {
           winData.console_messages.erase(winData.console_messages.begin());
+        }
 
         mrpt::gui::CDisplayWindowGUI::Ptr topWin = winData.win;
         ASSERT_(topWin);

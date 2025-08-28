@@ -99,6 +99,9 @@ class MolaViz : public ExecutableBase, public VizInterface
       const double decay_time_seconds, const std::string& viewportName = "main",
       const std::string& parentWindow = "main") override;
 
+  std::future<bool> clear_all_point_clouds_with_decay(
+      const std::string& viewportName = "main", const std::string& parentWindow = "main") override;
+
   std::future<bool> update_viewport_look_at(
       const mrpt::math::TPoint3Df& lookAt, const std::string& viewportName = "main",
       const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;

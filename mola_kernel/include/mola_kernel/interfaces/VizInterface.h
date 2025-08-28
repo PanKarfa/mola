@@ -110,6 +110,16 @@ class VizInterface
       const double decay_time_seconds, const std::string& viewportName = "main",
       const std::string& parentWindow = "main") = 0;
 
+  /**
+   * @brief Removes from the visualization all clouds inserted with insert_point_cloud_with_decay()
+   *
+   * \param viewportName   The name of the viewport where the object should be placed.
+   * \param parentWindow   The name of the parent window containing the background scene.
+   * \return               A future<bool>, will return `true` when the task is run in its thread.
+   */
+  virtual std::future<bool> clear_all_point_clouds_with_decay(
+      const std::string& viewportName = "main", const std::string& parentWindow = "main") = 0;
+
   virtual std::future<bool> update_viewport_look_at(
       const mrpt::math::TPoint3Df& lookAt, const std::string& viewportName = "main",
       const std::string& parentWindow = "main") = 0;
