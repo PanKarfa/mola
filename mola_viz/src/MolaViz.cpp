@@ -470,9 +470,10 @@ void gui_handler_gps(
     labels[1]->setCaption(mrpt::format("Longitude: %.06f deg", gga->fields.longitude_degrees));
     labels[2]->setCaption(mrpt::format("Altitude: %.02f m", gga->fields.altitude_meters));
     labels[3]->setCaption(mrpt::format("HDOP: %.02f", gga->fields.HDOP));
-    labels[4]->setCaption(mrpt::format(
-        "GGA UTC time: %02u:%02u:%02.03f", static_cast<unsigned int>(gga->fields.UTCTime.hour),
-        static_cast<unsigned int>(gga->fields.UTCTime.minute), gga->fields.UTCTime.sec));
+    labels[4]->setCaption(
+        mrpt::format(
+            "GGA UTC time: %02u:%02u:%02.03f", static_cast<unsigned int>(gga->fields.UTCTime.hour),
+            static_cast<unsigned int>(gga->fields.UTCTime.minute), gga->fields.UTCTime.sec));
   }
   if (obj->covariance_enu.has_value())
   {
@@ -537,9 +538,10 @@ void gui_handler_imu(
 
   if (obj->has(mrpt::obs::IMU_WX))
   {
-    txts.push_back(mrpt::format(
-        "omega=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_WX), obj->get(mrpt::obs::IMU_WY),
-        obj->get(mrpt::obs::IMU_WZ)));
+    txts.push_back(
+        mrpt::format(
+            "omega=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_WX),
+            obj->get(mrpt::obs::IMU_WY), obj->get(mrpt::obs::IMU_WZ)));
   }
   else
   {
@@ -548,9 +550,10 @@ void gui_handler_imu(
 
   if (obj->has(mrpt::obs::IMU_X_ACC))
   {
-    txts.push_back(mrpt::format(
-        "acc=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_X_ACC),
-        obj->get(mrpt::obs::IMU_Y_ACC), obj->get(mrpt::obs::IMU_Z_ACC)));
+    txts.push_back(
+        mrpt::format(
+            "acc=(%7.04f,%7.04f,%7.04f)", obj->get(mrpt::obs::IMU_X_ACC),
+            obj->get(mrpt::obs::IMU_Y_ACC), obj->get(mrpt::obs::IMU_Z_ACC)));
   }
   else
   {
@@ -781,7 +784,8 @@ mrpt::gui::CDisplayWindowGUI::Ptr MolaViz::create_and_add_window(const window_na
 
   mrpt::gui::CDisplayWindowGUI_Params cp;
   cp.maximized   = true;
-  windows_[name] = {mrpt::gui::CDisplayWindowGUI::Create("MOLAViz - "s + name, 1000, 800, cp)};
+  windows_[name] = {
+      mrpt::gui::CDisplayWindowGUI::Create("MOLAViz - "s + name, 1000, 800, cp), {}, {}};
 
   // create empty list of subwindows too:
   subWindows_[name];
@@ -1049,6 +1053,69 @@ std::future<bool> MolaViz::update_3d_object(
 
         // (except the name! which we need to re-use in the next call)
         glContainer->setName(objName);
+
+        return true;
+      });
+
+  auto lck = mrpt::lockHelper(guiThreadPendingTasksMtx_);
+  guiThreadPendingTasks_.emplace_back([=]() { (*task)(); });
+  guiThreadMustReLayoutTheseWindows_.insert(parentWindow);
+  return task->get_future();
+}
+
+std::future<bool> MolaViz::insert_point_cloud_with_decay(
+    const std::shared_ptr<mrpt::opengl::CPointCloudColoured>& cloud,
+    const double decay_time_seconds, const std::string& viewportName,
+    const std::string& parentWindow)
+{
+  using return_type = bool;
+
+  auto task = std::make_shared<std::packaged_task<return_type()>>(
+      [this, cloud, decay_time_seconds, viewportName, parentWindow]()
+      {
+        MRPT_LOG_DEBUG_STREAM(
+            "insert_point_cloud_with_decay() called with decay_time_seconds='" << decay_time_seconds
+                                                                               << "'");
+
+        if (!cloud || cloud->empty())
+        {
+          return true;
+        }
+
+        ASSERT_(windows_.count(parentWindow));
+        auto topWin = windows_.at(parentWindow).win;
+        ASSERT_(topWin);
+
+        // No need to acquire the mutex, since this task will be run
+        // in the proper moment in the proper thread:
+        ASSERT_(topWin->background_scene);
+
+        constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
+
+        mrpt::opengl::CSetOfObjects::Ptr glContainer;
+
+        if (auto o = topWin->background_scene->getByName(DECAY_CLOUDS_NAME, viewportName); o)
+        {
+          glContainer = std::dynamic_pointer_cast<mrpt::opengl::CSetOfObjects>(o);
+          ASSERT_(glContainer);
+        }
+        else
+        {
+          glContainer = mrpt::opengl::CSetOfObjects::Create();
+          topWin->background_scene->insert(glContainer, viewportName);
+          glContainer->setName(DECAY_CLOUDS_NAME);
+        }
+
+        // Insert into the gl viz container:
+        glContainer->insert(cloud);
+
+        // and in our own struct to make it fade out later on:
+        // (Assumption: all points have same alpha)
+        const auto initial_alpha = mrpt::u8tof(cloud->shaderPointsVertexColorBuffer().at(0).A);
+
+        windows_.at(parentWindow)
+            .decaying_clouds.emplace_back(
+                mrpt::Clock::now(), cloud, decay_time_seconds, initial_alpha);
 
         return true;
       });
