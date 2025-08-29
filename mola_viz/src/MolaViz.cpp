@@ -48,6 +48,7 @@
 #include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/system/thread_name.h>
+#include <mrpt/version.h>
 
 #include <array>
 
@@ -1458,6 +1459,7 @@ void MolaViz::internal_handle_decaying_clouds()
       const float threshold_time =
           static_cast<float>(decay_cloud.decay_time_seconds) - DECAY_FADE_OUT_TIME;
 
+#if MRPT_VERSION >= 0x20e0c  // v2.14.12 (setAllPointsAlpha)
       if (delta_time > threshold_time && decay_cloud.decay_time_seconds > 0)
       {
         const auto  decay_time = static_cast<float>(decay_cloud.decay_time_seconds);
@@ -1467,6 +1469,7 @@ void MolaViz::internal_handle_decaying_clouds()
             0.0f, 1.0f);
         decay_cloud.cloud->setAllPointsAlpha(mrpt::f2u8(new_alpha));
       }
+#endif
 
       // clouds to be deleted?
       if (delta_time > static_cast<float>(decay_cloud.decay_time_seconds))
