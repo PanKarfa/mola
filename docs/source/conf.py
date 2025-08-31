@@ -10,6 +10,8 @@
 
 from datetime import datetime
 import os
+import re
+import io
 import sys
 import xml.etree.ElementTree as ET
 
@@ -202,3 +204,50 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+PROJECT_CHANGELOGS = {
+    "mola_bridge_ros2": "../../mola_bridge_ros2/CHANGELOG.rst",
+    "mola_kernel": "../../mola_kernel/CHANGELOG.rst",
+    "mola_lidar_odometry": "../../../mola_lidar_odometry/CHANGELOG.rst",
+    "mola_metric_maps": "../../mola_metric_maps/CHANGELOG.rst",
+    "mola_state_estimation_simple": "../../../mola_state_estimation/mola_state_estimation_simple/CHANGELOG.rst",
+    "mola_state_estimation_smoother": "../../../mola_state_estimation/mola_state_estimation_smoother/CHANGELOG.rst",
+    "mola_viz": "../../mola_viz/CHANGELOG.rst",
+    "mp2p_icp": "../../../mp2p_icp/CHANGELOG.rst",
+}
+
+
+def _demote_headings_to_rubrics(text: str) -> str:
+    lines = text.splitlines()
+    out = []
+    i = 0
+    # common reST underline chars
+    underline_re = re.compile(r'^[=\-~^"+`#*]{3,}\s*$')
+    while i < len(lines):
+        if i + 1 < len(lines) and underline_re.match(lines[i + 1]) and lines[i].strip():
+            title = lines[i].strip()
+            # replace any "Title\n------" with a rubric
+            out.append(f'.. rubric:: {title}')
+            out.append('')  # blank line after directives
+            i += 2
+        else:
+            out.append(lines[i])
+            i += 1
+    return "\n".join(out) + "\n"
+
+
+def build_tab_friendly_changelogs(app):
+    gen_dir = os.path.join(app.srcdir, "_generated_changelogs")
+    os.makedirs(gen_dir, exist_ok=True)
+    for label, relpath in PROJECT_CHANGELOGS.items():
+        src = os.path.normpath(os.path.join(app.srcdir, relpath))
+        with io.open(src, "r", encoding="utf-8") as f:
+            text = f.read()
+        processed = _demote_headings_to_rubrics(text)
+        dst = os.path.join(gen_dir, f"{label}.rst")
+        with io.open(dst, "w", encoding="utf-8") as f:
+            f.write(processed)
+
+
+def setup(app):
+    app.connect("builder-inited", build_tab_friendly_changelogs)
