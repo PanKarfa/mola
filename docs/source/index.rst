@@ -55,6 +55,7 @@ MOLA
   dataset-conversions
   supported-sensors
   modules
+  changelog
   doxygen-index
   bibliography
 
