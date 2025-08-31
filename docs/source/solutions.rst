@@ -14,7 +14,7 @@ Check out the tutorials: :ref:`building-maps`, and :ref:`tutorial-mola-lo-map-an
 It provides:
 
 - LiDAR-only odometry (LO, no IMU).
-- LiDAR-inertial odometry (LIO, with IMU): **pending**.
+- LiDAR-inertial odometry (LIO, with IMU).
 
 in two modes: mapping, and localization based on a prebuilt map.
 
