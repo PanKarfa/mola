@@ -69,6 +69,14 @@ Get started:
  - See :ref:`installing` and :ref:`how to cite it <citing_mola>`.
  - See `videos`_ on YouTube.
 
+.. raw:: html
+
+   <div style="width: 100%; overflow: hidden;">
+     <video controls autoplay loop muted style="width: 512px;">
+       <source src="https://mrpt.github.io/videos/mola-lo-mulran-dcc02-demo-decaying-clouds.mp4" type="video/mp4">
+     </video>
+   </div>
+
 .. image:: https://mrpt.github.io/imgs/mola-slam-kitti-demo.gif
 
 
