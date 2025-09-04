@@ -41,7 +41,7 @@ First, build a simple-map from a dataset or a live robot as described in :ref:`b
 Make sure of having a GPS (GNSS) sensor source emitting observations, and that they were captured
 by MOLA-LO (see :ref:`the corresponding variable <mola_lo_pipeline_sensor_inputs>` in the LO pipeline).
 
-Then, build the corresponding metric map by applying a metric map generation pipeline (see :cite:`blanco2025mola_lo`
+Then, build the corresponding metric map by applying a metric map generation pipeline (see :cite:`blanco2025mola_lo`)
 or :ref:`this step  <building-maps_step_mm>` in the tutorial: 
 
 .. code-block:: bash
