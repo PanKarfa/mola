@@ -52,10 +52,10 @@ class FixedDenseGrid3D
   ~FixedDenseGrid3D() { free(cells_); }
 
   // Delete copy and move constructors and assignment operators
-  FixedDenseGrid3D(const FixedDenseGrid3D&)            = delete;
-  FixedDenseGrid3D& operator=(const FixedDenseGrid3D&) = delete;
-  FixedDenseGrid3D(FixedDenseGrid3D&&)                 = delete;
-  FixedDenseGrid3D& operator=(FixedDenseGrid3D&&)      = delete;
+  FixedDenseGrid3D(const FixedDenseGrid3D&)            = default;
+  FixedDenseGrid3D& operator=(const FixedDenseGrid3D&) = default;
+  FixedDenseGrid3D(FixedDenseGrid3D&&)                 = default;
+  FixedDenseGrid3D& operator=(FixedDenseGrid3D&&)      = default;
 
   T& cellByIndex(const index3d_t<inner_coord_t>& idx)
   {

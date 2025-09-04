@@ -30,6 +30,7 @@
  */
 
 #include <mola_metric_maps/HashedVoxelPointCloud.h>
+#include <mola_metric_maps/KeyframePointCloudMap.h>
 #include <mola_metric_maps/NDT.h>
 #include <mola_metric_maps/OccGrid.h>
 #include <mola_metric_maps/SparseTreesPointCloud.h>
@@ -44,9 +45,10 @@ MRPT_INITIALIZER(do_register_mola_metric_maps)
   using mrpt::rtti::registerClass;
 
   // and register RTTI info:
-  registerClass(CLASS_ID(mola::OccGrid));
-  registerClass(CLASS_ID(mola::SparseVoxelPointCloud));
-  registerClass(CLASS_ID(mola::SparseTreesPointCloud));
   registerClass(CLASS_ID(mola::HashedVoxelPointCloud));
+  registerClass(CLASS_ID(mola::KeyframePointCloudMap));
   registerClass(CLASS_ID(mola::NDT));
+  registerClass(CLASS_ID(mola::OccGrid));
+  registerClass(CLASS_ID(mola::SparseTreesPointCloud));
+  registerClass(CLASS_ID(mola::SparseVoxelPointCloud));
 }

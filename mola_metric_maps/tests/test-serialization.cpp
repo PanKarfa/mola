@@ -25,6 +25,8 @@
  * @date   Oct 31, 2023
  */
 
+#include <mola_metric_maps/HashedVoxelPointCloud.h>
+#include <mola_metric_maps/KeyframePointCloudMap.h>
 #include <mola_metric_maps/OccGrid.h>
 #include <mola_metric_maps/SparseVoxelPointCloud.h>
 #include <mrpt/io/CMemoryStream.h>
@@ -56,6 +58,8 @@ void test_serialization()
   const mrpt::rtti::TRuntimeClassId* lstClasses[] = {
       CLASS_ID(mola::OccGrid),
       CLASS_ID(mola::SparseVoxelPointCloud),
+      CLASS_ID(mola::HashedVoxelPointCloud),
+      CLASS_ID(mola::KeyframePointCloudMap),
   };
 
   for (auto& c : lstClasses)

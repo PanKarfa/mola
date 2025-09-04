@@ -30,21 +30,23 @@ add_subdirectory(3rdparty)
 # -----------------------
 # define lib:
 set(LIB_SRCS
-  src/SparseVoxelPointCloud.cpp
-  src/register.cpp
-  src/NDT.cpp
   src/HashedVoxelPointCloud.cpp
+  src/KeyframePointCloudMap.cpp
+  src/NDT.cpp
   src/OccGrid.cpp
+  src/register.cpp
   src/SparseTreesPointCloud.cpp
+  src/SparseVoxelPointCloud.cpp
 )
 set(LIB_PUBLIC_HDRS
-  include/mola_metric_maps/OccGrid.h
+  include/mola_metric_maps/FixedDenseGrid3D.h
   include/mola_metric_maps/HashedVoxelPointCloud.h
+  include/mola_metric_maps/index3d_t.h
+  include/mola_metric_maps/KeyframePointCloudMap.h
+  include/mola_metric_maps/NDT.h
+  include/mola_metric_maps/OccGrid.h
   include/mola_metric_maps/SparseTreesPointCloud.h
   include/mola_metric_maps/SparseVoxelPointCloud.h
-  include/mola_metric_maps/index3d_t.h
-  include/mola_metric_maps/NDT.h
-  include/mola_metric_maps/FixedDenseGrid3D.h
 )
 
 mola_add_library(

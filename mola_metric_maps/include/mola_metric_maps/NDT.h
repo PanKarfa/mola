@@ -65,10 +65,10 @@ class NDT : public mrpt::maps::CMetricMap,
 {
   DEFINE_SERIALIZABLE(NDT, mola)
  public:
-  NDT(const NDT&)            = delete;
-  NDT& operator=(const NDT&) = delete;
-  NDT(NDT&&)                 = delete;
-  NDT& operator=(NDT&&)      = delete;
+  NDT(const NDT&)            = default;
+  NDT& operator=(const NDT&) = default;
+  NDT(NDT&&)                 = default;
+  NDT& operator=(NDT&&)      = default;
 
   using global_index3d_t = index3d_t<int32_t>;
 

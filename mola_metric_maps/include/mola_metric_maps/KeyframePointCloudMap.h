@@ -17,163 +17,58 @@
  * You should have received a copy of the GNU General Public License along with
  * MOLA. If not, see <https://www.gnu.org/licenses/>.
  * ------------------------------------------------------------------------- */
+
 /**
- * @file   HashedVoxelPointCloud.h
- * @brief  Point cloud stored in voxels, in a sparse hash map
+ * @file   KeyframePointCloudMap.h
+ * @brief  Key-frames, each keeping point cloud layers with their own KD-tree
  * @author Jose Luis Blanco Claraco
- * @date   Oct 31, 2023
+ * @date   Sep 5, 2025
  */
 #pragma once
 
-#include <mola_metric_maps/index3d_t.h>
-#include <mrpt/core/round.h>
-#include <mrpt/img/TColor.h>
-#include <mrpt/img/color_maps.h>
+// #include <mrpt/img/TColor.h>
+// #include <mrpt/img/color_maps.h>
+#include <mp2p_icp/metricmap.h>
 #include <mrpt/maps/CMetricMap.h>
 #include <mrpt/maps/CSimplePointsMap.h>
 #include <mrpt/maps/NearestNeighborsCapable.h>
 #include <mrpt/math/TBoundingBox.h>
-#include <mrpt/math/TPoint3D.h>
-#include <tsl/robin_map.h>
 
-#include <array>
-#include <functional>
 #include <optional>
-
-// #define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
 
 namespace mola
 {
-/** HashedVoxelPointCloud: a pointcloud stored as a sparse set of cubic voxels,
- * indexed by a hash map. Efficient for storing point clouds, decimating them,
- *  and running nearest nearest-neighbor search.
+/** An efficient storage class for large point clouds built as keyframes, each having an associated
+ * local cloud.
+ *
+ * Each key-frame is responsible of keeping its own KD-tree for NN searches and keeping up-to-date
+ * covariances for each point local vicinity.
  */
-class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
+class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
                               public mrpt::maps::NearestNeighborsCapable
 {
-  DEFINE_SERIALIZABLE(HashedVoxelPointCloud, mola)
+  DEFINE_SERIALIZABLE(KeyframePointCloudMap, mola)
  public:
   // Prevent copying and moving
-  HashedVoxelPointCloud(const HashedVoxelPointCloud&)            = default;
-  HashedVoxelPointCloud& operator=(const HashedVoxelPointCloud&) = default;
-  HashedVoxelPointCloud(HashedVoxelPointCloud&&)                 = default;
-  HashedVoxelPointCloud& operator=(HashedVoxelPointCloud&&)      = default;
-
-  /** @name Compile-time parameters
-   *  @{ */
-
-  /// Size of the std::array for the small-size optimization container in each
-  /// voxel, defining the maximum number of points that can be stored without
-  /// heap allocation.
-  constexpr static std::size_t SSO_MAX_POINTS_PER_VOXEL    = 32;
-  constexpr static std::size_t GLOBAL_ID_SUBVOXEL_BITCOUNT = 5;
-  static_assert(SSO_MAX_POINTS_PER_VOXEL <= (1 << GLOBAL_ID_SUBVOXEL_BITCOUNT));
-
-  using global_index3d_t = index3d_t<int32_t>;
-
-  /// collapsed plain unique ID for global indices
-  using global_plain_index_t = uint64_t;
-
-  /** @} */
-
-  /** @name Indices and coordinates
-   *  @{ */
-
-  inline global_index3d_t coordToGlobalIdx(const mrpt::math::TPoint3Df& pt) const
-  {
-    return global_index3d_t(
-        static_cast<int32_t>(pt.x * voxel_size_inv_),  //
-        static_cast<int32_t>(pt.y * voxel_size_inv_),  //
-        static_cast<int32_t>(pt.z * voxel_size_inv_));
-  }
-
-  /// returns the coordinate of the voxel "bottom" corner
-  inline mrpt::math::TPoint3Df globalIdxToCoord(const global_index3d_t idx) const
-  {
-    return {
-        idx.cx * voxel_size_,  //
-        idx.cy * voxel_size_,  //
-        idx.cz * voxel_size_};
-  }
-
-  static inline global_plain_index_t g2plain(const global_index3d_t& g, int subVoxelIndex = 0)
-  {
-    constexpr uint64_t SUBVOXEL_MASK = ((1 << GLOBAL_ID_SUBVOXEL_BITCOUNT) - 1);
-    constexpr auto     OFF           = GLOBAL_ID_SUBVOXEL_BITCOUNT;
-    constexpr int      FBITS         = 20;  // (64 - OFF)/3, rounded if needed
-    constexpr uint64_t FMASK         = (1 << FBITS) - 1;
-
-    return (static_cast<uint64_t>(subVoxelIndex) & SUBVOXEL_MASK) |
-           (static_cast<uint64_t>(g.cx & FMASK) << (OFF + FBITS * 0)) |
-           (static_cast<uint64_t>(g.cy & FMASK) << (OFF + FBITS * 1)) |
-           (static_cast<uint64_t>(g.cz & FMASK) << (OFF + FBITS * 2));
-  }
-
-  /** @} */
+  KeyframePointCloudMap(const KeyframePointCloudMap&)            = default;
+  KeyframePointCloudMap& operator=(const KeyframePointCloudMap&) = default;
+  KeyframePointCloudMap(KeyframePointCloudMap&&)                 = default;
+  KeyframePointCloudMap& operator=(KeyframePointCloudMap&&)      = default;
 
   /** @name Basic API for construction and main parameters
    *  @{ */
 
   /**
    * @brief Constructor / default ctor
-   * @param voxel_size Voxel size [meters]
    */
-  HashedVoxelPointCloud(float voxel_size = 1.00f);
+  KeyframePointCloudMap() = default;
 
-  ~HashedVoxelPointCloud();
-
-  /** Reset the main voxel parameters, and *clears* all current map contents
-   */
-  void setVoxelProperties(float voxel_size);
+  ~KeyframePointCloudMap();
 
   /** @} */
 
   /** @name Data structures
    *  @{ */
-
-#if 0
-    using point_vector_t =
-        mrpt::containers::vector_with_small_size_optimization<
-            mrpt::math::TPoint3Df, SSO_MAX_POINTS_PER_VOXEL>;
-#endif
-
-  using point_vector_t = std::array<mrpt::math::TPoint3Df, SSO_MAX_POINTS_PER_VOXEL>;
-
-  struct VoxelData
-  {
-   public:
-    VoxelData() = default;
-
-    struct PointSpan
-    {
-      PointSpan(const point_vector_t& points, uint32_t n) : points_(points), n_(n) {}
-
-      size_t size() const { return n_; }
-      bool   empty() const { return n_ == 0; }
-
-      const mrpt::math::TPoint3Df& operator[](int i) const { return points_[i]; }
-
-     private:
-      const point_vector_t& points_;
-      const uint32_t        n_;
-    };
-
-    auto points() const -> PointSpan { return PointSpan(points_, nPoints_); }
-
-    void insertPoint(const mrpt::math::TPoint3Df& p)
-    {
-      if (nPoints_ < SSO_MAX_POINTS_PER_VOXEL) points_[nPoints_++] = p;
-    }
-
-    // for serialization, do not use in normal use:
-    size_t size() const { return nPoints_; }
-
-   private:
-    point_vector_t points_;
-    uint32_t       nPoints_ = 0;
-  };
-
-  using grids_map_t = tsl::robin_map<global_index3d_t, VoxelData, index3d_hash<int32_t>>;
 
   /** @} */
 
@@ -181,104 +76,14 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
    *  @{ */
   // clear(): available in base class
 
-  /** returns the voxeldata by global index coordinates, creating it or not if
-   * not found depending on createIfNew.
-   * Returns nullptr if not found and createIfNew is false
-   *
-   * Function defined in the header file so compilers can optimize
-   * for literals "createIfNew"
-   */
-  inline VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx, bool createIfNew)
-  {
-    // 1) Insert into decimation voxel map:
-    VoxelData* voxel = nullptr;
-
-#if defined(HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS)
-    for (int i = 0; i < CachedData::NUM_CACHED_IDXS; i++)
-    {
-      if (cached_.lastAccessVoxel[i] && cached_.lastAccessIdx[i] == idx)
-      {
-        // Cache hit:
-#ifdef USE_DEBUG_PROFILER
-        mrpt::system::CTimeLoggerEntry tle(profiler, "insertPoint.cache_hit");
-#endif
-        voxel = cached_.lastAccessVoxel[i];
-        break;
-      }
-    }
-
-    if (!voxel)
-    {
-#endif
-#ifdef USE_DEBUG_PROFILER
-      mrpt::system::CTimeLoggerEntry tle(profiler, "insertPoint.cache_misss");
-#endif
-
-      auto it = voxels_.find(idx);
-      if (it == voxels_.end())
-      {
-        if (!createIfNew)
-          return nullptr;
-        else
-          voxel = &voxels_[idx];  // Create it
-      }
-      else
-      {
-        // Use the found grid
-        voxel = &it.value();
-      }
-#if defined(HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS)
-      // Add to cache:
-      cached_.lastAccessIdx[cached_.lastAccessNextWrite]   = idx;
-      cached_.lastAccessVoxel[cached_.lastAccessNextWrite] = voxel;
-      cached_.lastAccessNextWrite++;
-      cached_.lastAccessNextWrite &= CachedData::NUM_CACHED_IDX_MASK;
-    }
-#endif
-    return voxel;
-  }
-
-  /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(
-      const global_index3d_t& idx  //
-      /*, bool createIfNew this must be false for const! */) const
-  {  // reuse the non-const method:
-    return const_cast<HashedVoxelPointCloud*>(this)->voxelByGlobalIdxs(idx, false);
-  }
-
-  /** Get a voxeldata by (x,y,z) coordinates, **creating** the voxel if
-   * needed. */
-  VoxelData* voxelByCoords(const mrpt::math::TPoint3Df& pt, bool createIfNew)
-  {
-    return voxelByGlobalIdxs(coordToGlobalIdx(pt), createIfNew);
-  }
-
-  /// \overload const version. Returns nullptr if voxel does not exist
-  const VoxelData* voxelByCoords(const mrpt::math::TPoint3Df& pt) const
-  {
-    return const_cast<HashedVoxelPointCloud*>(this)->voxelByCoords(pt, false);
-  }
-
-  /** Insert one point into the dual voxel map */
-  void insertPoint(const mrpt::math::TPoint3Df& pt);
-
-  const grids_map_t& voxels() const { return voxels_; }
-
   /** Computes the bounding box of all the points, or (0,0 ,0,0, 0,0) if
    * there are no points. Results are cached unless the map is somehow
    * modified to avoid repeated calculations.
    */
   mrpt::math::TBoundingBoxf boundingBox() const override;
 
-  void visitAllPoints(const std::function<void(const mrpt::math::TPoint3Df&)>& f) const;
-
-  void visitAllVoxels(
-      const std::function<void(const global_index3d_t&, const VoxelData&)>& f) const;
-
-  /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error ocurred, true elsewere.
-   */
-  bool saveToTextFile(const std::string& file) const;
+  // void visitAllKeyFrames(const std::function<void(const global_index3d_t&, const VoxelData&)>& f)
+  // const;
 
   /** @} */
 
@@ -334,7 +139,7 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
    * implementing this virtual interface).  */
   void saveMetricMapRepresentationToFile(const std::string& filNamePrefix) const override;
 
-  /// Returns a cached point cloud view of the hash map.
+  /// Returns a cached point cloud view of the entire map.
   /// Not efficient at all. Only for MOLA->ROS2 bridge.
   const mrpt::maps::CSimplePointsMap* getAsSimplePointsMap() const override;
 
@@ -353,18 +158,6 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
 
     void writeToStream(mrpt::serialization::CArchive& out) const;
     void readFromStream(mrpt::serialization::CArchive& in);
-
-    /** Maximum number of points per voxel. 0 means no limit.
-     */
-    uint32_t max_points_per_voxel = 0;
-
-    /** If !=0, remove the voxels farther (L1 distance) than this
-     * distance, in meters. */
-    double remove_voxels_farther_than = .0;
-
-    /** If !=0 skip the insertion of points that are closer than this
-     * distance to any other already in the voxel. */
-    float min_distance_between_points = .0f;
   };
   TInsertionOptions insertionOptions;
 
@@ -430,24 +223,16 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
 
  public:
   // Interface for use within a mrpt::maps::CMultiMetricMap:
-  MAP_DEFINITION_START(HashedVoxelPointCloud)
-  float voxel_size = 1.00f;
+  MAP_DEFINITION_START(KeyframePointCloudMap)
 
-  mola::HashedVoxelPointCloud::TInsertionOptions  insertionOpts;
-  mola::HashedVoxelPointCloud::TLikelihoodOptions likelihoodOpts;
-  mola::HashedVoxelPointCloud::TRenderOptions     renderOpts;
-  MAP_DEFINITION_END(HashedVoxelPointCloud)
+  mola::KeyframePointCloudMap::TInsertionOptions  insertionOpts;
+  mola::KeyframePointCloudMap::TLikelihoodOptions likelihoodOpts;
+  mola::KeyframePointCloudMap::TRenderOptions     renderOpts;
+  MAP_DEFINITION_END(KeyframePointCloudMap)
 
  private:
-  float voxel_size_ = 1.00f;
-
-  // Calculated from the above, in setVoxelProperties()
-  float                 voxel_size_inv_ = 1.0f / voxel_size_;
-  float                 voxel_size_sqr_ = voxel_size_ * voxel_size_;
-  mrpt::math::TPoint3Df voxelDiagonal_;
-
-  /** Voxel map as a set of fixed-size grids */
-  grids_map_t voxels_;
+  /** Key-frame data */
+  // grids_map_t voxels_;
 
   struct CachedData
   {
@@ -456,17 +241,6 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
     void reset() { *this = CachedData(); }
 
     mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox_;
-
-#if defined(HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS)
-    // 2 bits seems to be the optimum for typical cases:
-    constexpr static int CBITS               = 2;
-    constexpr static int NUM_CACHED_IDXS     = 1 << CBITS;
-    constexpr static int NUM_CACHED_IDX_MASK = NUM_CACHED_IDXS - 1;
-
-    int              lastAccessNextWrite = 0;
-    global_index3d_t lastAccessIdx[NUM_CACHED_IDXS];
-    VoxelData*       lastAccessVoxel[NUM_CACHED_IDXS] = {nullptr};
-#endif
   };
 
   CachedData cached_;

@@ -52,10 +52,10 @@ class SparseVoxelPointCloud : public mrpt::maps::CMetricMap,
   DEFINE_SERIALIZABLE(SparseVoxelPointCloud, mola)
  public:
   // Prevent copying and moving
-  SparseVoxelPointCloud(const SparseVoxelPointCloud&)            = delete;
-  SparseVoxelPointCloud& operator=(const SparseVoxelPointCloud&) = delete;
-  SparseVoxelPointCloud(SparseVoxelPointCloud&&)                 = delete;
-  SparseVoxelPointCloud& operator=(SparseVoxelPointCloud&&)      = delete;
+  SparseVoxelPointCloud(const SparseVoxelPointCloud&)            = default;
+  SparseVoxelPointCloud& operator=(const SparseVoxelPointCloud&) = default;
+  SparseVoxelPointCloud(SparseVoxelPointCloud&&)                 = default;
+  SparseVoxelPointCloud& operator=(SparseVoxelPointCloud&&)      = default;
 
   /** @name Compile-time parameters
    *  @{ */
