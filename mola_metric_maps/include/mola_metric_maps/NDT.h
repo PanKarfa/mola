@@ -43,7 +43,7 @@
 #include <functional>
 #include <optional>
 
-//#define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
+// #define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
 
 namespace mola
 {
@@ -65,6 +65,11 @@ class NDT : public mrpt::maps::CMetricMap,
 {
   DEFINE_SERIALIZABLE(NDT, mola)
  public:
+  NDT(const NDT&)            = delete;
+  NDT& operator=(const NDT&) = delete;
+  NDT(NDT&&)                 = delete;
+  NDT& operator=(NDT&&)      = delete;
+
   using global_index3d_t = index3d_t<int32_t>;
 
   /** @name Indices and coordinates
@@ -86,9 +91,9 @@ class NDT : public mrpt::maps::CMetricMap,
   inline mrpt::math::TPoint3Df globalIdxToCoord(const global_index3d_t idx) const
   {
     return {
-        idx.cx * voxel_size_,  //
-        idx.cy * voxel_size_,  //
-        idx.cz * voxel_size_};
+        static_cast<float>(idx.cx) * voxel_size_,  //
+        static_cast<float>(idx.cy) * voxel_size_,  //
+        static_cast<float>(idx.cz) * voxel_size_};
   }
 
   /// collapsed plain unique ID for global indices
@@ -161,7 +166,8 @@ class NDT : public mrpt::maps::CMetricMap,
 
     auto points() const -> PointSpan { return PointSpan(points_, nPoints_); }
 
-    void insertPoint(const mrpt::math::TPoint3Df& p, const mrpt::math::TPoint3Df& sensorPose)
+    void insertPoint(
+        const mrpt::math::TPoint3Df& p, const mrpt::math::TPoint3Df& sensorPose)  // NOLINT
     {
       if (nPoints_ < MAX_POINTS_PER_VOXEL)
       {
@@ -187,7 +193,7 @@ class NDT : public mrpt::maps::CMetricMap,
 
    private:
     mutable std::optional<mp2p_icp::PointCloudEigen> ndt_;
-    point_vector_t                                   points_;
+    point_vector_t                                   points_{};
     std::optional<mrpt::math::TPoint3Df>             was_seen_from_;
     uint32_t                                         nPoints_ = 0;
   };
@@ -237,9 +243,11 @@ class NDT : public mrpt::maps::CMetricMap,
       if (it == voxels_.end())
       {
         if (!createIfNew)
+        {
           return nullptr;
-        else
-          voxel = &voxels_[idx];  // Create it
+        }
+
+        voxel = &voxels_[idx];  // Create it
       }
       else
       {
@@ -258,8 +266,9 @@ class NDT : public mrpt::maps::CMetricMap,
   }
 
   /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx  //
-                                     /*, bool createIfNew this must be false for const! */) const
+  const VoxelData* voxelByGlobalIdxs(
+      const global_index3d_t& idx  //
+      /*, bool createIfNew this must be false for const! */) const
   {  // reuse the non-const method:
     return const_cast<NDT*>(this)->voxelByGlobalIdxs(idx, false);
   }
@@ -295,7 +304,7 @@ class NDT : public mrpt::maps::CMetricMap,
       const std::function<void(const global_index3d_t&, const VoxelData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

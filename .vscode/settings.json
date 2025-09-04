@@ -41,6 +41,7 @@
     },
     "ros.distro": "humble",
     "cSpell.words": [
+        "eigen",
         "recolorize",
         "Velodyne"
     ]

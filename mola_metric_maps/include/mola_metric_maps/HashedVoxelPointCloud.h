@@ -40,7 +40,7 @@
 #include <functional>
 #include <optional>
 
-//#define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
+// #define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
 
 namespace mola
 {
@@ -53,6 +53,12 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
 {
   DEFINE_SERIALIZABLE(HashedVoxelPointCloud, mola)
  public:
+  // Prevent copying and moving
+  HashedVoxelPointCloud(const HashedVoxelPointCloud&)            = delete;
+  HashedVoxelPointCloud& operator=(const HashedVoxelPointCloud&) = delete;
+  HashedVoxelPointCloud(HashedVoxelPointCloud&&)                 = delete;
+  HashedVoxelPointCloud& operator=(HashedVoxelPointCloud&&)      = delete;
+
   /** @name Compile-time parameters
    *  @{ */
 
@@ -233,8 +239,9 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
   }
 
   /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx  //
-                                     /*, bool createIfNew this must be false for const! */) const
+  const VoxelData* voxelByGlobalIdxs(
+      const global_index3d_t& idx  //
+      /*, bool createIfNew this must be false for const! */) const
   {  // reuse the non-const method:
     return const_cast<HashedVoxelPointCloud*>(this)->voxelByGlobalIdxs(idx, false);
   }
@@ -269,7 +276,7 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
       const std::function<void(const global_index3d_t&, const VoxelData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

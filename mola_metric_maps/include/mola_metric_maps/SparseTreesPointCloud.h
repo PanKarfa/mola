@@ -179,9 +179,11 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
       if (it == grids_.end())
       {
         if (!createIfNew)
+        {
           return nullptr;
-        else
-          grid = &grids_[oIdx];  // Create it
+        }
+
+        grid = &grids_[oIdx];  // Create it
       }
       else
       {
@@ -215,9 +217,13 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
 
     // Also, update bbox:
     if (!cached_.boundingBox_.has_value())
+    {
       cached_.boundingBox_.emplace(pt, pt);
+    }
     else
+    {
       cached_.boundingBox_->updateWithPoint(pt);
+    }
   }
 
   const grids_map_t& grids() const { return grids_; }
@@ -233,7 +239,7 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
   void visitAllGrids(const std::function<void(const outer_index3d_t&, const GridData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

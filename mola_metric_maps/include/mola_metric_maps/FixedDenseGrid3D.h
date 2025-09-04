@@ -28,7 +28,6 @@
 #include <mola_metric_maps/index3d_t.h>
 #include <mrpt/core/exceptions.h>
 
-#include <cstdint>
 #include <cstdlib>
 #include <type_traits>
 
@@ -51,6 +50,12 @@ class FixedDenseGrid3D
 
   FixedDenseGrid3D() { cells_ = reinterpret_cast<T*>(calloc(sizeof(T), TOTAL_CELL_COUNT)); }
   ~FixedDenseGrid3D() { free(cells_); }
+
+  // Delete copy and move constructors and assignment operators
+  FixedDenseGrid3D(const FixedDenseGrid3D&)            = delete;
+  FixedDenseGrid3D& operator=(const FixedDenseGrid3D&) = delete;
+  FixedDenseGrid3D(FixedDenseGrid3D&&)                 = delete;
+  FixedDenseGrid3D& operator=(FixedDenseGrid3D&&)      = delete;
 
   T& cellByIndex(const index3d_t<inner_coord_t>& idx)
   {

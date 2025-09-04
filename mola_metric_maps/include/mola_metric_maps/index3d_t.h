@@ -27,7 +27,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>  // hash<>
 #include <iostream>
 
 namespace mola
@@ -94,8 +93,14 @@ struct index3d_hash
   bool operator()(
       const index3d_t<cell_coord_t>& k1, const index3d_t<cell_coord_t>& k2) const noexcept
   {
-    if (k1.cx != k2.cx) return k1.cx < k2.cx;
-    if (k1.cy != k2.cy) return k1.cy < k2.cy;
+    if (k1.cx != k2.cx)
+    {
+      return k1.cx < k2.cx;
+    }
+    if (k1.cy != k2.cy)
+    {
+      return k1.cy < k2.cy;
+    }
     return k1.cz < k2.cz;
   }
 };

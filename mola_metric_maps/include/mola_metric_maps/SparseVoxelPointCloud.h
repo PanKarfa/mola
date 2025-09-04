@@ -36,7 +36,6 @@
 #include <mrpt/math/TBoundingBox.h>
 #include <mrpt/math/TPoint3D.h>
 
-#include <array>
 #include <functional>
 #include <map>
 #include <optional>
@@ -52,6 +51,12 @@ class SparseVoxelPointCloud : public mrpt::maps::CMetricMap,
 {
   DEFINE_SERIALIZABLE(SparseVoxelPointCloud, mola)
  public:
+  // Prevent copying and moving
+  SparseVoxelPointCloud(const SparseVoxelPointCloud&)            = delete;
+  SparseVoxelPointCloud& operator=(const SparseVoxelPointCloud&) = delete;
+  SparseVoxelPointCloud(SparseVoxelPointCloud&&)                 = delete;
+  SparseVoxelPointCloud& operator=(SparseVoxelPointCloud&&)      = delete;
+
   /** @name Compile-time parameters
    *  @{ */
 
@@ -260,9 +265,11 @@ class SparseVoxelPointCloud : public mrpt::maps::CMetricMap,
       if (it == grids_.end())
       {
         if (!createIfNew)
+        {
           return {nullptr, nullptr};
-        else
-          grid = &grids_[oIdx];  // Create it
+        }
+
+        grid = &grids_[oIdx];  // Create it
       }
       else
       {
@@ -312,14 +319,15 @@ class SparseVoxelPointCloud : public mrpt::maps::CMetricMap,
 
   void visitAllPoints(const std::function<void(const mrpt::math::TPoint3Df&)>& f) const;
 
-  void visitAllVoxels(const std::function<void(
-                          const outer_index3d_t&, const inner_plain_index_t, const VoxelData&,
-                          const InnerGrid&)>& f) const;
+  void visitAllVoxels(
+      const std::function<void(
+          const outer_index3d_t&, const inner_plain_index_t, const VoxelData&, const InnerGrid&)>&
+          f) const;
 
   void visitAllGrids(const std::function<void(const outer_index3d_t&, const InnerGrid&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 
