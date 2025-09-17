@@ -275,12 +275,7 @@ void HashedVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
       if (renderOptions.color.A != 1.0f)
       {
         const uint8_t alpha = static_cast<uint8_t>(255 * renderOptions.color.A);
-        for (size_t i = 0; i < nPoints; i++)
-        {
-          uint8_t r, g, b;
-          obj->getPointColor_fast(i, r, g, b);
-          obj->setPointColor_u8_fast(i, r, g, b, alpha);
-        }
+        obj->setAllPointsAlpha(alpha);
       }
     }
     outObj.insert(obj);

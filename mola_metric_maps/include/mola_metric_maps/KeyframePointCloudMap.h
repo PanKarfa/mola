@@ -18,10 +18,9 @@
  */
 #pragma once
 
-// #include <mrpt/img/TColor.h>
-// #include <mrpt/img/color_maps.h>
-#include <mp2p_icp/metricmap.h>
+#include <mrpt/img/color_maps.h>
 #include <mrpt/maps/CMetricMap.h>
+#include <mrpt/maps/CPointsMap.h>
 #include <mrpt/maps/CSimplePointsMap.h>
 #include <mrpt/maps/NearestNeighborsCapable.h>
 #include <mrpt/math/TBoundingBox.h>
@@ -33,6 +32,11 @@ namespace mola
 {
 /** An efficient storage class for large point clouds built as keyframes, each having an associated
  * local cloud.
+ *
+ * The user of the class is responsible for processing raw observations into
+ * mrpt::obs::CObservationPointCloud observations, the only ones allowed as input to the insert*()
+ * methods, with points already transformed from the sensor frame to the vehicle (`base_link`)
+ * frame. This can be easily done with mp2p_icp::Generator, plus an optional filtering pipeline.
  *
  * Each key-frame is responsible of keeping its own KD-tree for NN searches and keeping up-to-date
  * covariances for each point local vicinity.
@@ -237,9 +241,12 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
    public:
     KeyFrame() = default;
 
-    mrpt::poses::CPose3D    pose;  //!< Pose of the key-frame in the map reference frame
-    mp2p_icp::metric_map_t  metric_map;  //!< Local metric map for this key-frame
-    mrpt::Clock::time_point timestamp;  //!< Timestamp of the key-frame (from observation)
+    /**  Local metric map for this key-frame. Points are already transformed from the sensor frame
+     * to the vehicle ("base_link") frame.
+     */
+    mrpt::maps::CPointsMap::Ptr pointcloud;
+    mrpt::poses::CPose3D        pose;  //!< Pose of the key-frame in the map reference frame
+    mrpt::Clock::time_point     timestamp;  //!< Timestamp of the key-frame (from observation)
 
     mrpt::math::TBoundingBoxf localBoundingBox() const;
 

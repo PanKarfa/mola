@@ -19,6 +19,8 @@
 
 #include <mola_metric_maps/KeyframePointCloudMap.h>
 #include <mrpt/config/CConfigFileBase.h>  // MRPT_LOAD_CONFIG_VAR
+#include <mrpt/obs/CObservationPointCloud.h>
+#include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
 
 using namespace mola;
@@ -194,14 +196,45 @@ std::string KeyframePointCloudMap::asString() const
 
 void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
 {
-  // TODO: visualization code
+  MRPT_START
+  if (!genericMapParams.enableSaveAs3DObject)
+  {
+    return;
+  }
+
+  const uint8_t alpha_u8 = mrpt::f2u8(renderOptions.color.A);
+
+  // Create one visualization object per KF:
+  for (const auto& kf : keyframes_)
+  {
+    auto obj = mrpt::opengl::CPointCloudColoured::Create();
+
+    obj->loadFromPointsMap(kf.pointcloud.get());
+
+    obj->setPose(kf.pose);
+
+    obj->setPointSize(renderOptions.point_size);
+    if (renderOptions.color.A != 1.0f)
+    {
+      obj->setAllPointsAlpha(alpha_u8);
+    }
+
+#if 0
+    const int idx = renderOptions.recolorizeByCoordinateIndex;
+    ASSERT_(idx >= 0 && idx < 3);
+    float            min = .0, max = 1.f;
+    constexpr double confidenceInterval = 0.02;
+    obj->recolorizeByCoordinate(
+        min, max, renderOptions.recolorizeByCoordinateIndex, renderOptions.colormap);
+#endif
+
+    outObj.insert(obj);
+  }
+
+  MRPT_END
 }
 
-bool KeyframePointCloudMap::isEmpty() const
-{
-  // TODO
-  return true;
-}
+bool KeyframePointCloudMap::isEmpty() const { return keyframes_.empty(); }
 
 void KeyframePointCloudMap::saveMetricMapRepresentationToFile(
     const std::string& filNamePrefix) const
@@ -298,7 +331,24 @@ void KeyframePointCloudMap::internal_clear()
 bool KeyframePointCloudMap::internal_insertObservation(
     const mrpt::obs::CObservation& obs, const std::optional<const mrpt::poses::CPose3D>& robotPose)
 {
-  // TODO
+  mrpt::poses::CPose3D pc_in_map;
+  if (robotPose)
+  {
+    pc_in_map = *robotPose;
+  }
+
+  if (auto obsPC = dynamic_cast<const mrpt::obs::CObservationPointCloud*>(&obs); obsPC)
+  {
+    ASSERT_(obsPC->pointcloud);
+    // Add KF:
+    auto& new_kf      = keyframes_.emplace_back();
+    new_kf.timestamp  = obs.timestamp;
+    new_kf.pose       = pc_in_map;
+    new_kf.pointcloud = obsPC->pointcloud;
+    return true;
+  }
+
+  // Not of supported type, we cannot insert into our map:
   return false;
 }
 
@@ -339,17 +389,10 @@ mrpt::math::TBoundingBoxf KeyframePointCloudMap::KeyFrame::localBoundingBox() co
   {
     return *cached_bbox_;
   }
-  for (const auto& [name, layer] : metric_map.layers)
+  if (!pointcloud)
   {
-    const auto bb = layer->boundingBox();
-    if (!cached_bbox_)
-    {
-      cached_bbox_ = bb;
-    }
-    else
-    {
-      *cached_bbox_ = cached_bbox_->unionWith(bb);
-    }
+    return mrpt::math::TBoundingBoxf({0, 0, 0}, {0, 0, 0});
   }
+  cached_bbox_ = pointcloud->boundingBox();
   return *cached_bbox_;
 }

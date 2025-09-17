@@ -42,6 +42,7 @@
     "ros.distro": "humble",
     "cSpell.words": [
         "Boxf",
+        "Colorf",
         "eigen",
         "recolorize",
         "Velodyne"
