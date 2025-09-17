@@ -162,6 +162,9 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     void writeToStream(mrpt::serialization::CArchive& out) const;
     void readFromStream(mrpt::serialization::CArchive& in);
+
+    /// If >0, remove old key-frames farther than this (meters)
+    double remove_frames_farther_than = 0;
   };
   TInsertionOptions insertionOptions;
 

@@ -191,7 +191,10 @@ void KeyframePointCloudMap::nn_radius_search(
 
 std::string KeyframePointCloudMap::asString() const
 {
-  return "KeyframePointCloudMap: <TODO description>";
+  // Returns a short description of the map with the name of keyframes:
+  std::ostringstream o;
+  o << "KeyframePointCloudMap with " << keyframes_.size() << " keyframes.\n";
+  return o.str();
 }
 
 void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
@@ -253,25 +256,38 @@ const mrpt::maps::CSimplePointsMap* KeyframePointCloudMap::getAsSimplePointsMap(
 // ==========================
 
 void KeyframePointCloudMap::TInsertionOptions::loadFromConfigFile(
-    const mrpt::config::CConfigFileBase& source, const std::string& section)
+    const mrpt::config::CConfigFileBase& c, const std::string& s)
 {
-  // TODO
+  MRPT_LOAD_CONFIG_VAR(remove_frames_farther_than, double, c, s);
 }
 
 void KeyframePointCloudMap::TInsertionOptions::dumpToTextStream(std::ostream& out) const
 {
-  // TODO
+  LOADABLEOPTS_DUMP_VAR(remove_frames_farther_than, double);
 }
 
 void KeyframePointCloudMap::TInsertionOptions::writeToStream(
     mrpt::serialization::CArchive& out) const
 {
-  // TODO
+  const int8_t version = 0;
+  out << version;
+  out << remove_frames_farther_than;
 }
 
 void KeyframePointCloudMap::TInsertionOptions::readFromStream(mrpt::serialization::CArchive& in)
 {
-  // TODO
+  int8_t version;
+  in >> version;
+  switch (version)
+  {
+    case 0:
+    {
+      in >> remove_frames_farther_than;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  }
 }
 
 void KeyframePointCloudMap::TLikelihoodOptions::loadFromConfigFile(
@@ -335,6 +351,22 @@ bool KeyframePointCloudMap::internal_insertObservation(
   if (robotPose)
   {
     pc_in_map = *robotPose;
+  }
+
+  if (insertionOptions.remove_frames_farther_than > 0)
+  {
+    for (auto it = keyframes_.begin(); it != keyframes_.end();)
+    {
+      const double dist = pc_in_map.distanceTo(it->pose);
+      if (dist > insertionOptions.remove_frames_farther_than)
+      {
+        it = keyframes_.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }
   }
 
   if (auto obsPC = dynamic_cast<const mrpt::obs::CObservationPointCloud*>(&obs); obsPC)
