@@ -26,6 +26,7 @@
 #include <mrpt/maps/NearestNeighborsCapable.h>
 #include <mrpt/math/TBoundingBox.h>
 
+#include <deque>
 #include <optional>
 
 namespace mola
@@ -81,11 +82,18 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   /** @name API of the NearestNeighborsCapable virtual interface
   @{ */
-  [[nodiscard]] bool   nn_has_indices_or_ids() const override;
-  [[nodiscard]] size_t nn_index_count() const override;
-  [[nodiscard]] bool   nn_single_search(
-        const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
-        uint64_t& resultIndexOrID) const override;
+  [[nodiscard]] bool nn_has_indices_or_ids() const override
+  {
+    return false;  // No, they are not contiguous indices, but "IDs"
+  }
+  [[nodiscard]] size_t nn_index_count() const override
+  {
+    return 0;  // Ignored when nn_has_indices_or_ids() => false
+  }
+
+  [[nodiscard]] bool nn_single_search(
+      const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
+      uint64_t& resultIndexOrID) const override;
   [[nodiscard]] bool nn_single_search(
       const mrpt::math::TPoint2Df& query, mrpt::math::TPoint2Df& result, float& out_dist_sqr,
       uint64_t& resultIndexOrID) const override;
@@ -224,7 +232,24 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
  private:
   /** Key-frame data */
-  // grids_map_t voxels_;
+  class KeyFrame
+  {
+   public:
+    KeyFrame() = default;
+
+    mrpt::poses::CPose3D    pose;  //!< Pose of the key-frame in the map reference frame
+    mp2p_icp::metric_map_t  metric_map;  //!< Local metric map for this key-frame
+    mrpt::Clock::time_point timestamp;  //!< Timestamp of the key-frame (from observation)
+
+    mrpt::math::TBoundingBoxf localBoundingBox() const;
+
+    void invalidateCache() { cached_bbox_.reset(); }
+
+   private:
+    mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_;
+  };
+
+  std::deque<KeyFrame> keyframes_;
 
   struct CachedData
   {
@@ -266,6 +291,20 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   /// Used for getAsSimplePointsMap only.
   mutable mrpt::maps::CSimplePointsMap::Ptr cachedPoints_;
+
+  /// Convert a KF index and a local point index into a global index:
+  uint64_t toGlobalIndex(const size_t kf_idx, const size_t local_pt_idx) const
+  {
+    // Build 64 bits from 32bit kf_idx and 32bit local_pt_idx:
+    return (static_cast<uint64_t>(kf_idx) << 32) | static_cast<uint64_t>(local_pt_idx);
+  }
+  /// Inverse of toGlobalIndex(), returning kf_idx and local_pt_idx as a tuple:
+  std::tuple<size_t, size_t> fromGlobalIndex(const uint64_t global_idx) const
+  {
+    const size_t kf_idx       = static_cast<size_t>(global_idx >> 32);
+    const size_t local_pt_idx = static_cast<size_t>(global_idx & 0xFFFFFFFF);
+    return {kf_idx, local_pt_idx};
+  }
 };
 
 }  // namespace mola

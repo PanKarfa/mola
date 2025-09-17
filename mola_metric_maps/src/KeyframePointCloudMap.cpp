@@ -141,18 +141,6 @@ mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
   return mrpt::math::TBoundingBoxf::PlusMinusInfinity();
 }
 
-bool KeyframePointCloudMap::nn_has_indices_or_ids() const
-{
-  // TODO
-  return false;
-}
-
-size_t KeyframePointCloudMap::nn_index_count() const
-{
-  // TODO
-  return 0;
-}
-
 bool KeyframePointCloudMap::nn_single_search(
     const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
     uint64_t& resultIndexOrID) const
@@ -341,4 +329,27 @@ bool KeyframePointCloudMap::internal_canComputeObservationLikelihood(
 {
   // TODO
   return false;
+}
+
+//  =========== KeyFrame ============
+
+mrpt::math::TBoundingBoxf KeyframePointCloudMap::KeyFrame::localBoundingBox() const
+{
+  if (cached_bbox_)
+  {
+    return *cached_bbox_;
+  }
+  for (const auto& [name, layer] : metric_map.layers)
+  {
+    const auto bb = layer->boundingBox();
+    if (!cached_bbox_)
+    {
+      cached_bbox_ = bb;
+    }
+    else
+    {
+      *cached_bbox_ = cached_bbox_->unionWith(bb);
+    }
+  }
+  return *cached_bbox_;
 }
