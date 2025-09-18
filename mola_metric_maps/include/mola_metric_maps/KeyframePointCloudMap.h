@@ -25,7 +25,7 @@
 #include <mrpt/maps/NearestNeighborsCapable.h>
 #include <mrpt/math/TBoundingBox.h>
 
-#include <deque>
+#include <map>
 #include <optional>
 
 namespace mola
@@ -54,6 +54,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   /** @name Basic API for construction and main parameters
    *  @{ */
+
+  using KeyFrameID = uint64_t;  ///< key-frame ID, index in the keyframes_ map.
 
   /**
    * @brief Constructor / default ctor
@@ -228,10 +230,18 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   };
   TRenderOptions renderOptions;
 
+  struct TCreationOptions
+  {
+    TCreationOptions() = default;
+
+    uint32_t max_search_keyframes = 5;  //!< Maximum number of key-frames to search for NN
+  };
+  TCreationOptions creationOptions;
+
  public:
   // Interface for use within a mrpt::maps::CMultiMetricMap:
   MAP_DEFINITION_START(KeyframePointCloudMap)
-
+  mola::KeyframePointCloudMap::TCreationOptions   creationOptions;
   mola::KeyframePointCloudMap::TInsertionOptions  insertionOpts;
   mola::KeyframePointCloudMap::TLikelihoodOptions likelihoodOpts;
   mola::KeyframePointCloudMap::TRenderOptions     renderOpts;
@@ -263,7 +273,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_;
   };
 
-  std::deque<KeyFrame> keyframes_;
+  std::map<KeyFrameID, KeyFrame> keyframes_;
 
   struct CachedData
   {
@@ -272,6 +282,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     void reset() { *this = CachedData(); }
 
     mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox_;
+    mutable std::optional<std::vector<KeyFrameID>>   search_keyframes_;
   };
 
   CachedData cached_;
@@ -307,10 +318,10 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   mutable mrpt::maps::CSimplePointsMap::Ptr cachedPoints_;
 
   /// Convert a KF index and a local point index into a global index:
-  uint64_t toGlobalIndex(const size_t kf_idx, const size_t local_pt_idx) const
+  uint64_t toGlobalIndex(const KeyFrameID kf_idx, const size_t local_pt_idx) const
   {
     // Build 64 bits from 32bit kf_idx and 32bit local_pt_idx:
-    return (static_cast<uint64_t>(kf_idx) << 32) | static_cast<uint64_t>(local_pt_idx);
+    return (kf_idx << 32) | static_cast<uint64_t>(local_pt_idx);
   }
   /// Inverse of toGlobalIndex(), returning kf_idx and local_pt_idx as a tuple:
   std::tuple<size_t, size_t> fromGlobalIndex(const uint64_t global_idx) const
@@ -318,6 +329,16 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     const size_t kf_idx       = static_cast<size_t>(global_idx >> 32);
     const size_t local_pt_idx = static_cast<size_t>(global_idx & 0xFFFFFFFF);
     return {kf_idx, local_pt_idx};
+  }
+
+  /// Return the next key-frame ID, which is the size of the map:
+  [[nodiscard]] KeyFrameID nextFreeKeyFrameID() const
+  {
+    if (keyframes_.empty())
+    {
+      return 0;  // First key-frame
+    }
+    return keyframes_.rbegin()->first + 1;  // Next ID
   }
 };
 

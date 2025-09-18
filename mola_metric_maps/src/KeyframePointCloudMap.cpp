@@ -40,6 +40,8 @@ void KeyframePointCloudMap::TMapDefinition::loadFromConfigFile_map_specific(
   // const std::string sSectCreation = sectionPrefix + "_creationOpts"s;
   // MRPT_LOAD_CONFIG_VAR(voxel_size, float, s, sSectCreation);
 
+  MRPT_TODO("Implement loading of TCreationOptions into KeyframePointCloudMap::TMapDefinition::")
+
   ASSERT_(s.sectionExists(sectionPrefix + "_insertOpts"s));
   insertionOpts.loadFromConfigFile(s, sectionPrefix + "_insertOpts"s);
 
@@ -94,12 +96,22 @@ void    KeyframePointCloudMap::serializeTo(mrpt::serialization::CArchive& out) c
   renderOptions.writeToStream(out);
 
   // data:
-#if 0
-  out.WriteAs<uint32_t>(voxels_.size());
-  for (const auto& [idx, voxel] : voxels_)
+  out.WriteAs<uint32_t>(keyframes_.size());
+  for (const auto& [kf_id, kf] : keyframes_)
   {
+    out << kf_id;
+    out << kf.timestamp;
+    out << kf.pose;
+    if (kf.pointcloud)
+    {
+      out.WriteAs<uint8_t>(1);  // has point cloud
+      out << *kf.pointcloud;
+    }
+    else
+    {
+      out.WriteAs<uint8_t>(0);  // no point cloud
+    }
   }
-#endif
 }
 
 void KeyframePointCloudMap::serializeFrom(mrpt::serialization::CArchive& in, uint8_t version)
@@ -118,12 +130,24 @@ void KeyframePointCloudMap::serializeFrom(mrpt::serialization::CArchive& in, uin
       renderOptions.readFromStream(in);
 
       // data:
-#if 0
-      const auto nGrids = in.ReadAs<uint32_t>();
-      for (uint32_t i = 0; i < nGrids; i++)
+      uint32_t n_kfs = in.ReadAs<uint32_t>();
+      for (uint32_t i = 0; i < n_kfs; i++)
       {
+        uint64_t kf_id;
+        in >> kf_id;
+
+        KeyFrame& kf = keyframes_[kf_id];
+
+        in >> kf.timestamp;
+        in >> kf.pose;
+        const auto has_pointcloud = in.ReadAs<uint8_t>();
+        if (has_pointcloud)
+        {
+          auto obj      = in.ReadObject();
+          kf.pointcloud = std::dynamic_pointer_cast<mrpt::maps::CPointsMap>(obj);
+          ASSERT_(kf.pointcloud);
+        }
       }
-#endif
     }
     break;
     default:
@@ -148,7 +172,7 @@ mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
   // Pessimistic bounding box:
   // TODO(jlbc): To be refined once mrpt3 implements Oriented Bounding Boxes
   cached_.boundingBox_ = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
-  for (const auto& kf : keyframes_)
+  for (const auto& [kf_id, kf] : keyframes_)
   {
     cached_.boundingBox_ = cached_.boundingBox_->unionWith(kf.localBoundingBox().compose(kf.pose));
   }
@@ -160,8 +184,94 @@ bool KeyframePointCloudMap::nn_single_search(
     const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
     uint64_t& resultIndexOrID) const
 {
-  MRPT_TODO("implement");
-  return false;
+  std::vector<KeyFrameID> kfs_to_search_limited;
+
+  if (cached_.search_keyframes_)
+  {
+    kfs_to_search_limited = *cached_.search_keyframes_;
+  }
+  else
+  {
+    //  max_search_keyframes
+    // First, build a list of candidate key-frames to search into:
+    std::map<double, KeyFrameID> kfs_to_search;  // key: distance to KF center
+    for (auto& [kf_id, kf] : keyframes_)
+    {
+      if (!kf.pointcloud)
+      {
+        continue;
+      }
+
+      // convert query to local coordinates of the keyframe:
+      const auto query_local    = kf.pose.inverseComposePoint(query);
+      const auto dist_to_kf     = query_local.norm();
+      kfs_to_search[dist_to_kf] = kf_id;
+    }
+
+    for (const auto& [dist, kf_id] : kfs_to_search)
+    {
+      kfs_to_search_limited.push_back(kf_id);
+      if (kfs_to_search_limited.size() >= creationOptions.max_search_keyframes)
+      {
+        break;
+      }
+    }
+    cached_.search_keyframes_ = kfs_to_search_limited;
+  }
+
+  struct ResultPerKf
+  {
+    mrpt::math::TPoint3D point_global;  ///< The closest point, already in global frame
+    uint64_t             global_id = 0;  ///< Absolute ID of the point
+  };
+
+  std::map<float, ResultPerKf> best_results;  // key: squared distance
+
+  // Search in all keyframes:
+  for (const auto kf_id : kfs_to_search_limited)
+  {
+    const auto& kf = keyframes_.at(kf_id);
+
+    if (!kf.pointcloud)
+    {
+      continue;  // Should never happen!
+    }
+
+    // convert query to local coordinates of the keyframe:
+    const auto query_local = kf.pose.inverseComposePoint(query);
+
+    // Out of the bounding box?
+    if (!kf.localBoundingBox().containsPoint(query_local))
+    {
+      continue;  // Skip this keyframe
+    }
+
+    // Search in this keyframe's point cloud:
+    mrpt::math::TPoint3D result_local;
+    float                outDistSqr = 0;
+    const auto           pt_index =
+        kf.pointcloud->kdTreeClosestPoint3D(query_local, result_local, outDistSqr);
+
+    auto& res = best_results[outDistSqr];
+    // Convert back to global coordinates:
+    res.point_global = kf.pose.composePoint(result_local);
+    res.global_id    = toGlobalIndex(kf_id, pt_index);
+  }
+
+  if (best_results.empty())
+  {
+    // No results found:
+    resultIndexOrID = 0;
+    return false;
+  }
+
+  // Get the best result:
+  const auto& best = best_results.begin()->second;
+  result           = best.point_global;
+  out_dist_sqr     = best_results.begin()->first;
+  resultIndexOrID  = best.global_id;
+
+  return true;  // Found a result
 }
 
 bool KeyframePointCloudMap::nn_single_search(
@@ -203,10 +313,10 @@ void KeyframePointCloudMap::nn_radius_search(
 
 std::string KeyframePointCloudMap::asString() const
 {
-  // Returns a short description of the map with the name of keyframes:
+  // Returns a short description of the map:
   std::ostringstream o;
   std::size_t        total_points = 0;
-  for (const auto& kf : keyframes_)
+  for (const auto& [kf_id, kf] : keyframes_)
   {
     total_points += kf.pointcloud ? kf.pointcloud->size() : 0;
   }
@@ -227,7 +337,7 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
   const uint8_t alpha_u8 = mrpt::f2u8(renderOptions.color.A);
 
   // Create one visualization object per KF:
-  for (const auto& kf : keyframes_)
+  for (const auto& [kf_id, kf] : keyframes_)
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
@@ -376,7 +486,7 @@ bool KeyframePointCloudMap::internal_insertObservation(
   {
     for (auto it = keyframes_.begin(); it != keyframes_.end();)
     {
-      const double dist = pc_in_map.distanceTo(it->pose);
+      const double dist = pc_in_map.distanceTo(it->second.pose);
       if (dist > insertionOptions.remove_frames_farther_than)
       {
         it = keyframes_.erase(it);
@@ -393,13 +503,13 @@ bool KeyframePointCloudMap::internal_insertObservation(
     ASSERT_(obsPC->pointcloud);
 
     // Add KF:
-    auto& new_kf      = keyframes_.emplace_back();
+    auto& new_kf      = keyframes_[nextFreeKeyFrameID()];
     new_kf.timestamp  = obs.timestamp;
     new_kf.pose       = pc_in_map;
     new_kf.pointcloud = obsPC->pointcloud;
 
     new_kf.buildCache();
-    cached_.boundingBox_.reset();
+    cached_.reset();
 
     return true;
   }
