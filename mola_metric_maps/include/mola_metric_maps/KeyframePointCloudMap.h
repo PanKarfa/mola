@@ -251,11 +251,15 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     mrpt::poses::CPose3D        pose;  //!< Pose of the key-frame in the map reference frame
     mrpt::Clock::time_point     timestamp;  //!< Timestamp of the key-frame (from observation)
 
-    mrpt::math::TBoundingBoxf localBoundingBox() const;
+    [[nodiscard]] mrpt::math::TBoundingBoxf localBoundingBox() const;
+
+    /// Ensures the bbox and the kd-tree are built
+    void buildCache() const;
 
     void invalidateCache() { cached_bbox_.reset(); }
 
    private:
+    void                                             internalBuildBBox() const;
     mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_;
   };
 

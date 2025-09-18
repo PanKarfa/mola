@@ -22,6 +22,7 @@
 #include <mrpt/obs/CObservationPointCloud.h>
 #include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
+#include <mrpt/system/string_utils.h>  // unitsFormat()
 
 using namespace mola;
 
@@ -139,15 +140,27 @@ KeyframePointCloudMap::~KeyframePointCloudMap() = default;
 
 mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
 {
-  // TODO: implement real bounding box computation
-  return mrpt::math::TBoundingBoxf::PlusMinusInfinity();
+  if (cached_.boundingBox_)
+  {
+    return *cached_.boundingBox_;
+  }
+
+  // Pessimistic bounding box:
+  // TODO(jlbc): To be refined once mrpt3 implements Oriented Bounding Boxes
+  cached_.boundingBox_ = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
+  for (const auto& kf : keyframes_)
+  {
+    cached_.boundingBox_ = cached_.boundingBox_->unionWith(kf.localBoundingBox().compose(kf.pose));
+  }
+
+  return *cached_.boundingBox_;
 }
 
 bool KeyframePointCloudMap::nn_single_search(
     const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
     uint64_t& resultIndexOrID) const
 {
-  // TODO
+  MRPT_TODO("implement");
   return false;
 }
 
@@ -155,22 +168,21 @@ bool KeyframePointCloudMap::nn_single_search(
     const mrpt::math::TPoint2Df& query, mrpt::math::TPoint2Df& result, float& out_dist_sqr,
     uint64_t& resultIndexOrID) const
 {
-  // TODO
-  return false;
+  THROW_EXCEPTION("2D search not implemented in this class!");
 }
 
 void KeyframePointCloudMap::nn_multiple_search(
     const mrpt::math::TPoint3Df& query, const size_t N, std::vector<mrpt::math::TPoint3Df>& results,
     std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
 {
-  // TODO
+  THROW_EXCEPTION("Not implemented yet!");
 }
 
 void KeyframePointCloudMap::nn_multiple_search(
     const mrpt::math::TPoint2Df& query, const size_t N, std::vector<mrpt::math::TPoint2Df>& results,
     std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
 {
-  // TODO
+  THROW_EXCEPTION("2D search not implemented in this class!");
 }
 
 void KeyframePointCloudMap::nn_radius_search(
@@ -178,7 +190,7 @@ void KeyframePointCloudMap::nn_radius_search(
     std::vector<mrpt::math::TPoint3Df>& results, std::vector<float>& out_dists_sqr,
     std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
 {
-  // TODO
+  THROW_EXCEPTION("Not implemented yet!");
 }
 
 void KeyframePointCloudMap::nn_radius_search(
@@ -186,14 +198,21 @@ void KeyframePointCloudMap::nn_radius_search(
     std::vector<mrpt::math::TPoint2Df>& results, std::vector<float>& out_dists_sqr,
     std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
 {
-  // TODO
+  THROW_EXCEPTION("2D search not implemented in this class!");
 }
 
 std::string KeyframePointCloudMap::asString() const
 {
   // Returns a short description of the map with the name of keyframes:
   std::ostringstream o;
-  o << "KeyframePointCloudMap with " << keyframes_.size() << " keyframes.\n";
+  std::size_t        total_points = 0;
+  for (const auto& kf : keyframes_)
+  {
+    total_points += kf.pointcloud ? kf.pointcloud->size() : 0;
+  }
+
+  o << "KeyframePointCloudMap: " << keyframes_.size() << " keyframes, "
+    << mrpt::system::unitsFormat(static_cast<double>(total_points)) << " points.";
   return o.str();
 }
 
@@ -339,7 +358,7 @@ void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::
 
 void KeyframePointCloudMap::internal_clear()
 {
-  // TODO
+  keyframes_.clear();
   cached_.reset();
   cachedPoints_.reset();
 }
@@ -372,11 +391,16 @@ bool KeyframePointCloudMap::internal_insertObservation(
   if (auto obsPC = dynamic_cast<const mrpt::obs::CObservationPointCloud*>(&obs); obsPC)
   {
     ASSERT_(obsPC->pointcloud);
+
     // Add KF:
     auto& new_kf      = keyframes_.emplace_back();
     new_kf.timestamp  = obs.timestamp;
     new_kf.pose       = pc_in_map;
     new_kf.pointcloud = obsPC->pointcloud;
+
+    new_kf.buildCache();
+    cached_.boundingBox_.reset();
+
     return true;
   }
 
@@ -415,16 +439,36 @@ bool KeyframePointCloudMap::internal_canComputeObservationLikelihood(
 
 //  =========== KeyFrame ============
 
-mrpt::math::TBoundingBoxf KeyframePointCloudMap::KeyFrame::localBoundingBox() const
+void KeyframePointCloudMap::KeyFrame::internalBuildBBox() const
 {
-  if (cached_bbox_)
-  {
-    return *cached_bbox_;
-  }
   if (!pointcloud)
   {
-    return mrpt::math::TBoundingBoxf({0, 0, 0}, {0, 0, 0});
+    cached_bbox_ = mrpt::math::TBoundingBoxf({0, 0, 0}, {0, 0, 0});
   }
-  cached_bbox_ = pointcloud->boundingBox();
+  else
+  {
+    cached_bbox_ = pointcloud->boundingBox();
+  }
+}
+
+mrpt::math::TBoundingBoxf KeyframePointCloudMap::KeyFrame::localBoundingBox() const
+{
+  if (!cached_bbox_)
+  {
+    internalBuildBBox();
+  }
   return *cached_bbox_;
+}
+
+void KeyframePointCloudMap::KeyFrame::buildCache() const
+{
+  // Compute bbox:
+  internalBuildBBox();
+
+  // Build KD-tree:
+  ASSERT_(pointcloud);
+  pointcloud->kdTreeEnsureIndexBuilt3D();
+
+  // Build per-point covariances:
+  MRPT_TODO("Compute covariances for each point local neighborhood");
 }
