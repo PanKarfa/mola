@@ -18,6 +18,8 @@
  */
 #pragma once
 
+#include <mp2p_icp/IcpPrepareCapable.h>
+#include <mp2p_icp/NearestPointWithCovCapable.h>
 #include <mrpt/img/color_maps.h>
 #include <mrpt/maps/CMetricMap.h>
 #include <mrpt/maps/CPointsMap.h>
@@ -42,7 +44,9 @@ namespace mola
  * covariances for each point local vicinity.
  */
 class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
-                              public mrpt::maps::NearestNeighborsCapable
+                              public mrpt::maps::NearestNeighborsCapable,
+                              public mp2p_icp::IcpPrepareCapable,
+                              public mp2p_icp::NearestPointWithCovCapable
 {
   DEFINE_SERIALIZABLE(KeyframePointCloudMap, mola)
  public:
@@ -90,11 +94,12 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   @{ */
   [[nodiscard]] bool nn_has_indices_or_ids() const override
   {
-    return false;  // No, they are not contiguous indices, but "IDs"
+    return true;  // Yes, but only via the IcpPrepareCapable interface
   }
   [[nodiscard]] size_t nn_index_count() const override
   {
-    return 0;  // Ignored when nn_has_indices_or_ids() => false
+    ASSERT_(cached_.icp_search_submap);
+    return cached_.icp_search_submap->size();
   }
 
   [[nodiscard]] bool nn_single_search(
@@ -125,6 +130,26 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
       const mrpt::math::TPoint3Df& query, const size_t N,
       std::vector<mrpt::math::TPoint3Df>& results, std::vector<float>& out_dists_sqr,
       std::vector<uint64_t>& resultIndicesOrIDs) const;
+
+  /** @} */
+
+  /** @name Public virtual methods implementation for IcpPrepareCapable
+   *  @{ */
+
+  /// Prepare the map for ICP with a given point as reference.
+  void icp_get_prepared(
+      const mrpt::poses::CPose3D&                     icp_ref_point,
+      const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi = std::nullopt) const override;
+
+  /// Optionally, clean up after ICP is done.
+  void icp_cleanup() const override;
+
+  /** @} */
+
+  /** @name Public virtual methods implementation for NearestPointWithCovCapable
+   *  @{ */
+  std::optional<NearestPointCovResult> nn_search_pt2pl(
+      const mrpt::math::TPoint3Df& point, const float max_search_distance) const override;
 
   /** @} */
 
@@ -281,8 +306,9 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     void reset() { *this = CachedData(); }
 
-    mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox_;
-    mutable std::optional<std::vector<KeyFrameID>>   search_keyframes_;
+    mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox;
+    mutable std::optional<std::set<KeyFrameID>>      icp_search_kfs;
+    mutable mrpt::maps::CPointsMap::Ptr              icp_search_submap;
   };
 
   CachedData cached_;

@@ -164,70 +164,116 @@ KeyframePointCloudMap::~KeyframePointCloudMap() = default;
 
 mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
 {
-  if (cached_.boundingBox_)
+  if (cached_.boundingBox)
   {
-    return *cached_.boundingBox_;
+    return *cached_.boundingBox;
   }
 
   // Pessimistic bounding box:
   // TODO(jlbc): To be refined once mrpt3 implements Oriented Bounding Boxes
-  cached_.boundingBox_ = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
+  cached_.boundingBox = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
   for (const auto& [kf_id, kf] : keyframes_)
   {
-    cached_.boundingBox_ = cached_.boundingBox_->unionWith(kf.localBoundingBox().compose(kf.pose));
+    cached_.boundingBox = cached_.boundingBox->unionWith(kf.localBoundingBox().compose(kf.pose));
   }
 
-  return *cached_.boundingBox_;
+  return *cached_.boundingBox;
 }
 
 bool KeyframePointCloudMap::nn_single_search(
     const mrpt::math::TPoint3Df& query, mrpt::math::TPoint3Df& result, float& out_dist_sqr,
     uint64_t& resultIndexOrID) const
 {
-  std::vector<KeyFrameID> kfs_to_search_limited;
+  ASSERT_(cached_.icp_search_submap);
+  return cached_.icp_search_submap->nn_single_search(query, result, out_dist_sqr, resultIndexOrID);
+}
 
-  if (cached_.search_keyframes_)
+bool KeyframePointCloudMap::nn_single_search(
+    const mrpt::math::TPoint2Df& query, mrpt::math::TPoint2Df& result, float& out_dist_sqr,
+    uint64_t& resultIndexOrID) const
+{
+  ASSERT_(cached_.icp_search_submap);
+  return cached_.icp_search_submap->nn_single_search(query, result, out_dist_sqr, resultIndexOrID);
+}
+
+void KeyframePointCloudMap::nn_multiple_search(
+    const mrpt::math::TPoint3Df& query, const size_t N, std::vector<mrpt::math::TPoint3Df>& results,
+    std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
+{
+  ASSERT_(cached_.icp_search_submap);
+  cached_.icp_search_submap->nn_multiple_search(
+      query, N, results, out_dists_sqr, resultIndicesOrIDs);
+}
+
+void KeyframePointCloudMap::nn_multiple_search(
+    const mrpt::math::TPoint2Df& query, const size_t N, std::vector<mrpt::math::TPoint2Df>& results,
+    std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
+{
+  ASSERT_(cached_.icp_search_submap);
+  cached_.icp_search_submap->nn_multiple_search(
+      query, N, results, out_dists_sqr, resultIndicesOrIDs);
+}
+
+void KeyframePointCloudMap::nn_radius_search(
+    const mrpt::math::TPoint3Df& query, const float search_radius_sqr,
+    std::vector<mrpt::math::TPoint3Df>& results, std::vector<float>& out_dists_sqr,
+    std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
+{
+  ASSERT_(cached_.icp_search_submap);
+  cached_.icp_search_submap->nn_radius_search(
+      query, search_radius_sqr, results, out_dists_sqr, resultIndicesOrIDs, maxPoints);
+}
+
+void KeyframePointCloudMap::nn_radius_search(
+    const mrpt::math::TPoint2Df& query, const float search_radius_sqr,
+    std::vector<mrpt::math::TPoint2Df>& results, std::vector<float>& out_dists_sqr,
+    std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
+{
+  ASSERT_(cached_.icp_search_submap);
+  cached_.icp_search_submap->nn_radius_search(
+      query, search_radius_sqr, results, out_dists_sqr, resultIndicesOrIDs, maxPoints);
+}
+
+void KeyframePointCloudMap::icp_get_prepared(
+    const mrpt::poses::CPose3D&                                      icp_ref_point,
+    [[maybe_unused]] const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi) const
+{
+  std::set<KeyFrameID> kfs_to_search_limited;
+
+  //  max_search_keyframes
+  // First, build a list of candidate key-frames to search into:
+  std::map<double, KeyFrameID> kfs_to_search;  // key: distance to KF center
+  for (auto& [kf_id, kf] : keyframes_)
   {
-    kfs_to_search_limited = *cached_.search_keyframes_;
-  }
-  else
-  {
-    //  max_search_keyframes
-    // First, build a list of candidate key-frames to search into:
-    std::map<double, KeyFrameID> kfs_to_search;  // key: distance to KF center
-    for (auto& [kf_id, kf] : keyframes_)
+    if (!kf.pointcloud)
     {
-      if (!kf.pointcloud)
-      {
-        continue;
-      }
-
-      // convert query to local coordinates of the keyframe:
-      const auto query_local    = kf.pose.inverseComposePoint(query);
-      const auto dist_to_kf     = query_local.norm();
-      kfs_to_search[dist_to_kf] = kf_id;
+      continue;
     }
 
-    for (const auto& [dist, kf_id] : kfs_to_search)
-    {
-      kfs_to_search_limited.push_back(kf_id);
-      if (kfs_to_search_limited.size() >= creationOptions.max_search_keyframes)
-      {
-        break;
-      }
-    }
-    cached_.search_keyframes_ = kfs_to_search_limited;
+    // convert query to local coordinates of the keyframe:
+    const auto query_local    = kf.pose.inverseComposePoint(icp_ref_point.translation());
+    const auto dist_to_kf     = query_local.norm();
+    kfs_to_search[dist_to_kf] = kf_id;
   }
 
-  struct ResultPerKf
+  for (const auto& [dist, kf_id] : kfs_to_search)
   {
-    mrpt::math::TPoint3D point_global;  ///< The closest point, already in global frame
-    uint64_t             global_id = 0;  ///< Absolute ID of the point
-  };
+    kfs_to_search_limited.insert(kf_id);
+    if (kfs_to_search_limited.size() >= creationOptions.max_search_keyframes)
+    {
+      break;
+    }
+  }
 
-  std::map<float, ResultPerKf> best_results;  // key: squared distance
+  // For selected KFs, build the submap, if it's different from the previous one:
+  if (cached_.icp_search_kfs && *cached_.icp_search_kfs == kfs_to_search_limited)
+  {
+    // We are already up to date.
+    return;
+  }
 
-  // Search in all keyframes:
+  cached_.icp_search_kfs = kfs_to_search_limited;
+
   for (const auto kf_id : kfs_to_search_limited)
   {
     const auto& kf = keyframes_.at(kf_id);
@@ -237,78 +283,29 @@ bool KeyframePointCloudMap::nn_single_search(
       continue;  // Should never happen!
     }
 
-    // convert query to local coordinates of the keyframe:
-    const auto query_local = kf.pose.inverseComposePoint(query);
-
-    // Out of the bounding box?
-    if (!kf.localBoundingBox().containsPoint(query_local))
+    if (!cached_.icp_search_submap)
     {
-      continue;  // Skip this keyframe
+      cached_.icp_search_submap = mrpt::maps::CSimplePointsMap::Create();
     }
 
-    // Search in this keyframe's point cloud:
-    mrpt::math::TPoint3D result_local;
-    float                outDistSqr = 0;
-    const auto           pt_index =
-        kf.pointcloud->kdTreeClosestPoint3D(query_local, result_local, outDistSqr);
-
-    auto& res = best_results[outDistSqr];
-    // Convert back to global coordinates:
-    res.point_global = kf.pose.composePoint(result_local);
-    res.global_id    = toGlobalIndex(kf_id, pt_index);
+    cached_.icp_search_submap->insertAnotherMap(kf.pointcloud.get(), kf.pose);
   }
 
-  if (best_results.empty())
-  {
-    // No results found:
-    resultIndexOrID = 0;
-    return false;
-  }
+  cached_.icp_search_submap->kdTreeEnsureIndexBuilt3D();
 
-  // Get the best result:
-  const auto& best = best_results.begin()->second;
-  result           = best.point_global;
-  out_dist_sqr     = best_results.begin()->first;
-  resultIndexOrID  = best.global_id;
-
-  return true;  // Found a result
+  MRPT_TODO("Merge covs per points");
 }
 
-bool KeyframePointCloudMap::nn_single_search(
-    const mrpt::math::TPoint2Df& query, mrpt::math::TPoint2Df& result, float& out_dist_sqr,
-    uint64_t& resultIndexOrID) const
+void KeyframePointCloudMap::icp_cleanup() const
 {
-  THROW_EXCEPTION("2D search not implemented in this class!");
+  // Do NOT free the map, we might reuse it for next ICP call.
 }
 
-void KeyframePointCloudMap::nn_multiple_search(
-    const mrpt::math::TPoint3Df& query, const size_t N, std::vector<mrpt::math::TPoint3Df>& results,
-    std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
+std::optional<KeyframePointCloudMap::NearestPointCovResult> KeyframePointCloudMap::nn_search_pt2pl(
+    const mrpt::math::TPoint3Df& point, const float max_search_distance) const
 {
-  THROW_EXCEPTION("Not implemented yet!");
-}
-
-void KeyframePointCloudMap::nn_multiple_search(
-    const mrpt::math::TPoint2Df& query, const size_t N, std::vector<mrpt::math::TPoint2Df>& results,
-    std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
-{
-  THROW_EXCEPTION("2D search not implemented in this class!");
-}
-
-void KeyframePointCloudMap::nn_radius_search(
-    const mrpt::math::TPoint3Df& query, const float search_radius_sqr,
-    std::vector<mrpt::math::TPoint3Df>& results, std::vector<float>& out_dists_sqr,
-    std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
-{
-  THROW_EXCEPTION("Not implemented yet!");
-}
-
-void KeyframePointCloudMap::nn_radius_search(
-    const mrpt::math::TPoint2Df& query, const float search_radius_sqr,
-    std::vector<mrpt::math::TPoint2Df>& results, std::vector<float>& out_dists_sqr,
-    std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
-{
-  THROW_EXCEPTION("2D search not implemented in this class!");
+  //
+  return {};
 }
 
 std::string KeyframePointCloudMap::asString() const
