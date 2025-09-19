@@ -234,7 +234,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   {
     TCreationOptions() = default;
 
-    uint32_t max_search_keyframes = 5;  //!< Maximum number of key-frames to search for NN
+    uint32_t max_search_keyframes = 3;  //!< Maximum number of key-frames to search for NN
   };
   TCreationOptions creationOptions;
 
