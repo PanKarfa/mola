@@ -18,11 +18,19 @@
  */
 
 #include <mola_metric_maps/KeyframePointCloudMap.h>
+#include <mp2p_icp/estimate_points_eigen.h>
 #include <mrpt/config/CConfigFileBase.h>  // MRPT_LOAD_CONFIG_VAR
 #include <mrpt/obs/CObservationPointCloud.h>
 #include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
 #include <mrpt/system/string_utils.h>  // unitsFormat()
+
+#include <Eigen/Dense>
+#include <numeric>  // std::accumulate
+
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+#include <tbb/parallel_for.h>
+#endif
 
 using namespace mola;
 
@@ -473,12 +481,14 @@ void KeyframePointCloudMap::internal_clear()
 bool KeyframePointCloudMap::internal_insertObservation(
     const mrpt::obs::CObservation& obs, const std::optional<const mrpt::poses::CPose3D>& robotPose)
 {
+  // Get robot pose for insertion pose:
   mrpt::poses::CPose3D pc_in_map;
   if (robotPose)
   {
     pc_in_map = *robotPose;
   }
 
+  // Remove old key-frames if requested:
   if (insertionOptions.remove_frames_farther_than > 0)
   {
     for (auto it = keyframes_.begin(); it != keyframes_.end();)
@@ -495,6 +505,7 @@ bool KeyframePointCloudMap::internal_insertObservation(
     }
   }
 
+  // Observation must be a point cloud:
   if (auto obsPC = dynamic_cast<const mrpt::obs::CObservationPointCloud*>(&obs); obsPC)
   {
     ASSERT_(obsPC->pointcloud);
@@ -528,13 +539,6 @@ double KeyframePointCloudMap::internal_computeObservationLikelihoodPointCloud3D(
 {
   // TODO
   return .0;
-}
-
-void KeyframePointCloudMap::internal_insertPointCloud3D(
-    const mrpt::poses::CPose3D& pc_in_map, const float* xs, const float* ys, const float* zs,
-    const std::size_t num_pts)
-{
-  // TODO
 }
 
 bool KeyframePointCloudMap::internal_canComputeObservationLikelihood(
@@ -577,5 +581,98 @@ void KeyframePointCloudMap::KeyFrame::buildCache() const
   pointcloud->kdTreeEnsureIndexBuilt3D();
 
   // Build per-point covariances:
-  MRPT_TODO("Compute covariances for each point local neighborhood");
+  internalComputeCovariances();
+}
+
+void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
+{
+  ASSERT_(pointcloud);
+  const auto point_count = pointcloud->size();
+
+  if (cached_cov_.size() == point_count)
+  {
+    return;  // Already computed
+  }
+
+#define DO_PROFILE_COVS 0
+
+#if DO_PROFILE_COVS
+  auto start = std::chrono::high_resolution_clock::now();
+#endif
+
+  // Resize:
+  cached_cov_.resize(point_count);
+
+  if (point_count < 3)
+  {
+    // Nothing to do
+    cloud_density_ = 0;
+    return;
+  }
+
+  // Compute using KD-tree:
+  float sum_k_sq_distances = 0.0;
+
+  const size_t K_CORRESPONDENCES = 20;
+  const auto   normalization     = ((K_CORRESPONDENCES - 1) * (2 + K_CORRESPONDENCES)) / 2;
+
+  const auto& xs = pointcloud->getPointsBufferRef_x();
+  const auto& ys = pointcloud->getPointsBufferRef_y();
+  const auto& zs = pointcloud->getPointsBufferRef_z();
+
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+  tbb::parallel_for(
+      static_cast<size_t>(0), point_count,
+      [&](size_t i)
+#else
+  for (size_t i = 0; i < point_count; i++)
+#endif
+      {
+        std::vector<size_t> k_indices;
+        std::vector<float>  k_sq_distances;
+
+        pointcloud->kdTreeNClosestPoint3DIdx(
+            xs[i], ys[i], zs[i], K_CORRESPONDENCES, k_indices, k_sq_distances);
+
+        sum_k_sq_distances +=
+            std::accumulate(k_sq_distances.begin() + 1, k_sq_distances.end(), 0.0f) / normalization;
+
+        //    const auto eig = mp2p_icp::estimate_points_eigen(xs.data(), ys.data(), zs.data(),
+        //    k_indices);
+
+        Eigen::Matrix<double, 3, -1> neighbors(3, K_CORRESPONDENCES);
+        for (size_t j = 0; j < k_indices.size(); j++)
+        {
+          neighbors(0, static_cast<Eigen::Index>(j)) = static_cast<double>(xs[k_indices[j]]);
+          neighbors(1, static_cast<Eigen::Index>(j)) = static_cast<double>(ys[k_indices[j]]);
+          neighbors(2, static_cast<Eigen::Index>(j)) = static_cast<double>(zs[k_indices[j]]);
+        }
+
+        neighbors.colwise() -= neighbors.rowwise().mean().eval();
+        const Eigen::Matrix3d cov = neighbors * neighbors.transpose() / K_CORRESPONDENCES;
+
+        // Plane regularization (see DLIO'2023 or Thrun's GICP paper)
+        // ------------------------------------------------------------
+        // Regularization of singular values.
+        Eigen::JacobiSVD<Eigen::Matrix3d> svd(cov, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+        // SVD sorts eigenvalues in decreasing order, so the last one
+        // is the smallest (normal direction of a plane):
+        const Eigen::Vector3d values = Eigen::Vector3d(1.0, 1.0, 1e-3);
+
+        cached_cov_[i] = svd.matrixU() * values.asDiagonal() * svd.matrixV().transpose();
+      }
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+  );
+#endif
+
+  cloud_density_ = sum_k_sq_distances / static_cast<float>(point_count);
+
+  // done.
+#if DO_PROFILE_COVS
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start);
+  std::cout << "Compute covs: N=" << point_count << " in "
+            << static_cast<double>(duration.count()) * 1e-3 << " ms d=" << *cloud_density_ << "\n";
+#endif
 }

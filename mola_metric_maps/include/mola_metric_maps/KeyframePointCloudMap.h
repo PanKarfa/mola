@@ -288,14 +288,23 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     [[nodiscard]] mrpt::math::TBoundingBoxf localBoundingBox() const;
 
-    /// Ensures the bbox and the kd-tree are built
+    /// Ensures the bbox, the kd-tree, and the covariances are built
     void buildCache() const;
 
-    void invalidateCache() { cached_bbox_.reset(); }
+    void invalidateCache()
+    {
+      cached_bbox_.reset();
+      cached_cov_.clear();
+    }
 
    private:
-    void                                             internalBuildBBox() const;
+    void internalBuildBBox() const;
+    void internalComputeCovariances() const;
+
     mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_;
+    /// One cov per point (empty: not computed)
+    mutable std::vector<mrpt::math::CMatrixFloat33> cached_cov_;
+    mutable std::optional<float>                    cloud_density_;
   };
 
   std::map<KeyFrameID, KeyFrame> keyframes_;
@@ -329,13 +338,6 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   double internal_computeObservationLikelihoodPointCloud3D(
       const mrpt::poses::CPose3D& pc_in_map, const float* xs, const float* ys, const float* zs,
       const std::size_t num_pts) const;
-
-  /** - (xs,ys,zs): Sensed point local coordinates in the robot frame.
-   *  - pc_in_map: SE(3) pose of the robot in the map frame.
-   */
-  void internal_insertPointCloud3D(
-      const mrpt::poses::CPose3D& pc_in_map, const float* xs, const float* ys, const float* zs,
-      const std::size_t num_pts);
 
   // See docs in base class
   bool internal_canComputeObservationLikelihood(const mrpt::obs::CObservation& obs) const override;

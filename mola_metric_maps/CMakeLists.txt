@@ -24,6 +24,13 @@ find_package(mola_common REQUIRED)
 find_package(mrpt-maps REQUIRED)
 find_package(mp2p_icp_map REQUIRED)
 
+find_package(TBB) # optional
+
+if(TBB_FOUND)
+  option(MOLA_METRIC_MAPS_USE_TBB "If found TBB, this option controls whether to use it or not" ON)
+endif()
+
+
 # 3rdparty deps:
 add_subdirectory(3rdparty)
 
@@ -61,6 +68,12 @@ mola_add_library(
     mp2p_icp_map
     robin_map
 )
+
+if (TBB_FOUND AND MOLA_METRIC_MAPS_USE_TBB)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE MOLA_METRIC_MAPS_USE_TBB)
+  target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+endif()
+
 
 # -----------------------
 # define tests:
