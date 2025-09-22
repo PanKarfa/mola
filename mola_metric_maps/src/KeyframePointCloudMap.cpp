@@ -31,6 +31,7 @@
 #include <iostream>  // DEBUG, remove!
 
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
+#include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 #endif
 
@@ -364,6 +365,8 @@ void KeyframePointCloudMap::nn_search_cov2cov(
 
   globalPoints->kdTreeEnsureIndexBuilt3D();
 
+  tbb::enumerable_thread_specific<mp2p_icp::MatchedPointWithCovList> tls;
+
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
   tbb::parallel_for(
       static_cast<size_t>(0), localPointCount,
@@ -379,8 +382,13 @@ void KeyframePointCloudMap::nn_search_cov2cov(
 
         if (nn_dist_sqr <= max_sqr_dist)
         {
-          // Add pairing:
-          auto& p      = outPairings.emplace_back();
+      // Add pairing:
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+          auto& p = tls.local().emplace_back();
+#else
+      auto& p = outPairings.emplace_back();
+#endif
+
           p.global_idx = nn_global_idx;
           p.local_idx  = local_idx;
           p.local      = {xs[local_idx], ys[local_idx], zs[local_idx]};
@@ -391,12 +399,17 @@ void KeyframePointCloudMap::nn_search_cov2cov(
            *  But localKfCov already incorporate R*C*R^T from localKf.pose(p)
            */
           p.cov_inv = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse_LLt();
-
-          std::cout << p.asString();
         }
       }
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
   );
+  // Merge from all threads:
+  for (auto& localVec : tls)
+  {
+    outPairings.insert(
+        outPairings.end(), std::make_move_iterator(localVec.begin()),
+        std::make_move_iterator(localVec.end()));
+  }
 #endif
 }
 
