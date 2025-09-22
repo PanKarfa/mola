@@ -18,7 +18,6 @@
  */
 
 #include <mola_metric_maps/KeyframePointCloudMap.h>
-#include <mp2p_icp/estimate_points_eigen.h>
 #include <mrpt/config/CConfigFileBase.h>  // MRPT_LOAD_CONFIG_VAR
 #include <mrpt/obs/CObservationPointCloud.h>
 #include <mrpt/opengl/CPointCloudColoured.h>
@@ -28,11 +27,16 @@
 #include <Eigen/Dense>
 #include <numeric>  // std::accumulate
 
+//
+#include <iostream>  // DEBUG, remove!
+
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
 #include <tbb/parallel_for.h>
 #endif
 
 using namespace mola;
+
+// #define DO_PROFILE_COVS 1
 
 //  =========== Begin of Map definition ============
 MAP_DEFINITION_REGISTER(
@@ -50,8 +54,10 @@ void KeyframePointCloudMap::TMapDefinition::loadFromConfigFile_map_specific(
 
   MRPT_TODO("Implement loading of TCreationOptions into KeyframePointCloudMap::TMapDefinition::")
 
-  ASSERT_(s.sectionExists(sectionPrefix + "_insertOpts"s));
-  insertionOpts.loadFromConfigFile(s, sectionPrefix + "_insertOpts"s);
+  if (s.sectionExists(sectionPrefix + "_insertOpts"s))
+  {
+    insertionOpts.loadFromConfigFile(s, sectionPrefix + "_insertOpts"s);
+  }
 
   if (s.sectionExists(sectionPrefix + "_likelihoodOpts"s))
   {
@@ -109,11 +115,11 @@ void    KeyframePointCloudMap::serializeTo(mrpt::serialization::CArchive& out) c
   {
     out << kf_id;
     out << kf.timestamp;
-    out << kf.pose;
-    if (kf.pointcloud)
+    out << kf.pose();
+    if (kf.pointcloud())
     {
       out.WriteAs<uint8_t>(1);  // has point cloud
-      out << *kf.pointcloud;
+      out << *kf.pointcloud();
     }
     else
     {
@@ -147,13 +153,16 @@ void KeyframePointCloudMap::serializeFrom(mrpt::serialization::CArchive& in, uin
         KeyFrame& kf = keyframes_[kf_id];
 
         in >> kf.timestamp;
-        in >> kf.pose;
+        mrpt::poses::CPose3D pose;
+        in >> pose;
+        kf.pose(pose);
         const auto has_pointcloud = in.ReadAs<uint8_t>();
         if (has_pointcloud)
         {
-          auto obj      = in.ReadObject();
-          kf.pointcloud = std::dynamic_pointer_cast<mrpt::maps::CPointsMap>(obj);
-          ASSERT_(kf.pointcloud);
+          auto obj = in.ReadObject();
+          auto pc  = std::dynamic_pointer_cast<mrpt::maps::CPointsMap>(obj);
+          ASSERT_(pc);
+          kf.pointcloud(pc);
         }
       }
     }
@@ -182,7 +191,7 @@ mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
   cached_.boundingBox = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
   for (const auto& [kf_id, kf] : keyframes_)
   {
-    cached_.boundingBox = cached_.boundingBox->unionWith(kf.localBoundingBox().compose(kf.pose));
+    cached_.boundingBox = cached_.boundingBox->unionWith(kf.localBoundingBox().compose(kf.pose()));
   }
 
   return *cached_.boundingBox;
@@ -193,7 +202,8 @@ bool KeyframePointCloudMap::nn_single_search(
     uint64_t& resultIndexOrID) const
 {
   ASSERT_(cached_.icp_search_submap);
-  return cached_.icp_search_submap->nn_single_search(query, result, out_dist_sqr, resultIndexOrID);
+  return cached_.icp_search_submap->pointcloud()->nn_single_search(
+      query, result, out_dist_sqr, resultIndexOrID);
 }
 
 bool KeyframePointCloudMap::nn_single_search(
@@ -201,7 +211,8 @@ bool KeyframePointCloudMap::nn_single_search(
     uint64_t& resultIndexOrID) const
 {
   ASSERT_(cached_.icp_search_submap);
-  return cached_.icp_search_submap->nn_single_search(query, result, out_dist_sqr, resultIndexOrID);
+  return cached_.icp_search_submap->pointcloud()->nn_single_search(
+      query, result, out_dist_sqr, resultIndexOrID);
 }
 
 void KeyframePointCloudMap::nn_multiple_search(
@@ -209,7 +220,7 @@ void KeyframePointCloudMap::nn_multiple_search(
     std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
 {
   ASSERT_(cached_.icp_search_submap);
-  cached_.icp_search_submap->nn_multiple_search(
+  cached_.icp_search_submap->pointcloud()->nn_multiple_search(
       query, N, results, out_dists_sqr, resultIndicesOrIDs);
 }
 
@@ -218,7 +229,7 @@ void KeyframePointCloudMap::nn_multiple_search(
     std::vector<float>& out_dists_sqr, std::vector<uint64_t>& resultIndicesOrIDs) const
 {
   ASSERT_(cached_.icp_search_submap);
-  cached_.icp_search_submap->nn_multiple_search(
+  cached_.icp_search_submap->pointcloud()->nn_multiple_search(
       query, N, results, out_dists_sqr, resultIndicesOrIDs);
 }
 
@@ -228,7 +239,7 @@ void KeyframePointCloudMap::nn_radius_search(
     std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
 {
   ASSERT_(cached_.icp_search_submap);
-  cached_.icp_search_submap->nn_radius_search(
+  cached_.icp_search_submap->pointcloud()->nn_radius_search(
       query, search_radius_sqr, results, out_dists_sqr, resultIndicesOrIDs, maxPoints);
 }
 
@@ -238,11 +249,11 @@ void KeyframePointCloudMap::nn_radius_search(
     std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
 {
   ASSERT_(cached_.icp_search_submap);
-  cached_.icp_search_submap->nn_radius_search(
+  cached_.icp_search_submap->pointcloud()->nn_radius_search(
       query, search_radius_sqr, results, out_dists_sqr, resultIndicesOrIDs, maxPoints);
 }
 
-void KeyframePointCloudMap::icp_get_prepared(
+void KeyframePointCloudMap::icp_get_prepared_as_global(
     const mrpt::poses::CPose3D&                                      icp_ref_point,
     [[maybe_unused]] const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi) const
 {
@@ -253,16 +264,18 @@ void KeyframePointCloudMap::icp_get_prepared(
   std::map<double, KeyFrameID> kfs_to_search;  // key: distance to KF center
   for (auto& [kf_id, kf] : keyframes_)
   {
-    if (!kf.pointcloud)
+    if (!kf.pointcloud())
     {
       continue;
     }
 
     // convert query to local coordinates of the keyframe:
-    const auto query_local    = kf.pose.inverseComposePoint(icp_ref_point.translation());
+    const auto query_local    = kf.pose().inverseComposePoint(icp_ref_point.translation());
     const auto dist_to_kf     = query_local.norm();
     kfs_to_search[dist_to_kf] = kf_id;
   }
+
+  MRPT_TODO("Change criteria here so more distant frames are used too");
 
   for (const auto& [dist, kf_id] : kfs_to_search)
   {
@@ -282,26 +295,31 @@ void KeyframePointCloudMap::icp_get_prepared(
 
   cached_.icp_search_kfs = kfs_to_search_limited;
 
+  // Rebuild "cached merged KF":
+
+  cached_.icp_search_submap.reset();
+  cached_.icp_search_submap.emplace();
+
   for (const auto kf_id : kfs_to_search_limited)
   {
     const auto& kf = keyframes_.at(kf_id);
 
-    if (!kf.pointcloud)
+    if (!kf.pointcloud())
     {
       continue;  // Should never happen!
     }
 
-    if (!cached_.icp_search_submap)
+    if (!cached_.icp_search_submap->pointcloud())
     {
-      cached_.icp_search_submap = mrpt::maps::CSimplePointsMap::Create();
+      cached_.icp_search_submap->pointcloud(mrpt::maps::CSimplePointsMap::Create());
     }
 
-    cached_.icp_search_submap->insertAnotherMap(kf.pointcloud.get(), kf.pose);
+    MRPT_TODO("Use cached global pointcloud inside KF");
+    cached_.icp_search_submap->pointcloud()->insertAnotherMap(kf.pointcloud().get(), kf.pose());
   }
 
-  cached_.icp_search_submap->kdTreeEnsureIndexBuilt3D();
-
-  MRPT_TODO("Merge covs per points");
+  // This builds the KD-tree and covariances
+  cached_.icp_search_submap->buildCache();
 }
 
 void KeyframePointCloudMap::icp_cleanup() const
@@ -309,11 +327,77 @@ void KeyframePointCloudMap::icp_cleanup() const
   // Do NOT free the map, we might reuse it for next ICP call.
 }
 
-std::optional<KeyframePointCloudMap::NearestPointCovResult> KeyframePointCloudMap::nn_search_pt2pl(
-    const mrpt::math::TPoint3Df& point, const float max_search_distance) const
+void KeyframePointCloudMap::nn_search_cov2cov(
+    const NearestPointWithCovCapable& localMap, const mrpt::poses::CPose3D& localMapPose,
+    const float max_search_distance, mp2p_icp::MatchedPointWithCovList& outPairings) const
 {
-  //
-  return {};
+  ASSERTMSG_(
+      cached_.icp_search_submap,
+      "Using this method requires calling icp_get_prepared_as_global() first");
+
+  // Enforce local map to recompute its covariances to the new pose:
+  const auto* localMapKF = dynamic_cast<const KeyframePointCloudMap*>(&localMap);
+  ASSERTMSG_(
+      localMapKF, "Implementation expects local map to be also of type KeyframePointCloudMap");
+
+  ASSERT_EQUAL_(localMapKF->keyframes_.size(), 1U);
+  auto& localKf = const_cast<KeyFrame&>(localMapKF->keyframes_.at(0));
+  localKf.pose(localMapPose);
+
+  const auto& localKfCov  = localKf.covariancesGlobal();
+  const auto& localPoints = localKf.pointcloud_global();
+
+  const auto& globalKfCov  = cached_.icp_search_submap->covariancesGlobal();
+  const auto& globalPoints = cached_.icp_search_submap->pointcloud_global();
+
+  const auto localPointCount = localPoints->size();
+
+  const float max_sqr_dist = mrpt::square(max_search_distance);
+
+  const auto& xs = localPoints->getPointsBufferRef_x();
+  const auto& ys = localPoints->getPointsBufferRef_y();
+  const auto& zs = localPoints->getPointsBufferRef_z();
+
+  const auto& g_xs = globalPoints->getPointsBufferRef_x();
+  const auto& g_ys = globalPoints->getPointsBufferRef_y();
+  const auto& g_zs = globalPoints->getPointsBufferRef_z();
+
+  globalPoints->kdTreeEnsureIndexBuilt3D();
+
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+  tbb::parallel_for(
+      static_cast<size_t>(0), localPointCount,
+      [&](size_t local_idx)
+#else
+  for (size_t local_idx = 0; local_idx < localPointCount; local_idx++)
+#endif
+      {
+        float nn_dist_sqr = std::numeric_limits<float>::max();
+
+        const auto nn_global_idx = globalPoints->kdTreeClosestPoint3D(
+            xs[local_idx], ys[local_idx], zs[local_idx], nn_dist_sqr);
+
+        if (nn_dist_sqr <= max_sqr_dist)
+        {
+          // Add pairing:
+          auto& p      = outPairings.emplace_back();
+          p.global_idx = nn_global_idx;
+          p.local_idx  = local_idx;
+          p.local      = {xs[local_idx], ys[local_idx], zs[local_idx]};
+          p.global     = {g_xs[nn_global_idx], g_ys[nn_global_idx], g_zs[nn_global_idx]};
+
+          /* Following GICP \cite segal2009gicp this should be:
+           *  `(COV_{global} + R*COV_{local}*R^T)^{-1}`
+           *  But localKfCov already incorporate R*C*R^T from localKf.pose(p)
+           */
+          p.cov_inv = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse_LLt();
+
+          std::cout << p.asString();
+        }
+      }
+#if defined(MOLA_METRIC_MAPS_USE_TBB)
+  );
+#endif
 }
 
 std::string KeyframePointCloudMap::asString() const
@@ -323,7 +407,7 @@ std::string KeyframePointCloudMap::asString() const
   std::size_t        total_points = 0;
   for (const auto& [kf_id, kf] : keyframes_)
   {
-    total_points += kf.pointcloud ? kf.pointcloud->size() : 0;
+    total_points += kf.pointcloud() ? kf.pointcloud()->size() : 0;
   }
 
   o << "KeyframePointCloudMap: " << keyframes_.size() << " keyframes, "
@@ -346,9 +430,9 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
-    obj->loadFromPointsMap(kf.pointcloud.get());
+    obj->loadFromPointsMap(kf.pointcloud().get());
 
-    obj->setPose(kf.pose);
+    obj->setPose(kf.pose());
 
     obj->setPointSize(renderOptions.point_size);
     if (renderOptions.color.A != 1.0f)
@@ -493,7 +577,7 @@ bool KeyframePointCloudMap::internal_insertObservation(
   {
     for (auto it = keyframes_.begin(); it != keyframes_.end();)
     {
-      const double dist = pc_in_map.distanceTo(it->second.pose);
+      const double dist = pc_in_map.distanceTo(it->second.pose());
       if (dist > insertionOptions.remove_frames_farther_than)
       {
         it = keyframes_.erase(it);
@@ -511,10 +595,10 @@ bool KeyframePointCloudMap::internal_insertObservation(
     ASSERT_(obsPC->pointcloud);
 
     // Add KF:
-    auto& new_kf      = keyframes_[nextFreeKeyFrameID()];
-    new_kf.timestamp  = obs.timestamp;
-    new_kf.pose       = pc_in_map;
-    new_kf.pointcloud = obsPC->pointcloud;
+    auto& new_kf     = keyframes_[nextFreeKeyFrameID()];
+    new_kf.timestamp = obs.timestamp;
+    new_kf.pose(pc_in_map);
+    new_kf.pointcloud(obsPC->pointcloud);
 
     new_kf.buildCache();
     cached_.reset();
@@ -550,58 +634,71 @@ bool KeyframePointCloudMap::internal_canComputeObservationLikelihood(
 
 //  =========== KeyFrame ============
 
-void KeyframePointCloudMap::KeyFrame::internalBuildBBox() const
+void KeyframePointCloudMap::KeyFrame::updateBBox() const
 {
-  if (!pointcloud)
+  if (!pointcloud_)
   {
-    cached_bbox_ = mrpt::math::TBoundingBoxf({0, 0, 0}, {0, 0, 0});
+    cached_bbox_local_ = mrpt::math::TBoundingBoxf({0, 0, 0}, {0, 0, 0});
   }
   else
   {
-    cached_bbox_ = pointcloud->boundingBox();
+    cached_bbox_local_ = pointcloud_->boundingBox();
   }
 }
 
 mrpt::math::TBoundingBoxf KeyframePointCloudMap::KeyFrame::localBoundingBox() const
 {
-  if (!cached_bbox_)
+  if (!cached_bbox_local_)
   {
-    internalBuildBBox();
+    updateBBox();
   }
-  return *cached_bbox_;
+  return *cached_bbox_local_;
 }
 
 void KeyframePointCloudMap::KeyFrame::buildCache() const
 {
   // Compute bbox:
-  internalBuildBBox();
+  updateBBox();
 
   // Build KD-tree:
-  ASSERT_(pointcloud);
-  pointcloud->kdTreeEnsureIndexBuilt3D();
+  ASSERT_(pointcloud_);
+  pointcloud_->kdTreeEnsureIndexBuilt3D();
 
   // Build per-point covariances:
-  internalComputeCovariances();
+  computeCovariancesAndDensity();
 }
 
-void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
+void KeyframePointCloudMap::KeyFrame::updatePointsGlobal() const
 {
-  ASSERT_(pointcloud);
-  const auto point_count = pointcloud->size();
+  if (!pointcloud_)
+  {
+    return;
+  }
+  if (!pointcloud_global_)
+  {
+    pointcloud_global_ = mrpt::maps::CSimplePointsMap::Create();
+  }
+  pointcloud_global_->clear();
+  pointcloud_global_->insertAnotherMap(pointcloud_.get(), pose());
+}
 
-  if (cached_cov_.size() == point_count)
+void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
+{
+  ASSERT_(pointcloud_);
+  const auto point_count = pointcloud_->size();
+
+  if (cached_cov_local_.size() == point_count)
   {
     return;  // Already computed
   }
-
-#define DO_PROFILE_COVS 0
 
 #if DO_PROFILE_COVS
   auto start = std::chrono::high_resolution_clock::now();
 #endif
 
   // Resize:
-  cached_cov_.resize(point_count);
+  cached_cov_local_.resize(point_count);
+  cached_cov_global_.clear();  // invalidate
 
   if (point_count < 3)
   {
@@ -616,9 +713,9 @@ void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
   const size_t K_CORRESPONDENCES = 20;
   const auto   normalization     = ((K_CORRESPONDENCES - 1) * (2 + K_CORRESPONDENCES)) / 2;
 
-  const auto& xs = pointcloud->getPointsBufferRef_x();
-  const auto& ys = pointcloud->getPointsBufferRef_y();
-  const auto& zs = pointcloud->getPointsBufferRef_z();
+  const auto& xs = pointcloud_->getPointsBufferRef_x();
+  const auto& ys = pointcloud_->getPointsBufferRef_y();
+  const auto& zs = pointcloud_->getPointsBufferRef_z();
 
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
   tbb::parallel_for(
@@ -631,14 +728,11 @@ void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
         std::vector<size_t> k_indices;
         std::vector<float>  k_sq_distances;
 
-        pointcloud->kdTreeNClosestPoint3DIdx(
+        pointcloud_->kdTreeNClosestPoint3DIdx(
             xs[i], ys[i], zs[i], K_CORRESPONDENCES, k_indices, k_sq_distances);
 
         sum_k_sq_distances +=
             std::accumulate(k_sq_distances.begin() + 1, k_sq_distances.end(), 0.0f) / normalization;
-
-        //    const auto eig = mp2p_icp::estimate_points_eigen(xs.data(), ys.data(), zs.data(),
-        //    k_indices);
 
         Eigen::Matrix<double, 3, -1> neighbors(3, K_CORRESPONDENCES);
         for (size_t j = 0; j < k_indices.size(); j++)
@@ -660,13 +754,13 @@ void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
         // is the smallest (normal direction of a plane):
         const Eigen::Vector3d values = Eigen::Vector3d(1.0, 1.0, 1e-3);
 
-        cached_cov_[i] = svd.matrixU() * values.asDiagonal() * svd.matrixV().transpose();
+        cached_cov_local_[i] = svd.matrixU() * values.asDiagonal() * svd.matrixV().transpose();
       }
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
   );
 #endif
 
-  cloud_density_ = sum_k_sq_distances / static_cast<float>(point_count);
+  cloud_density_ = std::sqrt(sum_k_sq_distances / static_cast<float>(point_count));
 
   // done.
 #if DO_PROFILE_COVS
@@ -675,4 +769,23 @@ void KeyframePointCloudMap::KeyFrame::internalComputeCovariances() const
   std::cout << "Compute covs: N=" << point_count << " in "
             << static_cast<double>(duration.count()) * 1e-3 << " ms d=" << *cloud_density_ << "\n";
 #endif
+}
+
+void KeyframePointCloudMap::KeyFrame::updateCovariancesGlobal() const
+{
+  if (cached_cov_global_.size() == cached_cov_local_.size())
+  {
+    return;  // Already computed
+  }
+
+  ASSERT_EQUAL_(cached_cov_local_.size(), pointcloud_->size());
+
+  cached_cov_global_.resize(cached_cov_local_.size());
+
+  const Eigen::Matrix3f R = pose_.getRotationMatrix().cast_float().asEigen();
+
+  for (size_t i = 0; i < cached_cov_local_.size(); i++)
+  {
+    cached_cov_global_[i] = R * cached_cov_local_[i].asEigen() * R.transpose();
+  }
 }

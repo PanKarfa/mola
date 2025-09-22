@@ -85,9 +85,6 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
    */
   mrpt::math::TBoundingBoxf boundingBox() const override;
 
-  // void visitAllKeyFrames(const std::function<void(const global_index3d_t&, const VoxelData&)>& f)
-  // const;
-
   /** @} */
 
   /** @name API of the NearestNeighborsCapable virtual interface
@@ -98,8 +95,11 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   }
   [[nodiscard]] size_t nn_index_count() const override
   {
-    ASSERT_(cached_.icp_search_submap);
-    return cached_.icp_search_submap->size();
+    if (cached_.icp_search_submap)
+    {
+      return cached_.icp_search_submap->pointcloud()->size();
+    }
+    return 0;
   }
 
   [[nodiscard]] bool nn_single_search(
@@ -137,7 +137,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
    *  @{ */
 
   /// Prepare the map for ICP with a given point as reference.
-  void icp_get_prepared(
+  void icp_get_prepared_as_global(
       const mrpt::poses::CPose3D&                     icp_ref_point,
       const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi = std::nullopt) const override;
 
@@ -148,8 +148,10 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   /** @name Public virtual methods implementation for NearestPointWithCovCapable
    *  @{ */
-  std::optional<NearestPointCovResult> nn_search_pt2pl(
-      const mrpt::math::TPoint3Df& point, const float max_search_distance) const override;
+  void nn_search_cov2cov(
+      const NearestPointWithCovCapable& localMap, const mrpt::poses::CPose3D& localMapPose,
+      const float                        max_search_distance,
+      mp2p_icp::MatchedPointWithCovList& outPairings) const override;
 
   /** @} */
 
@@ -282,9 +284,35 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     /**  Local metric map for this key-frame. Points are already transformed from the sensor frame
      * to the vehicle ("base_link") frame.
      */
-    mrpt::maps::CPointsMap::Ptr pointcloud;
-    mrpt::poses::CPose3D        pose;  //!< Pose of the key-frame in the map reference frame
-    mrpt::Clock::time_point     timestamp;  //!< Timestamp of the key-frame (from observation)
+    void pointcloud(const mrpt::maps::CPointsMap::Ptr& pc)
+    {
+      pointcloud_ = pc;
+      invalidateCache();
+    }
+
+    [[nodiscard]] const mrpt::maps::CPointsMap::Ptr& pointcloud() const { return pointcloud_; }
+
+    [[nodiscard]] const mrpt::maps::CPointsMap::Ptr& pointcloud_global() const
+    {
+      ASSERT_(pointcloud_);
+      if (!pointcloud_global_)
+      {
+        updatePointsGlobal();
+      }
+      return pointcloud_global_;
+    }
+
+    mrpt::Clock::time_point timestamp;  //!< Timestamp of the key-frame (from observation)
+
+    /// Sets the pose of the key-frame in the map reference frame
+    void pose(const mrpt::poses::CPose3D& pose)
+    {
+      pose_ = pose;
+      cached_cov_global_.clear();
+      pointcloud_global_.reset();
+    }
+    /// Gets the pose of the key-frame in the map reference frame
+    [[nodiscard]] const mrpt::poses::CPose3D& pose() const { return pose_; }
 
     [[nodiscard]] mrpt::math::TBoundingBoxf localBoundingBox() const;
 
@@ -293,18 +321,44 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     void invalidateCache()
     {
-      cached_bbox_.reset();
-      cached_cov_.clear();
+      cached_bbox_local_.reset();
+      cached_cov_local_.clear();
+      cached_cov_global_.clear();
+      cloud_density_.reset();
+      pointcloud_global_.reset();
+    }
+
+    const auto& covariancesGlobal() const
+    {
+      computeCovariancesAndDensity();  // will reuse cached if possible
+      updateCovariancesGlobal();  // (idem)
+      return cached_cov_global_;
     }
 
    private:
-    void internalBuildBBox() const;
-    void internalComputeCovariances() const;
+    void updateBBox() const;
+    void computeCovariancesAndDensity() const;
+    void updateCovariancesGlobal() const;
+    void updatePointsGlobal() const;
 
-    mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_;
-    /// One cov per point (empty: not computed)
-    mutable std::vector<mrpt::math::CMatrixFloat33> cached_cov_;
-    mutable std::optional<float>                    cloud_density_;
+    mrpt::maps::CPointsMap::Ptr pointcloud_;
+    mrpt::poses::CPose3D        pose_;  //!< Pose of the key-frame in the map reference frame
+
+    /// Bounding box in local KF coordinates. Filled by updateBBox()
+    mutable std::optional<mrpt::math::TBoundingBoxf> cached_bbox_local_;
+    mutable std::optional<float>                     cloud_density_;
+    /** One cov per point in local KF coordinates (empty: not computed). Filled by
+     * computeCovariancesAndDensity()
+     */
+    mutable std::vector<mrpt::math::CMatrixFloat33> cached_cov_local_;
+
+    /** One cov per point in global map coordinates (empty: not computed). Updated by
+     *  updateCovariancesGlobal() */
+    mutable std::vector<mrpt::math::CMatrixFloat33> cached_cov_global_;
+
+    /** The cloud, converted to the "global" frame using "pose" (empty: not computed).
+     * Updated by updatePointsGlobal() */
+    mutable mrpt::maps::CPointsMap::Ptr pointcloud_global_;
   };
 
   std::map<KeyFrameID, KeyFrame> keyframes_;
@@ -317,7 +371,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox;
     mutable std::optional<std::set<KeyFrameID>>      icp_search_kfs;
-    mutable mrpt::maps::CPointsMap::Ptr              icp_search_submap;
+    mutable std::optional<KeyFrame>                  icp_search_submap;
   };
 
   CachedData cached_;
