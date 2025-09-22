@@ -413,6 +413,19 @@ void KeyframePointCloudMap::nn_search_cov2cov(
 #endif
 }
 
+std::size_t KeyframePointCloudMap::point_count() const
+{
+  std::size_t total = 0;
+  for (const auto& [id, kf] : keyframes_)
+  {
+    if (kf.pointcloud())
+    {
+      total += kf.pointcloud()->size();
+    }
+  }
+  return total;
+}
+
 std::string KeyframePointCloudMap::asString() const
 {
   // Returns a short description of the map:

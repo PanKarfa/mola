@@ -153,6 +153,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
       const float                        max_search_distance,
       mp2p_icp::MatchedPointWithCovList& outPairings) const override;
 
+  [[nodiscard]] std::size_t point_count() const override;
+
   /** @} */
 
   /** @name Public virtual methods implementation for CMetricMap
