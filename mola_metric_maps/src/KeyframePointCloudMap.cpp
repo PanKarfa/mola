@@ -328,6 +328,32 @@ void KeyframePointCloudMap::icp_cleanup() const
   // Do NOT free the map, we might reuse it for next ICP call.
 }
 
+namespace
+{
+
+/// Compute the symmetric matrix square root of a symmetric PSD matrix.
+/// If the matrix has small negative eigenvalues due to numerical issues,
+/// they are clamped to zero.
+Eigen::Matrix3f sqrtm(const Eigen::Matrix3f& A)
+{
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eig(A);
+
+  if (eig.info() != Eigen::Success)
+  {
+    // Return default (shouldn't happen!)
+    return Eigen::Matrix3f::Identity();
+  }
+
+  // Clamp eigenvalues to >= 0 to avoid numerical issues
+  const Eigen::Vector3f  eigvals = eig.eigenvalues().cwiseMax(0.0);
+  const Eigen::Matrix3f& eigvec  = eig.eigenvectors();
+
+  // Construct sqrt(A) = Q * sqrt(D) * Q^T
+  return eigvec * eigvals.cwiseSqrt().asDiagonal() * eigvec.transpose();
+}
+
+}  // namespace
+
 void KeyframePointCloudMap::nn_search_cov2cov(
     const NearestPointWithCovCapable& localMap, const mrpt::poses::CPose3D& localMapPose,
     const float max_search_distance, mp2p_icp::MatchedPointWithCovList& outPairings) const
@@ -403,7 +429,8 @@ void KeyframePointCloudMap::nn_search_cov2cov(
            *  `(COV_{global} + R*COV_{local}*R^T)^{-1}`
            *  But localKfCov already incorporate R*C*R^T from localKf.pose(p)
            */
-          p.cov_inv = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse_LLt();
+          p.cov_inv      = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse_LLt();
+          p.cov_inv_sqrt = sqrtm(p.cov_inv.asEigen());
         }
       }
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
