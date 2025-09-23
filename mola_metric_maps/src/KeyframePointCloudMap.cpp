@@ -106,6 +106,7 @@ void    KeyframePointCloudMap::serializeTo(mrpt::serialization::CArchive& out) c
 {
   // params:
   // out << params_;
+  creationOptions.writeToStream(out);
   insertionOptions.writeToStream(out);
   likelihoodOptions.writeToStream(out);
   renderOptions.writeToStream(out);
@@ -139,7 +140,7 @@ void KeyframePointCloudMap::serializeFrom(mrpt::serialization::CArchive& in, uin
     case 0:
     {
       // params:
-      // in >> params_;
+      creationOptions.readFromStream(in);
       insertionOptions.readFromStream(in);
       likelihoodOptions.readFromStream(in);
       renderOptions.readFromStream(in);
@@ -151,7 +152,8 @@ void KeyframePointCloudMap::serializeFrom(mrpt::serialization::CArchive& in, uin
         uint64_t kf_id;
         in >> kf_id;
 
-        KeyFrame& kf = keyframes_[kf_id];
+        auto [it, isNew] = keyframes_.emplace(kf_id, creationOptions.k_correspondences_for_cov);
+        KeyFrame& kf     = it->second;
 
         in >> kf.timestamp;
         mrpt::poses::CPose3D pose;
@@ -299,7 +301,7 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
   // Rebuild "cached merged KF":
 
   cached_.icp_search_submap.reset();
-  cached_.icp_search_submap.emplace();
+  cached_.icp_search_submap.emplace(creationOptions.k_correspondences_for_cov);
 
   for (const auto kf_id : kfs_to_search_limited)
   {
@@ -368,7 +370,8 @@ void KeyframePointCloudMap::nn_search_cov2cov(
       localMapKF, "Implementation expects local map to be also of type KeyframePointCloudMap");
 
   ASSERT_EQUAL_(localMapKF->keyframes_.size(), 1U);
-  auto& localKf = const_cast<KeyFrame&>(localMapKF->keyframes_.at(0));
+  auto&      localKf             = const_cast<KeyFrame&>(localMapKF->keyframes_.at(0));
+  const auto originalLocalKfPose = localKf.pose();
   localKf.pose(localMapPose);
 
   const auto& localKfCov        = localKf.covariancesGlobal();
@@ -443,6 +446,9 @@ void KeyframePointCloudMap::nn_search_cov2cov(
         std::make_move_iterator(localVec.end()));
   }
 #endif
+
+  // Recover original:
+  localKf.pose(originalLocalKfPose);
 }
 
 std::size_t KeyframePointCloudMap::point_count() const
@@ -609,6 +615,21 @@ void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::
   // TODO
 }
 
+void KeyframePointCloudMap::TCreationOptions::writeToStream(
+    mrpt::serialization::CArchive& out) const
+{
+  out.WriteAs<uint8_t>(0);  // version
+  out << max_search_keyframes << k_correspondences_for_cov;
+}
+
+void KeyframePointCloudMap::TCreationOptions::readFromStream(mrpt::serialization::CArchive& in)
+{
+  const auto version = in.ReadAs<uint8_t>();
+  ASSERT_(version == 0);
+
+  in >> max_search_keyframes >> k_correspondences_for_cov;
+}
+
 // ==========================
 //   Protected / Private
 // ==========================
@@ -653,7 +674,10 @@ bool KeyframePointCloudMap::internal_insertObservation(
     ASSERT_(obsPC->pointcloud);
 
     // Add KF:
-    auto& new_kf     = keyframes_[nextFreeKeyFrameID()];
+    auto [it, isNew] =
+        keyframes_.emplace(nextFreeKeyFrameID(), creationOptions.k_correspondences_for_cov);
+    auto& new_kf = it->second;
+
     new_kf.timestamp = obs.timestamp;
     new_kf.pose(pc_in_map);
     new_kf.pointcloud(obsPC->pointcloud);
@@ -768,7 +792,7 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
   // Compute using KD-tree:
   float sum_k_sq_distances = 0.0;
 
-  const size_t K_CORRESPONDENCES = 20;
+  const size_t K_CORRESPONDENCES = k_correspondences_for_cov_;
   const auto   normalization     = ((K_CORRESPONDENCES - 1) * (2 + K_CORRESPONDENCES)) / 2;
 
   const auto& xs = pointcloud_->getPointsBufferRef_x();

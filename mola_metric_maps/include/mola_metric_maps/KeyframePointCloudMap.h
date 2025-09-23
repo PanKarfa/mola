@@ -263,7 +263,11 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   {
     TCreationOptions() = default;
 
-    uint32_t max_search_keyframes = 3;  //!< Maximum number of key-frames to search for NN
+    void writeToStream(mrpt::serialization::CArchive& out) const;
+    void readFromStream(mrpt::serialization::CArchive& in);
+
+    uint32_t max_search_keyframes      = 3;  //!< Maximum number of key-frames to search for NN
+    uint32_t k_correspondences_for_cov = 8;
   };
   TCreationOptions creationOptions;
 
@@ -281,7 +285,10 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
   class KeyFrame
   {
    public:
-    KeyFrame() = default;
+    KeyFrame(std::size_t k_correspondences_for_cov)
+        : k_correspondences_for_cov_(k_correspondences_for_cov)
+    {
+    }
 
     /**  Local metric map for this key-frame. Points are already transformed from the sensor frame
      * to the vehicle ("base_link") frame.
@@ -338,6 +345,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     }
 
    private:
+    std::size_t k_correspondences_for_cov_;
+
     void updateBBox() const;
     void computeCovariancesAndDensity() const;
     void updateCovariancesGlobal() const;
