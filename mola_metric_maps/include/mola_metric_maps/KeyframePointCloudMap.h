@@ -267,7 +267,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     void readFromStream(mrpt::serialization::CArchive& in);
 
     uint32_t max_search_keyframes      = 3;  //!< Maximum number of key-frames to search for NN
-    uint32_t k_correspondences_for_cov = 8;
+    uint32_t k_correspondences_for_cov = 20;
   };
   TCreationOptions creationOptions;
 
