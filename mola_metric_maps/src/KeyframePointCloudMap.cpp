@@ -345,15 +345,20 @@ void KeyframePointCloudMap::nn_search_cov2cov(
   auto& localKf = const_cast<KeyFrame&>(localMapKF->keyframes_.at(0));
   localKf.pose(localMapPose);
 
-  const auto& localKfCov  = localKf.covariancesGlobal();
-  const auto& localPoints = localKf.pointcloud_global();
+  const auto& localKfCov        = localKf.covariancesGlobal();
+  const auto& localPointsTransf = localKf.pointcloud_global();
+  const auto& localPoints       = localKf.pointcloud();
 
   const auto& globalKfCov  = cached_.icp_search_submap->covariancesGlobal();
   const auto& globalPoints = cached_.icp_search_submap->pointcloud_global();
 
-  const auto localPointCount = localPoints->size();
+  const auto localPointCount = localPointsTransf->size();
 
   const float max_sqr_dist = mrpt::square(max_search_distance);
+
+  const auto& xs_tf = localPointsTransf->getPointsBufferRef_x();
+  const auto& ys_tf = localPointsTransf->getPointsBufferRef_y();
+  const auto& zs_tf = localPointsTransf->getPointsBufferRef_z();
 
   const auto& xs = localPoints->getPointsBufferRef_x();
   const auto& ys = localPoints->getPointsBufferRef_y();
@@ -378,7 +383,7 @@ void KeyframePointCloudMap::nn_search_cov2cov(
         float nn_dist_sqr = std::numeric_limits<float>::max();
 
         const auto nn_global_idx = globalPoints->kdTreeClosestPoint3D(
-            xs[local_idx], ys[local_idx], zs[local_idx], nn_dist_sqr);
+            xs_tf[local_idx], ys_tf[local_idx], zs_tf[local_idx], nn_dist_sqr);
 
         if (nn_dist_sqr <= max_sqr_dist)
         {
