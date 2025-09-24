@@ -19,6 +19,7 @@
 #pragma once
 
 #include <mp2p_icp/IcpPrepareCapable.h>
+#include <mp2p_icp/MetricMapMergeCapable.h>
 #include <mp2p_icp/NearestPointWithCovCapable.h>
 #include <mrpt/img/color_maps.h>
 #include <mrpt/maps/CMetricMap.h>
@@ -46,7 +47,8 @@ namespace mola
 class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
                               public mrpt::maps::NearestNeighborsCapable,
                               public mp2p_icp::IcpPrepareCapable,
-                              public mp2p_icp::NearestPointWithCovCapable
+                              public mp2p_icp::NearestPointWithCovCapable,
+                              public mp2p_icp::MetricMapMergeCapable
 {
   DEFINE_SERIALIZABLE(KeyframePointCloudMap, mola)
  public:
@@ -143,6 +145,17 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   /// Optionally, clean up after ICP is done.
   void icp_cleanup() const override;
+
+  /** @} */
+
+  /** @name Public virtual methods implementation for MetricMapMergeCapable
+   *  @{ */
+
+  void merge_with(
+      const MetricMapMergeCapable&               source,
+      const std::optional<mrpt::poses::CPose3D>& otherRelativePose = std::nullopt) override;
+
+  void transform_map_left_multiply(const mrpt::poses::CPose3D& b) override;
 
   /** @} */
 
@@ -289,6 +302,37 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
         : k_correspondences_for_cov_(k_correspondences_for_cov)
     {
     }
+
+    // Copy constructor
+    KeyFrame(const KeyFrame& other)
+        : timestamp(other.timestamp),
+          k_correspondences_for_cov_(other.k_correspondences_for_cov_),
+          pointcloud_(other.pointcloud_),
+          pose_(other.pose_)
+    {
+      // Do not copy cached data -> force recomputation
+      invalidateCache();
+    }
+
+    // Copy assignment operator (safe self-assignment)
+    KeyFrame& operator=(const KeyFrame& other)
+    {
+      if (this != &other)
+      {
+        k_correspondences_for_cov_ = other.k_correspondences_for_cov_;
+        pointcloud_                = other.pointcloud_;
+        pose_                      = other.pose_;
+        timestamp                  = other.timestamp;
+
+        invalidateCache();
+      }
+      return *this;
+    }
+
+    // Rule of 5: default is fine
+    ~KeyFrame()                              = default;
+    KeyFrame(KeyFrame&&) noexcept            = default;
+    KeyFrame& operator=(KeyFrame&&) noexcept = default;
 
     /**  Local metric map for this key-frame. Points are already transformed from the sensor frame
      * to the vehicle ("base_link") frame.

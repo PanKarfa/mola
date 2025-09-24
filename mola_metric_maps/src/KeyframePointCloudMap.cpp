@@ -330,6 +330,44 @@ void KeyframePointCloudMap::icp_cleanup() const
   // Do NOT free the map, we might reuse it for next ICP call.
 }
 
+// =============== MetricMapMergeCapable ===============
+void KeyframePointCloudMap::merge_with(
+    const MetricMapMergeCapable&               source,
+    const std::optional<mrpt::poses::CPose3D>& otherRelativePose)
+{
+  const auto* sourceMapKF = dynamic_cast<const KeyframePointCloudMap*>(&source);
+  ASSERTMSG_(
+      sourceMapKF, "Implementation expects source map to be also of type KeyframePointCloudMap");
+
+  for (const auto& [srcKfId, srcKf] : sourceMapKF->keyframes_)
+  {
+    const auto& srcPc = srcKf.pointcloud();
+    if (!srcPc)
+    {
+      continue;
+    }
+    auto [it, isNew] =
+        keyframes_.emplace(nextFreeKeyFrameID(), creationOptions.k_correspondences_for_cov);
+    auto& new_kf = it->second;
+
+    // copy
+    new_kf = srcKf;
+    // and optionally, transform
+    if (otherRelativePose)
+    {
+      new_kf.pose(*otherRelativePose + new_kf.pose());
+    }
+  }
+}
+
+void KeyframePointCloudMap::transform_map_left_multiply(const mrpt::poses::CPose3D& b)
+{
+  for (auto& [id, kf] : keyframes_)
+  {
+    kf.pose(b + kf.pose());
+  }
+}
+
 namespace
 {
 
