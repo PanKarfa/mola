@@ -35,9 +35,21 @@
 #include <tbb/parallel_for.h>
 #endif
 
-using namespace mola;
-
 // #define DO_PROFILE_COVS 1
+// #define DO_VIZ_DEBUG 1
+
+#if DO_VIZ_DEBUG
+#include <mrpt/opengl/CAxis.h>
+#include <mrpt/opengl/CEllipsoid3D.h>
+#include <mrpt/opengl/CGridPlaneXY.h>
+#include <mrpt/opengl/CPointCloud.h>
+#include <mrpt/opengl/CSetOfLines.h>
+#include <mrpt/opengl/Scene.h>
+
+#include <fstream>
+#endif
+
+using namespace mola;
 
 //  =========== Begin of Map definition ============
 MAP_DEFINITION_REGISTER(
@@ -470,7 +482,7 @@ void KeyframePointCloudMap::nn_search_cov2cov(
            *  `(COV_{global} + R*COV_{local}*R^T)^{-1}`
            *  But localKfCov already incorporate R*C*R^T from localKf.pose(p)
            */
-          p.cov_inv      = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse_LLt();
+          p.cov_inv      = (globalKfCov.at(nn_global_idx) + localKfCov.at(local_idx)).inverse();
           p.cov_inv_sqrt = sqrtm(p.cov_inv.asEigen());
         }
       }
@@ -815,6 +827,10 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
 #if DO_PROFILE_COVS
   auto start = std::chrono::high_resolution_clock::now();
 #endif
+#if DO_VIZ_DEBUG
+  static int call_counter = 0;
+  call_counter++;
+#endif
 
   // Resize:
   cached_cov_local_.resize(point_count);
@@ -828,10 +844,11 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
   }
 
   // Compute using KD-tree:
-  float sum_k_sq_distances = 0.0;
+  std::vector<float> sum_k_sq_distances(point_count);
 
   const size_t K_CORRESPONDENCES = k_correspondences_for_cov_;
-  const auto   normalization     = ((K_CORRESPONDENCES - 1) * (2 + K_CORRESPONDENCES)) / 2;
+  const auto   normalization =
+      static_cast<float>(((K_CORRESPONDENCES - 1) * (2 + K_CORRESPONDENCES))) / 2;
 
   const auto& xs = pointcloud_->getPointsBufferRef_x();
   const auto& ys = pointcloud_->getPointsBufferRef_y();
@@ -851,10 +868,10 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
         pointcloud_->kdTreeNClosestPoint3DIdx(
             xs[i], ys[i], zs[i], K_CORRESPONDENCES, k_indices, k_sq_distances);
 
-        sum_k_sq_distances +=
+        sum_k_sq_distances[i] =
             std::accumulate(k_sq_distances.begin() + 1, k_sq_distances.end(), 0.0f) / normalization;
 
-        Eigen::Matrix<double, 3, -1> neighbors(3, K_CORRESPONDENCES);
+        Eigen::Matrix<double, 3, -1> neighbors(3, k_indices.size());
         for (size_t j = 0; j < k_indices.size(); j++)
         {
           neighbors(0, static_cast<Eigen::Index>(j)) = static_cast<double>(xs[k_indices[j]]);
@@ -862,7 +879,8 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
           neighbors(2, static_cast<Eigen::Index>(j)) = static_cast<double>(zs[k_indices[j]]);
         }
 
-        neighbors.colwise() -= neighbors.rowwise().mean().eval();
+        // neighbors.colwise() -= neighbors.rowwise().mean().eval();
+        neighbors.colwise() -= Eigen::Vector3d(xs[i], ys[i], zs[i]);
         const Eigen::Matrix3d cov = neighbors * neighbors.transpose() / K_CORRESPONDENCES;
 
         // Plane regularization (see DLIO'2023 or Thrun's GICP paper)
@@ -873,14 +891,90 @@ void KeyframePointCloudMap::KeyFrame::computeCovariancesAndDensity() const
         // SVD sorts eigenvalues in decreasing order, so the last one
         // is the smallest (normal direction of a plane):
         const Eigen::Vector3d values = Eigen::Vector3d(1.0, 1.0, 1e-3);
-
         cached_cov_local_[i] = svd.matrixU() * values.asDiagonal() * svd.matrixV().transpose();
+
+#if DO_VIZ_DEBUG
+        if (i % 100 == 0)
+        {
+          mrpt::opengl::Scene scene;
+
+          scene.insert(mrpt::opengl::CAxis::Create());
+          scene.insert(mrpt::opengl::CGridPlaneXY::Create(-100, 100, -100, 100, 0, 5));
+
+          {
+            auto glPts = mrpt::opengl::CPointCloud::Create();
+
+            glPts->loadFromPointsMap(this->pointcloud().get());
+            glPts->setPointSize(2.5f);
+            glPts->setColor_u8(0x00, 0x00, 0x00, 0x90);
+            scene.insert(glPts);
+          }
+
+          {
+            auto glPts = mrpt::opengl::CPointCloud::Create();
+
+            for (size_t j = 0; j < k_indices.size(); j++)
+            {
+              glPts->insertPoint(xs[k_indices[j]], ys[k_indices[j]], zs[k_indices[j]]);
+            }
+            glPts->setPointSize(7.0f);
+            glPts->setColor_u8(0xff, 0x00, 0x00, 0xff);
+            scene.insert(glPts);
+          }
+
+          {
+            auto glPts = mrpt::opengl::CPointCloud::Create();
+
+            glPts->insertPoint(xs[i], ys[i], zs[i]);
+
+            glPts->setPointSize(19.0f);
+            glPts->setColor_u8(0x00, 0x00, 0xff, 0xff);
+            scene.insert(glPts);
+          }
+
+          {
+            auto glElli = mrpt::opengl::CEllipsoid3D::Create();
+            glElli->setLocation(xs[i], ys[i], zs[i]);
+            glElli->enableDrawSolid3D(false);
+            glElli->setCovMatrix(cached_cov_local_[i] * 0.05);
+            glElli->setColor_u8(0x00, 0xff, 0x00, 0xff);
+            scene.insert(glElli);
+          }
+
+          {
+            auto glEigs = mrpt::opengl::CSetOfLines::Create();
+            glEigs->setColor_u8(0x00, 0x00, 0x00, 0xff);
+
+            const auto c = mrpt::math::TPoint3Df(xs[i], ys[i], zs[i]).cast<double>();
+
+            glEigs->appendLine(c, c + eigData.eigVectors[0]);
+            glEigs->appendLine(c, c + eigData.eigVectors[1] * 2);
+            glEigs->appendLine(c, c + eigData.eigVectors[2] * 2);
+
+            scene.insert(glEigs);
+          }
+
+          scene.saveToFile(mrpt::format("debug_kf_cov_%05i_%05zu.3Dscene", call_counter, i));
+          std::ofstream f(mrpt::format("debug_kf_cov_%05i_%05zu.cov", call_counter, i));
+          f << cached_cov_local_[i].inMatlabFormat();
+        }
+#endif
       }
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
   );
 #endif
 
-  cloud_density_ = std::sqrt(sum_k_sq_distances / static_cast<float>(point_count));
+  cloud_density_ = std::sqrt(
+      [&]()
+      {
+        float sum = 0;
+        for (const auto d : sum_k_sq_distances)
+        {
+          sum += d;
+        }
+        return sum;
+      }() /
+      static_cast<float>(point_count));
 
   // done.
 #if DO_PROFILE_COVS
