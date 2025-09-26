@@ -272,6 +272,8 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
     const mrpt::poses::CPose3D&                                      icp_ref_point,
     [[maybe_unused]] const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi) const
 {
+  auto lck = mrpt::lockHelper(state_mtx_);
+
   std::set<KeyFrameID> kfs_to_search_limited;
 
   //  max_search_keyframes
@@ -302,6 +304,7 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
   }
 
   // For selected KFs, build the submap, if it's different from the previous one:
+
   if (cached_.icp_search_kfs && *cached_.icp_search_kfs == kfs_to_search_limited)
   {
     // We are already up to date.
@@ -309,6 +312,7 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
   }
 
   cached_.icp_search_kfs = kfs_to_search_limited;
+  lck.unlock();
 
   // Rebuild "cached merged KF":
 
@@ -410,6 +414,8 @@ void KeyframePointCloudMap::nn_search_cov2cov(
     const NearestPointWithCovCapable& localMap, const mrpt::poses::CPose3D& localMapPose,
     const float max_search_distance, mp2p_icp::MatchedPointWithCovList& outPairings) const
 {
+  auto lck = mrpt::lockHelper(state_mtx_);
+
   ASSERTMSG_(
       cached_.icp_search_submap,
       "Using this method requires calling icp_get_prepared_as_global() first");
@@ -536,6 +542,7 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
   {
     return;
   }
+  auto lck = mrpt::lockHelper(state_mtx_);
 
   const uint8_t alpha_u8 = mrpt::f2u8(renderOptions.color.A);
 
@@ -548,7 +555,13 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
 
     obj->setPose(kf.pose());
 
-    obj->setPointSize(renderOptions.point_size);
+    float pointSize = renderOptions.point_size;
+    if (cached_.icp_search_kfs->count(kf_id))
+    {
+      pointSize *= 3;
+    }
+
+    obj->setPointSize(pointSize);
     if (renderOptions.color.A != 1.0f)
     {
       obj->setAllPointsAlpha(alpha_u8);
@@ -686,6 +699,8 @@ void KeyframePointCloudMap::TCreationOptions::readFromStream(mrpt::serialization
 
 void KeyframePointCloudMap::internal_clear()
 {
+  auto lck = mrpt::lockHelper(state_mtx_);
+
   keyframes_.clear();
   cached_.reset();
   cachedPoints_.reset();
@@ -694,6 +709,8 @@ void KeyframePointCloudMap::internal_clear()
 bool KeyframePointCloudMap::internal_insertObservation(
     const mrpt::obs::CObservation& obs, const std::optional<const mrpt::poses::CPose3D>& robotPose)
 {
+  auto lck = mrpt::lockHelper(state_mtx_);
+
   // Get robot pose for insertion pose:
   mrpt::poses::CPose3D pc_in_map;
   if (robotPose)

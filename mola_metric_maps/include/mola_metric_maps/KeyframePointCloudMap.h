@@ -418,6 +418,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   std::map<KeyFrameID, KeyFrame> keyframes_;
 
+  mutable std::recursive_mutex state_mtx_;  //!< for cached_ and _keyframes
+
   struct CachedData
   {
     CachedData() = default;
