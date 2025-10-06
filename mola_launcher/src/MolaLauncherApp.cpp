@@ -378,11 +378,11 @@ void MolaLauncherApp::spin()
 
   // Main SLAM/Localization infinite loop
   // -------------------------------------------
-  // clang-format off
-    MRPT_LOG_INFO("╔═══════════════════════════════════════╦═════════════════════════════════╗");
-    MRPT_LOG_INFO("║  Entering main MOLA application loop  ║ > CTRL+C for mola-cli to quit < ║");
-    MRPT_LOG_INFO("╚═══════════════════════════════════════╩═════════════════════════════════╝");
-  // clang-format on
+  MRPT_LOG_INFO(
+      "\n"
+      "╔═══════════════════════════════════════╦═════════════════════════════════╗\n"
+      "║  Entering main MOLA application loop  ║ > CTRL+C for mola-cli to quit < ║\n"
+      "╚═══════════════════════════════════════╩═════════════════════════════════╝");
 
   spin_thread_id_ = std::this_thread::get_id();
   while (!threads_must_end_)
