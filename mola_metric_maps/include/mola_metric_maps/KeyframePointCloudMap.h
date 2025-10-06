@@ -27,6 +27,7 @@
 #include <mrpt/maps/CSimplePointsMap.h>
 #include <mrpt/maps/NearestNeighborsCapable.h>
 #include <mrpt/math/TBoundingBox.h>
+#include <mrpt/opengl/opengl_frwds.h>
 
 #include <map>
 #include <optional>
@@ -227,19 +228,6 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
     void writeToStream(mrpt::serialization::CArchive& out) const;
     void readFromStream(mrpt::serialization::CArchive& in);
-
-    /** Sigma (standard deviation, in meters) of the Gaussian observation
-     *  model used to model the likelihood (default= 0.5 m) */
-    double sigma_dist = 0.5;
-
-    /** Maximum distance in meters to consider for the numerator divided by
-     * "sigma_dist", so that each point has a minimum (but very small)
-     * likelihood to avoid underflows (default=1.0 meters) */
-    double max_corr_distance = 1.0;
-
-    /** Speed up the likelihood computation by considering only one out of N
-     * rays (default=10) */
-    uint32_t decimation = 10;
   };
   TLikelihoodOptions likelihoodOptions;
 
@@ -266,15 +254,19 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     mrpt::img::TColormap colormap = mrpt::img::cmHOT;
 
     /** If colormap!=mrpt::img::cmNONE, use this coordinate
-     *  as color index: 0=x  1=y  2=z
+     *  as color index: 0=x  1=y  2=z  3=intensity
      */
-    uint8_t recolorizeByCoordinateIndex = 2;
+    uint8_t recolorizeByCoordinateIndex = 3;
   };
   TRenderOptions renderOptions;
 
-  struct TCreationOptions
+  struct TCreationOptions : public mrpt::config::CLoadableOptions
   {
     TCreationOptions() = default;
+    void loadFromConfigFile(
+        const mrpt::config::CConfigFileBase& source,
+        const std::string&                   section) override;  // See base docs
+    void dumpToTextStream(std::ostream& out) const override;  // See base docs
 
     void writeToStream(mrpt::serialization::CArchive& out) const;
     void readFromStream(mrpt::serialization::CArchive& in);
@@ -334,7 +326,7 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     KeyFrame(KeyFrame&&) noexcept            = default;
     KeyFrame& operator=(KeyFrame&&) noexcept = default;
 
-    /**  Local metric map for this key-frame. Points are already transformed from the sensor frame
+    /** Local metric map for this key-frame. Points are already transformed from the sensor frame
      * to the vehicle ("base_link") frame.
      */
     void pointcloud(const mrpt::maps::CPointsMap::Ptr& pc)
@@ -388,6 +380,11 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
       return cached_cov_global_;
     }
 
+    /** Builds (or get cached) visualization of the cloud in this KF, already transformed to its
+     * global pose.
+     */
+    std::shared_ptr<mrpt::opengl::CPointCloudColoured> getViz(const TRenderOptions& ro) const;
+
    private:
     std::size_t k_correspondences_for_cov_;
 
@@ -414,6 +411,9 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     /** The cloud, converted to the "global" frame using "pose" (empty: not computed).
      * Updated by updatePointsGlobal() */
     mutable mrpt::maps::CPointsMap::Ptr pointcloud_global_;
+
+    /** Cached visualization, created/getted by getViz() */
+    mutable std::shared_ptr<mrpt::opengl::CPointCloudColoured> cached_viz_;
   };
 
   std::map<KeyFrameID, KeyFrame> keyframes_;
@@ -429,6 +429,9 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     mutable std::optional<mrpt::math::TBoundingBoxf> boundingBox;
     mutable std::optional<std::set<KeyFrameID>>      icp_search_kfs;
     mutable std::optional<KeyFrame>                  icp_search_submap;
+
+    /// Used for getAsSimplePointsMap only.
+    mutable mrpt::maps::CSimplePointsMap::Ptr cachedPoints;
   };
 
   CachedData cached_;
@@ -452,9 +455,6 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   // See docs in base class
   bool internal_canComputeObservationLikelihood(const mrpt::obs::CObservation& obs) const override;
-
-  /// Used for getAsSimplePointsMap only.
-  mutable mrpt::maps::CSimplePointsMap::Ptr cachedPoints_;
 
   /// Convert a KF index and a local point index into a global index:
   uint64_t toGlobalIndex(const KeyFrameID kf_idx, const size_t local_pt_idx) const

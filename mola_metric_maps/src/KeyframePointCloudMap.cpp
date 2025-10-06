@@ -21,14 +21,17 @@
 #include <mrpt/config/CConfigFileBase.h>  // MRPT_LOAD_CONFIG_VAR
 #include <mrpt/obs/CObservationPointCloud.h>
 #include <mrpt/opengl/CPointCloudColoured.h>
+#include <mrpt/opengl/Scene.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
 #include <mrpt/system/string_utils.h>  // unitsFormat()
+#include <mrpt/version.h>
+
+#if MRPT_VERSION >= 0x020e0d
+#include <mrpt/math/TOrientedBox.h>
+#endif
 
 #include <Eigen/Dense>
 #include <numeric>  // std::accumulate
-
-//
-#include <iostream>  // DEBUG, remove!
 
 #if defined(MOLA_METRIC_MAPS_USE_TBB)
 #include <tbb/enumerable_thread_specific.h>
@@ -61,11 +64,10 @@ void KeyframePointCloudMap::TMapDefinition::loadFromConfigFile_map_specific(
 {
   using namespace std::string_literals;
 
-  // [<sectionNamePrefix>+"_creationOpts"]
-  // const std::string sSectCreation = sectionPrefix + "_creationOpts"s;
-  // MRPT_LOAD_CONFIG_VAR(voxel_size, float, s, sSectCreation);
-
-  MRPT_TODO("Implement loading of TCreationOptions into KeyframePointCloudMap::TMapDefinition::")
+  if (s.sectionExists(sectionPrefix + "_creationOpts"s))
+  {
+    creationOptions.loadFromConfigFile(s, sectionPrefix + "_creationOpts"s);
+  }
 
   if (s.sectionExists(sectionPrefix + "_insertOpts"s))
   {
@@ -85,8 +87,7 @@ void KeyframePointCloudMap::TMapDefinition::loadFromConfigFile_map_specific(
 
 void KeyframePointCloudMap::TMapDefinition::dumpToTextStream_map_specific(std::ostream& out) const
 {
-  // LOADABLEOPTS_DUMP_VAR(voxel_size, float);
-
+  creationOptions.dumpToTextStream(out);
   insertionOpts.dumpToTextStream(out);
   likelihoodOpts.dumpToTextStream(out);
   renderOpts.dumpToTextStream(out);
@@ -201,13 +202,17 @@ mrpt::math::TBoundingBoxf KeyframePointCloudMap::boundingBox() const
     return *cached_.boundingBox;
   }
 
+  // TODO(jlbc): To be refined with new mrpt implementation of Oriented Bounding Boxes
+#if MRPT_VERSION >= 0x020e0d && 0
+  mrpt::math::TOrientedBox ob;
+#else
   // Pessimistic bounding box:
-  // TODO(jlbc): To be refined once mrpt3 implements Oriented Bounding Boxes
   cached_.boundingBox = mrpt::math::TBoundingBoxf::PlusMinusInfinity();
   for (const auto& [kf_id, kf] : keyframes_)
   {
     cached_.boundingBox = cached_.boundingBox->unionWith(kf.localBoundingBox().compose(kf.pose()));
   }
+#endif
 
   return *cached_.boundingBox;
 }
@@ -292,7 +297,7 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
     kfs_to_search[dist_to_kf] = kf_id;
   }
 
-  MRPT_TODO("Change criteria here so more distant frames are used too");
+  // TODO: Explore other criteria here so more distant frames are used too?
 
   for (const auto& [dist, kf_id] : kfs_to_search)
   {
@@ -333,8 +338,9 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
       cached_.icp_search_submap->pointcloud(mrpt::maps::CSimplePointsMap::Create());
     }
 
-    MRPT_TODO("Use cached global pointcloud inside KF");
-    cached_.icp_search_submap->pointcloud()->insertAnotherMap(kf.pointcloud().get(), kf.pose());
+    // Use cached global pointcloud inside KF:
+    cached_.icp_search_submap->pointcloud()->insertAnotherMap(
+        kf.pointcloud_global().get(), mrpt::poses::CPose3D::Identity());
   }
 
   // This builds the KD-tree and covariances
@@ -517,36 +523,18 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
   }
   auto lck = mrpt::lockHelper(state_mtx_);
 
-  const uint8_t alpha_u8 = mrpt::f2u8(renderOptions.color.A);
-
   // Create one visualization object per KF:
   for (const auto& [kf_id, kf] : keyframes_)
   {
-    auto obj = mrpt::opengl::CPointCloudColoured::Create();
+    auto obj = kf.getViz(renderOptions);
 
-    obj->loadFromPointsMap(kf.pointcloud().get());
-
-    obj->setPose(kf.pose());
-
-    float pointSize = renderOptions.point_size;
+#if 0
+    float pointSize = ro.point_size;
     if (cached_.icp_search_kfs->count(kf_id))
     {
       pointSize *= 3;
     }
-
     obj->setPointSize(pointSize);
-    if (renderOptions.color.A != 1.0f)
-    {
-      obj->setAllPointsAlpha(alpha_u8);
-    }
-
-#if 0
-    const int idx = renderOptions.recolorizeByCoordinateIndex;
-    ASSERT_(idx >= 0 && idx < 3);
-    float            min = .0, max = 1.f;
-    constexpr double confidenceInterval = 0.02;
-    obj->recolorizeByCoordinate(
-        min, max, renderOptions.recolorizeByCoordinateIndex, renderOptions.colormap);
 #endif
 
     outObj.insert(obj);
@@ -560,13 +548,17 @@ bool KeyframePointCloudMap::isEmpty() const { return keyframes_.empty(); }
 void KeyframePointCloudMap::saveMetricMapRepresentationToFile(
     const std::string& filNamePrefix) const
 {
-  // TODO
+  using namespace std::string_literals;
+
+  mrpt::opengl::Scene scene;
+  scene.insert(getVisualization());
+  scene.saveToFile(filNamePrefix + ".3Dscene"s);
 }
 
 const mrpt::maps::CSimplePointsMap* KeyframePointCloudMap::getAsSimplePointsMap() const
 {
   // TODO: return cachedPoints_ or recompute it
-  return cachedPoints_.get();
+  return cached_.cachedPoints.get();
 }
 
 // ==========================
@@ -581,6 +573,7 @@ void KeyframePointCloudMap::TInsertionOptions::loadFromConfigFile(
 
 void KeyframePointCloudMap::TInsertionOptions::dumpToTextStream(std::ostream& out) const
 {
+  out << "\n------ [KeyframePointCloudMap::TInsertionOptions] ------- \n\n";
   LOADABLEOPTS_DUMP_VAR(remove_frames_farther_than, double);
 }
 
@@ -609,46 +602,90 @@ void KeyframePointCloudMap::TInsertionOptions::readFromStream(mrpt::serializatio
 }
 
 void KeyframePointCloudMap::TLikelihoodOptions::loadFromConfigFile(
-    const mrpt::config::CConfigFileBase& source, const std::string& section)
+    [[maybe_unused]] const mrpt::config::CConfigFileBase& source,
+    [[maybe_unused]] const std::string&                   section)
 {
-  // TODO
 }
 
-void KeyframePointCloudMap::TLikelihoodOptions::dumpToTextStream(std::ostream& out) const
+void KeyframePointCloudMap::TLikelihoodOptions::dumpToTextStream(
+    [[maybe_unused]] std::ostream& out) const
 {
-  // TODO
+  out << "\n------ [KeyframePointCloudMap::TLikelihoodOptions] ------- \n\n";
 }
 
 void KeyframePointCloudMap::TLikelihoodOptions::writeToStream(
     mrpt::serialization::CArchive& out) const
 {
-  // TODO
+  out.WriteAs<uint8_t>(0);
 }
 
 void KeyframePointCloudMap::TLikelihoodOptions::readFromStream(mrpt::serialization::CArchive& in)
 {
-  // TODO
+  const auto version = in.ReadAs<uint8_t>();
+  (void)version;
 }
 
 void KeyframePointCloudMap::TRenderOptions::loadFromConfigFile(
-    const mrpt::config::CConfigFileBase& source, const std::string& section)
+    const mrpt::config::CConfigFileBase& c, const std::string& s)
 {
-  // TODO
+  MRPT_LOAD_CONFIG_VAR(point_size, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.R, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.G, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
+  colormap = c.read_enum(s, "colormap", this->colormap);
+  MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
 }
 
 void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) const
 {
-  // TODO
+  out << "\n------ [KeyframePointCloudMap::TRenderOptions] ------- \n\n";
+
+  LOADABLEOPTS_DUMP_VAR(point_size, float);
+  LOADABLEOPTS_DUMP_VAR(color.R, float);
+  LOADABLEOPTS_DUMP_VAR(color.G, float);
+  LOADABLEOPTS_DUMP_VAR(color.B, float);
+  LOADABLEOPTS_DUMP_VAR(colormap, int);
+  LOADABLEOPTS_DUMP_VAR(recolorizeByCoordinateIndex, int);
 }
 
 void KeyframePointCloudMap::TRenderOptions::writeToStream(mrpt::serialization::CArchive& out) const
 {
-  // TODO
+  const int8_t version = 0;
+  out << version;
+  out << point_size << color << int8_t(colormap) << recolorizeByCoordinateIndex;
 }
 
 void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
 {
-  // TODO
+  int8_t version;
+  in >> version;
+  switch (version)
+  {
+    case 0:
+    {
+      in >> point_size;
+      in >> this->color;
+      in.ReadAsAndCastTo<int8_t>(this->colormap);
+      in >> recolorizeByCoordinateIndex;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  }
+}
+
+void KeyframePointCloudMap::TCreationOptions::loadFromConfigFile(
+    const mrpt::config::CConfigFileBase& c, const std::string& s)
+{
+  MRPT_LOAD_CONFIG_VAR_REQUIRED_CS(max_search_keyframes, uint64_t);
+  MRPT_LOAD_CONFIG_VAR_REQUIRED_CS(k_correspondences_for_cov, uint64_t);
+}
+
+void KeyframePointCloudMap::TCreationOptions::dumpToTextStream(std::ostream& out) const
+{
+  out << "\n------ [KeyframePointCloudMap::TCreationOptions] ------- \n\n";
+  LOADABLEOPTS_DUMP_VAR(max_search_keyframes, int);
+  LOADABLEOPTS_DUMP_VAR(k_correspondences_for_cov, int);
 }
 
 void KeyframePointCloudMap::TCreationOptions::writeToStream(
@@ -661,9 +698,16 @@ void KeyframePointCloudMap::TCreationOptions::writeToStream(
 void KeyframePointCloudMap::TCreationOptions::readFromStream(mrpt::serialization::CArchive& in)
 {
   const auto version = in.ReadAs<uint8_t>();
-  ASSERT_(version == 0);
-
-  in >> max_search_keyframes >> k_correspondences_for_cov;
+  switch (version)
+  {
+    case 0:
+    {
+      in >> max_search_keyframes >> k_correspondences_for_cov;
+    }
+    break;
+    default:
+      MRPT_THROW_UNKNOWN_SERIALIZATION_VERSION(version);
+  }
 }
 
 // ==========================
@@ -676,7 +720,6 @@ void KeyframePointCloudMap::internal_clear()
 
   keyframes_.clear();
   cached_.reset();
-  cachedPoints_.reset();
 }
 
 bool KeyframePointCloudMap::internal_insertObservation(
@@ -733,24 +776,23 @@ bool KeyframePointCloudMap::internal_insertObservation(
 }
 
 double KeyframePointCloudMap::internal_computeObservationLikelihood(
-    const mrpt::obs::CObservation& obs, const mrpt::poses::CPose3D& takenFrom) const
+    [[maybe_unused]] const mrpt::obs::CObservation& obs,
+    [[maybe_unused]] const mrpt::poses::CPose3D&    takenFrom) const
 {
-  // TODO
   return .0;
 }
 
 double KeyframePointCloudMap::internal_computeObservationLikelihoodPointCloud3D(
-    const mrpt::poses::CPose3D& pc_in_map, const float* xs, const float* ys, const float* zs,
-    const std::size_t num_pts) const
+    [[maybe_unused]] const mrpt::poses::CPose3D&   pc_in_map,
+    [[maybe_unused]] [[maybe_unused]] const float* xs, [[maybe_unused]] const float* ys,
+    [[maybe_unused]] const float* zs, [[maybe_unused]] const std::size_t num_pts) const
 {
-  // TODO
   return .0;
 }
 
 bool KeyframePointCloudMap::internal_canComputeObservationLikelihood(
-    const mrpt::obs::CObservation& obs) const
+    [[maybe_unused]] const mrpt::obs::CObservation& obs) const
 {
-  // TODO
   return false;
 }
 
@@ -992,4 +1034,111 @@ void KeyframePointCloudMap::KeyFrame::updateCovariancesGlobal() const
   {
     cached_cov_global_[i] = R * cached_cov_local_[i].asEigen() * R.transpose();
   }
+}
+
+std::shared_ptr<mrpt::opengl::CPointCloudColoured> KeyframePointCloudMap::KeyFrame::getViz(
+    const TRenderOptions& ro) const
+{
+  if (cached_viz_)
+  {
+    return cached_viz_;
+  }
+
+  auto doColorizeByIntensity = [&](const mrpt::img::TColormap&        colormap,
+                                   const mrpt::maps::CPointsMap*      org_cloud,
+                                   mrpt::opengl::CPointCloudColoured& cloud)
+  {
+    if (colormap == mrpt::img::TColormap::cmNONE)
+    {
+      return;
+    }
+
+    // Colorize by intensity with custom color map?
+    if (!org_cloud || !org_cloud->hasField_Intensity())
+    {
+      return;
+    }
+
+    const auto* Is = org_cloud->getPointsBufferRef_intensity();
+    ASSERT_(Is);
+
+    // Thread-local cache for max intensity
+    thread_local float max_intensity_cache = 1.0f;
+
+    // Find max intensity in current cloud
+    float current_max = 0.0f;
+    for (const auto& I : *Is)
+    {
+      if (I > current_max)
+      {
+        current_max = I;
+      }
+    }
+
+    // Smooth update of max intensity
+    max_intensity_cache = 0.9f * max_intensity_cache + 0.1f * current_max;
+    const float scale   = (max_intensity_cache > 0.0f) ? (1.0f / max_intensity_cache) : 1.0f;
+
+    for (size_t i = 0; i < Is->size(); i++)
+    {
+      const float I_norm = (*Is)[i] * scale;  // normalize to [0,1] using smoothed max
+      float       r = 0, g = 0, b = 0;
+      mrpt::img::colormap(colormap, I_norm, r, g, b);
+      cloud.setPointColor_fast(i, r, g, b);
+    }
+
+    cloud.markAllPointsAsNew();
+  };
+
+  const uint8_t alpha_u8 = mrpt::f2u8(ro.color.A);
+  auto          obj      = mrpt::opengl::CPointCloudColoured::Create();
+
+  obj->loadFromPointsMap(pointcloud().get());
+
+  obj->setPose(pose());
+
+  if (ro.color.A != 1.0f)
+  {
+    obj->setAllPointsAlpha(alpha_u8);
+  }
+
+  if (ro.colormap != mrpt::img::cmNONE)
+  {
+    const int idx = ro.recolorizeByCoordinateIndex;
+    ASSERT_(idx >= 0 && idx <= 3);
+
+    if (idx == 3)
+    {
+      // Intensity:
+      doColorizeByIntensity(ro.colormap, pointcloud().get(), *obj);
+    }
+    else
+    {
+      // XYZ
+      float       minCoord = 0;
+      float       maxCoord = 0;
+      const auto& bb       = localBoundingBox();
+      switch (idx)
+      {
+        case 0:
+          minCoord = bb.min.x;
+          maxCoord = bb.max.x;
+          break;
+        case 1:
+          minCoord = bb.min.y;
+          maxCoord = bb.max.y;
+          break;
+        case 2:
+          minCoord = bb.min.z;
+          maxCoord = bb.max.z;
+          break;
+        default:
+          THROW_EXCEPTION("Should not reach here!");
+      };
+      obj->recolorizeByCoordinate(minCoord, maxCoord, ro.recolorizeByCoordinateIndex, ro.colormap);
+    }
+  }
+
+  cached_viz_ = obj;
+  return cached_viz_;
 }
