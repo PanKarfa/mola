@@ -42,6 +42,7 @@ MOLA
 
   module-mp2p-icp
   mp2p_icp_basics
+  mp2p_icp_filters
   mp2p_icp_optimal-transformations
   mp2p_icp_applications
 
