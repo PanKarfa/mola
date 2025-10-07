@@ -43,7 +43,7 @@
 
 ## 🤖 What is MOLA?
 MOLA (Modular Optimization framework for Localization and mApping) is a 
-🧩 modular, ⚙️ extensible, and 🚀 high-performance framework for robotics 
+modular, extensible, and high-performance framework for robotics 
 localization and 🗺️ mapping.  
 
 This repository contains the base open-sourced packages for the MOLA project. Other packages exist under the [MOLAorg](https://github.com/MOLAorg/) organization.
