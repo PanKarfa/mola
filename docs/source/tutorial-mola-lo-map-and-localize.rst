@@ -208,12 +208,12 @@ Again, we will use **three terminals**:
 
     .. code-block:: bash
 
-        MOLA_LOAD_MM=/tmp/my_map.mm \
-        MOLA_LOAD_SM=/tmp/my_map.simplemap \
         ros2 launch mola_lidar_odometry ros2-lidar-odometry.launch.py \
           start_active:=False \
           start_mapping_enabled:=False \
-          lidar_topic_name:=/lidar1_points
+          lidar_topic_name:=/lidar1_points \
+          mola_initial_map_mm_file:=/tmp/my_map.mm \
+          mola_initial_map_sm_file:=/tmp/my_map.simplemap
 
     Of course, the ROS 2 service offers a greater flexibility to switch
     between maps at run-time. You can drop ``MOLA_LOAD_SM`` if you do not need
