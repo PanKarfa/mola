@@ -1,22 +1,15 @@
-/* -------------------------------------------------------------------------
- *   A Modular Optimization framework for Localization and mApping  (MOLA)
- *
- * Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria
- * Licensed under the GNU GPL v3 for non-commercial applications.
- *
- * This file is part of MOLA.
- * MOLA is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * MOLA is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * MOLA. If not, see <https://www.gnu.org/licenses/>.
- * ------------------------------------------------------------------------- */
+/*               _
+ _ __ ___   ___ | | __ _
+| '_ ` _ \ / _ \| |/ _` | Modular Optimization framework for
+| | | | | | (_) | | (_| | Localization and mApping (MOLA)
+|_| |_| |_|\___/|_|\__,_| https://github.com/MOLAorg/mola
+
+ Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria,
+                         and individual contributors.
+ SPDX-License-Identifier: GPL-3.0
+ See LICENSE for full license information.
+*/
+
 /**
  * @file   HashedVoxelPointCloud.h
  * @brief  Point cloud stored in voxels, in a sparse hash map
@@ -40,7 +33,7 @@
 #include <functional>
 #include <optional>
 
-//#define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
+// #define HASHED_VOXEL_POINT_CLOUD_WITH_CACHED_ACCESS
 
 namespace mola
 {
@@ -53,6 +46,12 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
 {
   DEFINE_SERIALIZABLE(HashedVoxelPointCloud, mola)
  public:
+  // Prevent copying and moving
+  HashedVoxelPointCloud(const HashedVoxelPointCloud&)            = default;
+  HashedVoxelPointCloud& operator=(const HashedVoxelPointCloud&) = default;
+  HashedVoxelPointCloud(HashedVoxelPointCloud&&)                 = default;
+  HashedVoxelPointCloud& operator=(HashedVoxelPointCloud&&)      = default;
+
   /** @name Compile-time parameters
    *  @{ */
 
@@ -269,7 +268,7 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
       const std::function<void(const global_index3d_t&, const VoxelData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

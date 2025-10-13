@@ -1,22 +1,15 @@
-/* -------------------------------------------------------------------------
- *   A Modular Optimization framework for Localization and mApping  (MOLA)
- *
- * Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria
- * Licensed under the GNU GPL v3 for non-commercial applications.
- *
- * This file is part of MOLA.
- * MOLA is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * MOLA is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * MOLA. If not, see <https://www.gnu.org/licenses/>.
- * ------------------------------------------------------------------------- */
+/*               _
+ _ __ ___   ___ | | __ _
+| '_ ` _ \ / _ \| |/ _` | Modular Optimization framework for
+| | | | | | (_) | | (_| | Localization and mApping (MOLA)
+|_| |_| |_|\___/|_|\__,_| https://github.com/MOLAorg/mola
+
+ Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria,
+                         and individual contributors.
+ SPDX-License-Identifier: GPL-3.0
+ See LICENSE for full license information.
+*/
+
 /**
  * @file   SparseTreesPointCloud.h
  * @brief  Point cloud stored as a 3D grid of KD-trees/pointclouds
@@ -179,9 +172,11 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
       if (it == grids_.end())
       {
         if (!createIfNew)
+        {
           return nullptr;
-        else
-          grid = &grids_[oIdx];  // Create it
+        }
+
+        grid = &grids_[oIdx];  // Create it
       }
       else
       {
@@ -215,9 +210,13 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
 
     // Also, update bbox:
     if (!cached_.boundingBox_.has_value())
+    {
       cached_.boundingBox_.emplace(pt, pt);
+    }
     else
+    {
       cached_.boundingBox_->updateWithPoint(pt);
+    }
   }
 
   const grids_map_t& grids() const { return grids_; }
@@ -233,7 +232,7 @@ class SparseTreesPointCloud : public mrpt::maps::CMetricMap,
   void visitAllGrids(const std::function<void(const outer_index3d_t&, const GridData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z" point coordinates.
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

@@ -1,22 +1,14 @@
-/* -------------------------------------------------------------------------
- *   A Modular Optimization framework for Localization and mApping  (MOLA)
- *
- * Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria
- * Licensed under the GNU GPL v3 for non-commercial applications.
- *
- * This file is part of MOLA.
- * MOLA is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * MOLA is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * MOLA. If not, see <https://www.gnu.org/licenses/>.
- * ------------------------------------------------------------------------- */
+/*               _
+ _ __ ___   ___ | | __ _
+| '_ ` _ \ / _ \| |/ _` | Modular Optimization framework for
+| | | | | | (_) | | (_| | Localization and mApping (MOLA)
+|_| |_| |_|\___/|_|\__,_| https://github.com/MOLAorg/mola
+
+ Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria,
+                         and individual contributors.
+ SPDX-License-Identifier: GPL-3.0
+ See LICENSE for full license information.
+*/
 
 /**
  * @file   NDT.cpp
@@ -274,7 +266,6 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
   const float recolorK = recolorMax != recolorMin ? 1.0f / (recolorMax - recolorMin) : 1.0f;
 
   // points:
-  MRPT_TODO("option to hide points already with NDT");
   if (renderOptions.points_visible)
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
@@ -441,9 +432,13 @@ bool NDT::internal_insertObservation(
           std::abs(it->first.cz - idxCurObs.cz));
 
       if (dist > distInGrid)
+      {
         it = voxels_.erase(it);
+      }
       else
+      {
         ++it;
+      }
     }
   }
 
@@ -452,13 +447,16 @@ bool NDT::internal_insertObservation(
     /********************************************************************
                 OBSERVATION TYPE: CObservation2DRangeScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservation2DRangeScan&>(obs);
+    const auto& o = dynamic_cast<const CObservation2DRangeScan&>(obs);
 
     // Build (if not done before) the points map representation of this
     // observation:
     const auto* scanPoints = o.buildAuxPointsMap<mrpt::maps::CPointsMap>();
 
-    if (scanPoints->empty()) return 0;
+    if (scanPoints->empty())
+    {
+      return 0;
+    }
 
     const auto& xs = scanPoints->getPointsBufferRef_x();
     const auto& ys = scanPoints->getPointsBufferRef_y();
@@ -468,12 +466,13 @@ bool NDT::internal_insertObservation(
 
     return true;
   }
-  else if (IS_CLASS(obs, CObservation3DRangeScan))
+
+  if (IS_CLASS(obs, CObservation3DRangeScan))
   {
     /********************************************************************
                 OBSERVATION TYPE: CObservation3DRangeScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservation3DRangeScan&>(obs);
+    const auto& o = dynamic_cast<const CObservation3DRangeScan&>(obs);
 
     mrpt::obs::T3DPointsProjectionParams pp;
     pp.takeIntoAccountSensorPoseOnRobot = true;
@@ -488,7 +487,8 @@ bool NDT::internal_insertObservation(
 
       return true;
     }
-    else if (o.hasRangeImage)
+
+    if (o.hasRangeImage)
     {
       mrpt::maps::CSimplePointsMap pointMap;
       const_cast<CObservation3DRangeScan&>(o).unprojectInto(pointMap, pp);
@@ -501,18 +501,22 @@ bool NDT::internal_insertObservation(
 
       return true;
     }
-    else
-      return false;
+
+    return false;
   }
-  else if (IS_CLASS(obs, CObservationVelodyneScan))
+
+  if (IS_CLASS(obs, CObservationVelodyneScan))
   {
     /********************************************************************
                 OBSERVATION TYPE: CObservationVelodyneScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservationVelodyneScan&>(obs);
+    const auto& o = dynamic_cast<const CObservationVelodyneScan&>(obs);
 
     // Automatically generate pointcloud if needed:
-    if (!o.point_cloud.size()) const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    if (!o.point_cloud.size())
+    {
+      const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    }
 
     for (size_t i = 0; i < o.point_cloud.x.size(); i++)
     {
@@ -523,9 +527,10 @@ bool NDT::internal_insertObservation(
 
     return true;
   }
-  else if (IS_CLASS(obs, CObservationPointCloud))
+
+  if (IS_CLASS(obs, CObservationPointCloud))
   {
-    const auto& o = static_cast<const CObservationPointCloud&>(obs);
+    const auto& o = dynamic_cast<const CObservationPointCloud&>(obs);
     ASSERT_(o.pointcloud);
 
     const auto& xs = o.pointcloud->getPointsBufferRef_x();
@@ -539,13 +544,11 @@ bool NDT::internal_insertObservation(
 
     return true;
   }
-  else
-  {
-    /********************************************************************
-                OBSERVATION TYPE: Unknown
-    ********************************************************************/
-    return false;
-  }
+
+  /********************************************************************
+              OBSERVATION TYPE: Unknown
+  ********************************************************************/
+  return false;
 
   MRPT_END
 }
@@ -557,7 +560,10 @@ double NDT::internal_computeObservationLikelihood(
   using namespace mrpt::poses;
   using namespace mrpt::maps;
 
-  if (isEmpty()) return 0;
+  if (isEmpty())
+  {
+    return 0;
+  }
 
   // This function depends on the observation type:
   // -----------------------------------------------------
@@ -572,7 +578,10 @@ double NDT::internal_computeObservationLikelihood(
     const auto* scanPoints = o.buildAuxPointsMap<CPointsMap>();
 
     const size_t N = scanPoints->size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const auto& xs = scanPoints->getPointsBufferRef_x();
     const auto& ys = scanPoints->getPointsBufferRef_y();
@@ -581,7 +590,8 @@ double NDT::internal_computeObservationLikelihood(
     return internal_computeObservationLikelihoodPointCloud3D(
         takenFrom, xs.data(), ys.data(), zs.data(), N);
   }
-  else if (IS_CLASS(obs, CObservationVelodyneScan))
+
+  if (IS_CLASS(obs, CObservationVelodyneScan))
   {
     const auto& o = dynamic_cast<const CObservationVelodyneScan&>(obs);
 
@@ -589,7 +599,10 @@ double NDT::internal_computeObservationLikelihood(
     if (!o.point_cloud.size()) const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
 
     const size_t N = o.point_cloud.size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const CPose3D sensorAbsPose = takenFrom + o.sensorPose;
 
@@ -600,12 +613,16 @@ double NDT::internal_computeObservationLikelihood(
     return internal_computeObservationLikelihoodPointCloud3D(
         sensorAbsPose, xs.data(), ys.data(), zs.data(), N);
   }
-  else if (IS_CLASS(obs, CObservationPointCloud))
+
+  if (IS_CLASS(obs, CObservationPointCloud))
   {
     const auto& o = dynamic_cast<const CObservationPointCloud&>(obs);
 
     const size_t N = o.pointcloud->size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const CPose3D sensorAbsPose = takenFrom + o.sensorPose;
 

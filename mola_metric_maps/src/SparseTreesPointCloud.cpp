@@ -1,22 +1,14 @@
-/* -------------------------------------------------------------------------
- *   A Modular Optimization framework for Localization and mApping  (MOLA)
- *
- * Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria
- * Licensed under the GNU GPL v3 for non-commercial applications.
- *
- * This file is part of MOLA.
- * MOLA is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * MOLA is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * MOLA. If not, see <https://www.gnu.org/licenses/>.
- * ------------------------------------------------------------------------- */
+/*               _
+ _ __ ___   ___ | | __ _
+| '_ ` _ \ / _ \| |/ _` | Modular Optimization framework for
+| | | | | | (_) | | (_| | Localization and mApping (MOLA)
+|_| |_| |_|\___/|_|\__,_| https://github.com/MOLAorg/mola
+
+ Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria,
+                         and individual contributors.
+ SPDX-License-Identifier: GPL-3.0
+ See LICENSE for full license information.
+*/
 
 /**
  * @file   SparseTreesPointCloud.cpp
@@ -189,7 +181,10 @@ std::string SparseTreesPointCloud::asString() const
 void SparseTreesPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
 {
   MRPT_START
-  if (!genericMapParams.enableSaveAs3DObject) return;
+  if (!genericMapParams.enableSaveAs3DObject)
+  {
+    return;
+  }
 
   // TODO(jlbc): convert into one CPointCloud per voxel to better scale huge
   // maps.
@@ -216,7 +211,12 @@ void SparseTreesPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
 
     // handle planar maps (avoids error in histogram below):
     for (int i = 0; i < 3; i++)
-      if (bb.max[i] == bb.min[i]) bb.max[i] = bb.min[i] + 0.1f;
+    {
+      if (bb.max[i] == bb.min[i])
+      {
+        bb.max[i] = bb.min[i] + 0.1f;
+      }
+    }
 
     // Use a histogram to discard outliers from the colormap extremes:
     constexpr size_t nBins = 100;
@@ -230,7 +230,10 @@ void SparseTreesPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
     {
       // x y z R G B [A]
       obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
-      for (int i = 0; i < 3; i++) hists[i].add(pt[i]);
+      for (int i = 0; i < 3; i++)
+      {
+        hists[i].add(pt[i]);
+      }
     };
 
     this->visitAllPoints(lambdaVisitPoints);
@@ -306,13 +309,16 @@ bool SparseTreesPointCloud::internal_insertObservation(
     /********************************************************************
                 OBSERVATION TYPE: CObservation2DRangeScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservation2DRangeScan&>(obs);
+    const auto& o = dynamic_cast<const CObservation2DRangeScan&>(obs);
 
     // Build (if not done before) the points map representation of
     // this observation:
     const auto* scanPoints = o.buildAuxPointsMap<mrpt::maps::CPointsMap>();
 
-    if (scanPoints->empty()) return 0;
+    if (scanPoints->empty())
+    {
+      return 0;
+    }
 
     const auto& xs = scanPoints->getPointsBufferRef_x();
     const auto& ys = scanPoints->getPointsBufferRef_y();
@@ -322,12 +328,13 @@ bool SparseTreesPointCloud::internal_insertObservation(
 
     return true;
   }
-  else if (IS_CLASS(obs, CObservation3DRangeScan))
+
+  if (IS_CLASS(obs, CObservation3DRangeScan))
   {
     /********************************************************************
                 OBSERVATION TYPE: CObservation3DRangeScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservation3DRangeScan&>(obs);
+    const auto& o = dynamic_cast<const CObservation3DRangeScan&>(obs);
 
     mrpt::obs::T3DPointsProjectionParams pp;
     pp.takeIntoAccountSensorPoseOnRobot = true;
@@ -336,12 +343,15 @@ bool SparseTreesPointCloud::internal_insertObservation(
     if (o.hasPoints3D)
     {
       for (size_t i = 0; i < o.points3D_x.size(); i++)
+      {
         this->insertPoint(
             robotPose3D.composePoint({o.points3D_x[i], o.points3D_y[i], o.points3D_z[i]}));
+      }
 
       return true;
     }
-    else if (o.hasRangeImage)
+
+    if (o.hasRangeImage)
     {
       mrpt::maps::CSimplePointsMap pointMap;
       const_cast<CObservation3DRangeScan&>(o).unprojectInto(pointMap, pp);
@@ -354,18 +364,22 @@ bool SparseTreesPointCloud::internal_insertObservation(
 
       return true;
     }
-    else
-      return false;
+
+    return false;
   }
-  else if (IS_CLASS(obs, CObservationVelodyneScan))
+
+  if (IS_CLASS(obs, CObservationVelodyneScan))
   {
     /********************************************************************
                 OBSERVATION TYPE: CObservationVelodyneScan
      ********************************************************************/
-    const auto& o = static_cast<const CObservationVelodyneScan&>(obs);
+    const auto& o = dynamic_cast<const CObservationVelodyneScan&>(obs);
 
     // Automatically generate pointcloud if needed:
-    if (!o.point_cloud.size()) const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    if (!o.point_cloud.size())
+    {
+      const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    }
 
     internal_insertPointCloud3D(
         robotPose3D, o.point_cloud.x.data(), o.point_cloud.y.data(), o.point_cloud.z.data(),
@@ -373,9 +387,10 @@ bool SparseTreesPointCloud::internal_insertObservation(
 
     return true;
   }
-  else if (IS_CLASS(obs, CObservationPointCloud))
+
+  if (IS_CLASS(obs, CObservationPointCloud))
   {
-    const auto& o = static_cast<const CObservationPointCloud&>(obs);
+    const auto& o = dynamic_cast<const CObservationPointCloud&>(obs);
     ASSERT_(o.pointcloud);
 
     const auto& xs = o.pointcloud->getPointsBufferRef_x();
@@ -386,13 +401,11 @@ bool SparseTreesPointCloud::internal_insertObservation(
 
     return true;
   }
-  else
-  {
-    /********************************************************************
+
+  /********************************************************************
                 OBSERVATION TYPE: Unknown
     ********************************************************************/
-    return false;
-  }
+  return false;
 
   MRPT_END
 }
@@ -404,7 +417,10 @@ double SparseTreesPointCloud::internal_computeObservationLikelihood(
   using namespace mrpt::poses;
   using namespace mrpt::maps;
 
-  if (isEmpty()) return 0;
+  if (isEmpty())
+  {
+    return 0;
+  }
 
   // This function depends on the observation type:
   // -----------------------------------------------------
@@ -412,14 +428,17 @@ double SparseTreesPointCloud::internal_computeObservationLikelihood(
   {
     // Observation is a laser range scan:
     // -------------------------------------------
-    const auto& o = static_cast<const CObservation2DRangeScan&>(obs);
+    const auto& o = dynamic_cast<const CObservation2DRangeScan&>(obs);
 
     // Build (if not done before) the points map representation of
     // this observation:
     const auto* scanPoints = o.buildAuxPointsMap<CPointsMap>();
 
     const size_t N = scanPoints->size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const auto& xs = scanPoints->getPointsBufferRef_x();
     const auto& ys = scanPoints->getPointsBufferRef_y();
@@ -428,15 +447,22 @@ double SparseTreesPointCloud::internal_computeObservationLikelihood(
     return internal_computeObservationLikelihoodPointCloud3D(
         takenFrom, xs.data(), ys.data(), zs.data(), N);
   }
-  else if (IS_CLASS(obs, CObservationVelodyneScan))
+
+  if (IS_CLASS(obs, CObservationVelodyneScan))
   {
     const auto& o = dynamic_cast<const CObservationVelodyneScan&>(obs);
 
     // Automatically generate pointcloud if needed:
-    if (!o.point_cloud.size()) const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    if (!o.point_cloud.size())
+    {
+      const_cast<CObservationVelodyneScan&>(o).generatePointCloud();
+    }
 
     const size_t N = o.point_cloud.size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const CPose3D sensorAbsPose = takenFrom + o.sensorPose;
 
@@ -447,12 +473,16 @@ double SparseTreesPointCloud::internal_computeObservationLikelihood(
     return internal_computeObservationLikelihoodPointCloud3D(
         sensorAbsPose, xs.data(), ys.data(), zs.data(), N);
   }
-  else if (IS_CLASS(obs, CObservationPointCloud))
+
+  if (IS_CLASS(obs, CObservationPointCloud))
   {
     const auto& o = dynamic_cast<const CObservationPointCloud&>(obs);
 
     const size_t N = o.pointcloud->size();
-    if (!N) return 0;
+    if (!N)
+    {
+      return 0;
+    }
 
     const CPose3D sensorAbsPose = takenFrom + o.sensorPose;
 
@@ -478,8 +508,8 @@ double SparseTreesPointCloud::internal_computeObservationLikelihoodPointCloud3D(
   mrpt::math::TPoint3Df closest;
   float                 closest_err;
   uint64_t              closest_id;
-  const float           max_sqr_err = mrpt::square(likelihoodOptions.max_corr_distance);
-  double                sumSqrDist  = .0;
+  const float max_sqr_err = static_cast<float>(mrpt::square(likelihoodOptions.max_corr_distance));
+  double      sumSqrDist  = .0;
 
   std::size_t nPtsForAverage = 0;
   for (std::size_t i = 0; i < num_pts; i += likelihoodOptions.decimation, nPtsForAverage++)
@@ -489,14 +519,20 @@ double SparseTreesPointCloud::internal_computeObservationLikelihoodPointCloud3D(
     const auto gPt = pc_in_map.composePoint({xs[i], ys[i], zs[i]});
 
     const bool found = nn_single_search(gPt, closest, closest_err, closest_id);
-    if (!found) continue;
+    if (!found)
+    {
+      continue;
+    }
 
     // Put a limit:
     mrpt::keep_min(closest_err, max_sqr_err);
 
     sumSqrDist += static_cast<double>(closest_err);
   }
-  if (nPtsForAverage) sumSqrDist /= nPtsForAverage;
+  if (nPtsForAverage)
+  {
+    sumSqrDist /= static_cast<double>(nPtsForAverage);
+  }
 
   // Log-likelihood:
   return -sumSqrDist / likelihoodOptions.sigma_dist;
@@ -531,7 +567,10 @@ void SparseTreesPointCloud::saveMetricMapRepresentationToFile(
 bool SparseTreesPointCloud::saveToTextFile(const std::string& file) const
 {
   FILE* f = mrpt::system::os::fopen(file.c_str(), "wt");
-  if (!f) return false;
+  if (!f)
+  {
+    return false;
+  }
 
   const auto lambdaVisitPoints = [f](const mrpt::math::TPoint3Df& pt)
   { mrpt::system::os::fprintf(f, "%f %f %f\n", pt.x, pt.y, pt.z); };
@@ -549,11 +588,17 @@ bool SparseTreesPointCloud::nn_has_indices_or_ids() const
 
 void SparseTreesPointCloud::nn_prepare_for_2d_queries() const
 {
-  for (auto& [idx, grid] : grids_) grid.points().nn_prepare_for_2d_queries();
+  for (auto& [idx, grid] : grids_)
+  {
+    grid.points().nn_prepare_for_2d_queries();
+  }
 }
 void SparseTreesPointCloud::nn_prepare_for_3d_queries() const
 {
-  for (auto& [idx, grid] : grids_) grid.points().nn_prepare_for_3d_queries();
+  for (auto& [idx, grid] : grids_)
+  {
+    grid.points().nn_prepare_for_3d_queries();
+  }
 }
 
 size_t SparseTreesPointCloud::nn_index_count() const
@@ -563,8 +608,9 @@ size_t SparseTreesPointCloud::nn_index_count() const
 
 bool SparseTreesPointCloud::nn_single_search(
     [[maybe_unused]] const mrpt::math::TPoint2Df& query,
-    [[maybe_unused]] mrpt::math::TPoint2Df& result, [[maybe_unused]] float& out_dist_sqr,
-    [[maybe_unused]] uint64_t& resultIndexOrID) const
+    [[maybe_unused]] mrpt::math::TPoint2Df&       result,
+    [[maybe_unused]] float&                       out_dist_sqr,  // NOLINT
+    [[maybe_unused]] uint64_t&                    resultIndexOrID) const
 {
   THROW_EXCEPTION("Cannot run a 2D search on a SparseTreesPointCloud");
 }
@@ -594,7 +640,10 @@ bool SparseTreesPointCloud::nn_single_search(
   const outer_index3d_t idxs = coordToOuterIdx(query);
 
   auto* g = gridByOuterIdxs(idxs, false);
-  if (!g) return false;
+  if (!g)
+  {
+    return false;
+  }
 
   return g->points().nn_single_search(query, result, out_dist_sqr, resultIndexOrID);
 }
@@ -610,7 +659,10 @@ void SparseTreesPointCloud::nn_multiple_search(
   resultIndicesOrIDs.clear();
 
   auto* g = gridByOuterIdxs(idxs, false);
-  if (!g) return;
+  if (!g)
+  {
+    return;
+  }
 
   g->points().nn_multiple_search(query, N, results, out_dists_sqr, resultIndicesOrIDs);
 }
@@ -620,13 +672,14 @@ void SparseTreesPointCloud::nn_radius_search(
     std::vector<mrpt::math::TPoint3Df>& results, std::vector<float>& out_dists_sqr,
     std::vector<uint64_t>& resultIndicesOrIDs, size_t maxPoints) const
 {
-  //    const double t0 = mrpt::Clock::nowDouble();
-
   results.clear();
   out_dists_sqr.clear();
   resultIndicesOrIDs.clear();
 
-  if (search_radius_sqr <= 0) return;
+  if (search_radius_sqr <= 0)
+  {
+    return;
+  }
 
   const float radius   = std::sqrt(search_radius_sqr);
   const auto  diagonal = mrpt::math::TPoint3Df(1.0f, 1.0f, 1.0f) * radius;
@@ -644,7 +697,10 @@ void SparseTreesPointCloud::nn_radius_search(
   auto lambdaCheckCell = [&](const outer_index3d_t& p)
   {
     auto* g = gridByOuterIdxs(p, false);
-    if (!g) return;
+    if (!g)
+    {
+      return;
+    }
 
     std::vector<mrpt::math::TPoint3Df> sub_results;
     std::vector<float>                 sub_out_dists_sqr;
@@ -655,12 +711,21 @@ void SparseTreesPointCloud::nn_radius_search(
         maxPoints);
 
     for (size_t i = 0; i < sub_results.size(); i++)
+    {
       lmbAddCandidate(sub_out_dists_sqr[i], sub_results[i], sub_resultIndicesOrIDs[i]);
+    }
   };
 
   for (int32_t cx = idxs0.cx; cx <= idxs1.cx; cx++)
+  {
     for (int32_t cy = idxs0.cy; cy <= idxs1.cy; cy++)
-      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++) lambdaCheckCell({cx, cy, cz});
+    {
+      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++)
+      {
+        lambdaCheckCell({cx, cy, cz});
+      }
+    }
+  }
 
   for (const auto& kv : candidates)
   {
@@ -718,8 +783,10 @@ void SparseTreesPointCloud::visitAllPoints(
     const auto&  zs = pts.getPointsBufferRef_z();
     const size_t N  = xs.size();
 
-    for (size_t i = 0; i < N; i++)  //
+    for (size_t i = 0; i < N; i++)
+    {
       f({xs[i], ys[i], zs[i]});
+    }
   }
 }
 
@@ -812,9 +879,7 @@ void SparseTreesPointCloud::TRenderOptions::readFromStream(mrpt::serialization::
 
 void SparseTreesPointCloud::TInsertionOptions::dumpToTextStream(std::ostream& out) const
 {
-  out << "\n------ [SparseTreesPointCloud::TInsertionOptions] "
-         "------- "
-         "\n\n";
+  out << "\n------ [SparseTreesPointCloud::TInsertionOptions] ------- \n\n";
 
   LOADABLEOPTS_DUMP_VAR(minimum_points_clearance, double);
   LOADABLEOPTS_DUMP_VAR(remove_submaps_farther_than, int);
@@ -822,9 +887,7 @@ void SparseTreesPointCloud::TInsertionOptions::dumpToTextStream(std::ostream& ou
 
 void SparseTreesPointCloud::TLikelihoodOptions::dumpToTextStream(std::ostream& out) const
 {
-  out << "\n------ [SparseTreesPointCloud::TLikelihoodOptions] "
-         "------- "
-         "\n\n";
+  out << "\n------ [SparseTreesPointCloud::TLikelihoodOptions] ------- \n\n";
 
   LOADABLEOPTS_DUMP_VAR(sigma_dist, double);
   LOADABLEOPTS_DUMP_VAR(max_corr_distance, double);
@@ -833,8 +896,7 @@ void SparseTreesPointCloud::TLikelihoodOptions::dumpToTextStream(std::ostream& o
 
 void SparseTreesPointCloud::TRenderOptions::dumpToTextStream(std::ostream& out) const
 {
-  out << "\n------ [SparseTreesPointCloud::TRenderOptions] ------- "
-         "\n\n";
+  out << "\n------ [SparseTreesPointCloud::TRenderOptions] ------- \n\n";
 
   LOADABLEOPTS_DUMP_VAR(point_size, float);
   LOADABLEOPTS_DUMP_VAR(show_inner_grid_boxes, bool);
@@ -879,7 +941,10 @@ void SparseTreesPointCloud::internal_insertPointCloud3D(
 {
   MRPT_TRY_START
 
-  if (!num_pts) return;
+  if (!num_pts)
+  {
+    return;
+  }
 
   // Make a temporary buffer for transformed point cloud.
   // I'll do it in the stack to save alloc & free time:
@@ -895,15 +960,15 @@ void SparseTreesPointCloud::internal_insertPointCloud3D(
     // Transform the point from the scan reference to its global 3D
     // position:
     const auto gPt = pc_in_map.composePoint({xs[i], ys[i], zs[i]});
-    gXs[i]         = gPt.x;
-    gYs[i]         = gPt.y;
-    gZs[i]         = gPt.z;
+    gXs[i]         = static_cast<float>(gPt.x);
+    gYs[i]         = static_cast<float>(gPt.y);
+    gZs[i]         = static_cast<float>(gPt.z);
 
     // check for closest existing point:
-    mrpt::math::TPoint3Df neig;
+    mrpt::math::TPoint3Df neighbour;
     float                 nnSqrDist;
     uint64_t              nnId;
-    bool                  found = nn_single_search(gPt, neig, nnSqrDist, nnId);
+    bool                  found = nn_single_search(gPt, neighbour, nnSqrDist, nnId);
 
     doInsert[i] = (!found || nnSqrDist > minSqrDist) ? 1 : 0;
   }
@@ -911,7 +976,12 @@ void SparseTreesPointCloud::internal_insertPointCloud3D(
   // Insert *after* the loop above, to prevent having to rebuild the
   // KD-Tree "N" times (!!!)
   for (std::size_t i = 0; i < num_pts; i++)
-    if (doInsert[i]) insertPoint({gXs[i], gYs[i], gZs[i]});
+  {
+    if (doInsert[i])
+    {
+      insertPoint({gXs[i], gYs[i], gZs[i]});
+    }
+  }
 
   MRPT_TRY_END
 }
@@ -932,13 +1002,14 @@ void SparseTreesPointCloud::eraseGridsFartherThan(
   {
     if (idx.cx >= curIdxs0.cx && idx.cy >= curIdxs0.cy && idx.cz >= curIdxs0.cz &&
         idx.cx <= curIdxs1.cx && idx.cy <= curIdxs1.cy && idx.cz <= curIdxs1.cz)
+    {
       return;
+    }
     gridsToRemove.insert(idx);
   };
   visitAllGrids(lmbPerGrid);
 
-  // Remove the grid blocks from the local map, and also from the
-  // access cache:
+  // Remove the grid blocks from the local map, and also from the access cache:
   cachedMtx_.lock();
 
   for (auto& idx : gridsToRemove)

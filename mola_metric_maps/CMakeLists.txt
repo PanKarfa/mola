@@ -24,27 +24,36 @@ find_package(mola_common REQUIRED)
 find_package(mrpt-maps REQUIRED)
 find_package(mp2p_icp_map REQUIRED)
 
+find_package(TBB) # optional
+
+if(TBB_FOUND)
+  option(MOLA_METRIC_MAPS_USE_TBB "If found TBB, this option controls whether to use it or not" ON)
+endif()
+
+
 # 3rdparty deps:
 add_subdirectory(3rdparty)
 
 # -----------------------
 # define lib:
 set(LIB_SRCS
-  src/SparseVoxelPointCloud.cpp
-  src/register.cpp
-  src/NDT.cpp
   src/HashedVoxelPointCloud.cpp
+  src/KeyframePointCloudMap.cpp
+  src/NDT.cpp
   src/OccGrid.cpp
+  src/register.cpp
   src/SparseTreesPointCloud.cpp
+  src/SparseVoxelPointCloud.cpp
 )
 set(LIB_PUBLIC_HDRS
-  include/mola_metric_maps/OccGrid.h
+  include/mola_metric_maps/FixedDenseGrid3D.h
   include/mola_metric_maps/HashedVoxelPointCloud.h
+  include/mola_metric_maps/index3d_t.h
+  include/mola_metric_maps/KeyframePointCloudMap.h
+  include/mola_metric_maps/NDT.h
+  include/mola_metric_maps/OccGrid.h
   include/mola_metric_maps/SparseTreesPointCloud.h
   include/mola_metric_maps/SparseVoxelPointCloud.h
-  include/mola_metric_maps/index3d_t.h
-  include/mola_metric_maps/NDT.h
-  include/mola_metric_maps/FixedDenseGrid3D.h
 )
 
 mola_add_library(
@@ -59,6 +68,12 @@ mola_add_library(
     mp2p_icp_map
     robin_map
 )
+
+if (TBB_FOUND AND MOLA_METRIC_MAPS_USE_TBB)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE MOLA_METRIC_MAPS_USE_TBB)
+  target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+endif()
+
 
 # -----------------------
 # define tests:

@@ -48,6 +48,12 @@ class MolaViz : public ExecutableBase, public VizInterface
   MolaViz();
   ~MolaViz() override;
 
+  // Prevent copying and moving
+  MolaViz(const MolaViz&)            = delete;
+  MolaViz& operator=(const MolaViz&) = delete;
+  MolaViz(MolaViz&&)                 = delete;
+  MolaViz& operator=(MolaViz&&)      = delete;
+
   // See docs in base class
   void initialize(const Yaml& cfg) override;
   void spinOnce() override;
@@ -77,26 +83,24 @@ class MolaViz : public ExecutableBase, public VizInterface
       const mrpt::math::TPoint2D_<int>& size,
       const std::string&                parentWindow = DEFAULT_WINDOW_NAME) override;
 
-  /** Updates the contents of a subwindow from a given object, typically a
-   * mrpt::obs::CObservation, but custom handlers can be installed for
-   * arbitrary classes.
-   *
-   * Depending on the object class RTTI, the corresponding handler is called.
-   *
-   * \return false if no handler is found for the given object.
-   *
-   * \sa
-   */
   std::future<bool> subwindow_update_visualization(
       const mrpt::rtti::CObject::Ptr& obj, const std::string& subWindowTitle,
-      const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+      const mrpt::containers::yaml* extra_parameters = nullptr,
+      const std::string&            parentWindow     = DEFAULT_WINDOW_NAME) override;
 
-  /** Update (or adds if not found) a 3D object in the main 3D view area.
-   */
+  // See docs in parent class
   std::future<bool> update_3d_object(
       const std::string& objName, const std::shared_ptr<mrpt::opengl::CSetOfObjects>& obj,
       const std::string& viewportName = "main",
       const std::string& parentWindow = DEFAULT_WINDOW_NAME) override;
+
+  std::future<bool> insert_point_cloud_with_decay(
+      const std::shared_ptr<mrpt::opengl::CPointCloudColoured>& cloud,
+      const double decay_time_seconds, const std::string& viewportName = "main",
+      const std::string& parentWindow = "main") override;
+
+  std::future<bool> clear_all_point_clouds_with_decay(
+      const std::string& viewportName = "main", const std::string& parentWindow = "main") override;
 
   std::future<bool> update_viewport_look_at(
       const mrpt::math::TPoint3Df& lookAt, const std::string& viewportName = "main",
@@ -128,7 +132,7 @@ class MolaViz : public ExecutableBase, public VizInterface
 
   using update_handler_t = std::function<void(
       const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin, window_name_t parentWin,
-      MolaViz* instance)>;
+      MolaViz* instance, const mrpt::containers::yaml* extra_parameters)>;
   using class_name_t     = std::string;
 
   static void register_gui_handler(class_name_t name, update_handler_t handler);
@@ -155,10 +159,33 @@ class MolaViz : public ExecutableBase, public VizInterface
 
   mrpt::gui::CDisplayWindowGUI::Ptr create_and_add_window(const window_name_t& name);
 
+  struct DecayingCloud
+  {
+    DecayingCloud() = default;
+    DecayingCloud(
+        const std::string& opengl_viewport_name_, const mrpt::Clock::time_point& insertion_stamp_,
+        const std::shared_ptr<mrpt::opengl::CPointCloudColoured>& cloud_,
+        double decay_time_seconds_, float initial_alpha_)  // NOLINT
+        : opengl_viewport_name(opengl_viewport_name_),
+          insertion_stamp(insertion_stamp_),
+          cloud(cloud_),
+          decay_time_seconds(decay_time_seconds_),
+          initial_alpha(initial_alpha_)
+    {
+    }
+
+    std::string                                        opengl_viewport_name;
+    mrpt::Clock::time_point                            insertion_stamp;
+    std::shared_ptr<mrpt::opengl::CPointCloudColoured> cloud;
+    double                                             decay_time_seconds = 0;
+    float                                              initial_alpha      = 1.0f;
+  };
+
   struct PerWindowData
   {
     mrpt::gui::CDisplayWindowGUI::Ptr win;
     std::vector<std::string>          console_messages = {};
+    std::deque<DecayingCloud>         decaying_clouds;
   };
 
   std::map<window_name_t, PerWindowData>                                windows_;
@@ -189,6 +216,8 @@ class MolaViz : public ExecutableBase, public VizInterface
 
   void dataset_ui_check_new_modules();
   void dataset_ui_update();
+
+  void internal_handle_decaying_clouds();
 };
 
 }  // namespace mola

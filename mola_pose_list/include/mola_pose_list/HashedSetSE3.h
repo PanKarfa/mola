@@ -148,8 +148,7 @@ class HashedSetSE3
   }
 
   /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx  //
-                                     /*, bool createIfNew this must be false for const! */) const
+  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx) const
   {  // reuse the non-const method:
     return const_cast<HashedSetSE3*>(this)->voxelByGlobalIdxs(idx, false);
   }
@@ -178,7 +177,7 @@ class HashedSetSE3
       const std::function<void(const global_index3d_t&, const VoxelData&)>& f) const;
 
   /** Save to a text file. Each line contains "X Y Z YAW PITCH ROLL".
-   *  Returns false if any error occured, true elsewere.
+   *  Returns false if any error ocurred, true elsewere.
    */
   bool saveToTextFile(const std::string& file) const;
 

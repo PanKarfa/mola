@@ -16,6 +16,12 @@
         "--header-insertion=never",
         "--pretty"
     ],
+    // Ensure format-on-save uses clang-format
+    "editor.formatOnSave": true,
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.clang_format_path": "/usr/bin/clang-format-14",
+    // Optional: enforce a specific style
+    "C_Cpp.clang_format_style": "file",
     "[cpp]": {
         "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
     },
@@ -33,5 +39,12 @@
         "**/install": true,
         "**/log": true
     },
-    "ros.distro": "humble"
+    "ros.distro": "humble",
+    "cSpell.words": [
+        "Boxf",
+        "Colorf",
+        "eigen",
+        "recolorize",
+        "Velodyne"
+    ]
 }

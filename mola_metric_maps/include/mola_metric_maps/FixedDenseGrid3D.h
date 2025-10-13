@@ -1,22 +1,15 @@
-/* -------------------------------------------------------------------------
- *   A Modular Optimization framework for Localization and mApping  (MOLA)
- *
- * Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria
- * Licensed under the GNU GPL v3 for non-commercial applications.
- *
- * This file is part of MOLA.
- * MOLA is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * MOLA is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * MOLA. If not, see <https://www.gnu.org/licenses/>.
- * ------------------------------------------------------------------------- */
+/*               _
+ _ __ ___   ___ | | __ _
+| '_ ` _ \ / _ \| |/ _` | Modular Optimization framework for
+| | | | | | (_) | | (_| | Localization and mApping (MOLA)
+|_| |_| |_|\___/|_|\__,_| https://github.com/MOLAorg/mola
+
+ Copyright (C) 2018-2025 Jose Luis Blanco, University of Almeria,
+                         and individual contributors.
+ SPDX-License-Identifier: GPL-3.0
+ See LICENSE for full license information.
+*/
+
 /**
  * @file   FixedDenseGrid3D.h
  * @brief  An efficient 3D grid template class with compile-time fixed size.
@@ -28,7 +21,6 @@
 #include <mola_metric_maps/index3d_t.h>
 #include <mrpt/core/exceptions.h>
 
-#include <cstdint>
 #include <cstdlib>
 #include <type_traits>
 
@@ -51,6 +43,12 @@ class FixedDenseGrid3D
 
   FixedDenseGrid3D() { cells_ = reinterpret_cast<T*>(calloc(sizeof(T), TOTAL_CELL_COUNT)); }
   ~FixedDenseGrid3D() { free(cells_); }
+
+  // Delete copy and move constructors and assignment operators
+  FixedDenseGrid3D(const FixedDenseGrid3D&)            = default;
+  FixedDenseGrid3D& operator=(const FixedDenseGrid3D&) = default;
+  FixedDenseGrid3D(FixedDenseGrid3D&&)                 = default;
+  FixedDenseGrid3D& operator=(FixedDenseGrid3D&&)      = default;
 
   T& cellByIndex(const index3d_t<inner_coord_t>& idx)
   {
