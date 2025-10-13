@@ -2,6 +2,21 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio
+  Changes for new LIO
+* MolaViz: Add method clear_all_point_clouds_with_decay()
+* MolaViz: Add support for inserting clouds with decay_time
+* Large clean up of unused code from older MOLA versions.
+  In particular, all abstract definitions of factors, entities, and WorldModel have been removed.
+  It seems more natural and efficient to keep them in the specific SLAM modules.
+* Allow extra parameters in mola_viz per-sensor preview windows
+* fix clang-format
+* Modernize copyright notice
+* Remove old code that was needed to support very old MRPT versions
+* Contributors: Jose Luis Blanco-Claraco
+
 1.9.1 (2025-07-07)
 ------------------
 

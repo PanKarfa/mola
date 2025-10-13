@@ -2,6 +2,20 @@
 Changelog for package mola_launcher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio
+  Changes for new LIO
+* mola_launcher init message: avoid split into several log lines
+* Large clean up of unused code from older MOLA versions.
+  In particular, all abstract definitions of factors, entities, and WorldModel have been removed.
+  It seems more natural and efficient to keep them in the specific SLAM modules.
+* do not run the ament version of clang_format test
+* fix clang-format
+* Modernize copyright notice
+* Use ament linters
+* Contributors: Jose Luis Blanco-Claraco
+
 1.9.1 (2025-07-07)
 ------------------
 

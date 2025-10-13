@@ -2,6 +2,19 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio
+  Changes for new LIO
+* add optional debug viz files; fix race conditions
+* cov2cov pairings now saves the sqrt(cov_inv)
+* Move to new mp2p_icp cov2cov matcher API
+* Update missing copyright notices
+* New KeyframePointCloudMap map
+* Fix typos and clang-tidy hints
+* Fix clang-tidy formatting tips
+* Contributors: Jose Luis Blanco-Claraco
+
 1.9.1 (2025-07-07)
 ------------------
 

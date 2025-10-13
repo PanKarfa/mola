@@ -2,6 +2,21 @@
 Changelog for package mola_viz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio
+  Changes for new LIO
+* Fix warnings
+* fix build against old mrpt versions
+* Implement removal of decayed clouds
+* MolaViz: Add method clear_all_point_clouds_with_decay()
+* MolaViz: Add support for inserting clouds with decay_time
+* fix clang-format
+* Allow extra parameters in mola_viz per-sensor preview windows
+* MolaViz: show min/max intensity in input sensor point clouds
+* Remove old code that was needed to support very old MRPT versions
+* Contributors: Jose Luis Blanco-Claraco
+
 1.9.1 (2025-07-07)
 ------------------
 
