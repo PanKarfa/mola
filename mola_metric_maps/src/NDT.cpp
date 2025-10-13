@@ -270,8 +270,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
-    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt)
-    { obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0}); };
+    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt) {
+      obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
+    };
     this->visitAllPoints(lambdaVisitPoints);
 
     if (renderOptions.points_colormap == mrpt::img::cmNONE)
@@ -336,10 +337,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
       }
       else
       {
-        t.setColor(
-            mrpt::img::colormap(
-                renderOptions.planes_colormap,
-                recolorK * (center[renderOptions.recolorizeByCoordinateIndex] - recolorMin)));
+        t.setColor(mrpt::img::colormap(
+            renderOptions.planes_colormap,
+            recolorK * (center[renderOptions.recolorizeByCoordinateIndex] - recolorMin)));
       }
 
       t.vertices[0].xyzrgba.pt = center + vx + vy;
