@@ -3,8 +3,8 @@ Changelog for package mola_relocalization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.0.0 (2025-10-13)
+------------------
 * Remove old code that was needed to support very old MRPT versions
 * Contributors: Jose Luis Blanco-Claraco
 
