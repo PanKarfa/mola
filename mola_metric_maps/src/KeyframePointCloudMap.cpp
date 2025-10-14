@@ -38,6 +38,8 @@
 #include <tbb/parallel_for.h>
 #endif
 
+#include <type_traits>
+
 // #define DO_PROFILE_COVS 1
 // #define DO_VIZ_DEBUG 1
 
@@ -51,6 +53,10 @@
 
 #include <fstream>
 #endif
+
+static_assert(
+    std::is_copy_constructible_v<mola::KeyframePointCloudMap>,
+    "KeyframePointCloudMap must be copy constructible");
 
 using namespace mola;
 
@@ -277,7 +283,7 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
     const mrpt::poses::CPose3D&                                      icp_ref_point,
     [[maybe_unused]] const std::optional<mrpt::math::TBoundingBoxf>& local_map_roi) const
 {
-  auto lck = mrpt::lockHelper(state_mtx_);
+  auto lck = mrpt::lockHelper(*state_mtx_);
 
   std::set<KeyFrameID> kfs_to_search_limited;
 
@@ -394,7 +400,7 @@ void KeyframePointCloudMap::nn_search_cov2cov(
     const NearestPointWithCovCapable& localMap, const mrpt::poses::CPose3D& localMapPose,
     const float max_search_distance, mp2p_icp::MatchedPointWithCovList& outPairings) const
 {
-  auto lck = mrpt::lockHelper(state_mtx_);
+  auto lck = mrpt::lockHelper(*state_mtx_);
 
   ASSERTMSG_(
       cached_.icp_search_submap,
@@ -521,7 +527,7 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
   {
     return;
   }
-  auto lck = mrpt::lockHelper(state_mtx_);
+  auto lck = mrpt::lockHelper(*state_mtx_);
 
   // Create one visualization object per KF:
   for (const auto& [kf_id, kf] : keyframes_)
@@ -716,7 +722,7 @@ void KeyframePointCloudMap::TCreationOptions::readFromStream(mrpt::serialization
 
 void KeyframePointCloudMap::internal_clear()
 {
-  auto lck = mrpt::lockHelper(state_mtx_);
+  auto lck = mrpt::lockHelper(*state_mtx_);
 
   keyframes_.clear();
   cached_.reset();
@@ -725,7 +731,7 @@ void KeyframePointCloudMap::internal_clear()
 bool KeyframePointCloudMap::internal_insertObservation(
     const mrpt::obs::CObservation& obs, const std::optional<const mrpt::poses::CPose3D>& robotPose)
 {
-  auto lck = mrpt::lockHelper(state_mtx_);
+  auto lck = mrpt::lockHelper(*state_mtx_);
 
   // Get robot pose for insertion pose:
   mrpt::poses::CPose3D pc_in_map;

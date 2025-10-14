@@ -21,6 +21,7 @@
 #include <mp2p_icp/IcpPrepareCapable.h>
 #include <mp2p_icp/MetricMapMergeCapable.h>
 #include <mp2p_icp/NearestPointWithCovCapable.h>
+#include <mrpt/containers/NonCopiableData.h>
 #include <mrpt/img/color_maps.h>
 #include <mrpt/maps/CMetricMap.h>
 #include <mrpt/maps/CPointsMap.h>
@@ -418,7 +419,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   std::map<KeyFrameID, KeyFrame> keyframes_;
 
-  mutable std::recursive_mutex state_mtx_;  //!< for cached_ and _keyframes
+  /// for cached_ and _keyframes
+  mutable mrpt::containers::NonCopiableData<std::recursive_mutex> state_mtx_;
 
   struct CachedData
   {
