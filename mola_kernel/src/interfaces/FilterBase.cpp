@@ -19,8 +19,6 @@
 
 #include <mola_kernel/interfaces/FilterBase.h>
 
-#include <iostream>
-
 using namespace mola;
 
 // arguments: class_name, parent_class, class namespace
@@ -47,24 +45,29 @@ void FilterBase::spinOnce()
 }
 
 // Virtual interface of any RawDataConsumer
-void FilterBase::onNewObservation(const CObservation::Ptr& o)
+void FilterBase::onNewObservation(const CObservation::ConstPtr& o)
 {
   const auto obsFut = thread_pool_.enqueue(
-      [this](const CObservation::Ptr& in)
+      [this](const CObservation::ConstPtr& in)
       {
         try
         {
           // Process the observation:
           CObservation::Ptr out = this->doFilter(in);
           // Forward it:
-          if (out) this->sendObservationsToFrontEnds(out);
+          if (out)
+          {
+            this->sendObservationsToFrontEnds(out);
+          }
         }
         catch (const std::exception& e)
         {
           MRPT_LOG_ERROR_STREAM(
-              "[FilterBase::onNewObservation] Error: " << std::endl
-                                                       << mrpt::exception_to_str(e));
+              "[FilterBase::onNewObservation] Error:\n"
+              << mrpt::exception_to_str(e));
         }
       },
       o);
+
+  (void)obsFut;
 }

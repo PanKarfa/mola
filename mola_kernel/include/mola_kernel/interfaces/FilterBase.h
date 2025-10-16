@@ -42,13 +42,13 @@ class FilterBase : public RawDataSourceBase, public RawDataConsumer
   /** To be called for each incoming observation. Process it and return
    * the modified observation.
    */
-  virtual CObservation::Ptr doFilter(const CObservation::Ptr& o) = 0;
+  virtual CObservation::Ptr doFilter(const CObservation::ConstPtr& o) = 0;
   /** @} */
 
   void spinOnce() override;
 
   // Virtual interface of any RawDataConsumer
-  void onNewObservation(const CObservation::Ptr& o) override;
+  void onNewObservation(const CObservation::ConstPtr& o) override;
 
  protected:
   // Virtual interface of any RawDataSource

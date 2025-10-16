@@ -57,7 +57,7 @@ class MapSourceBase
 
     /** Might be null if georeferencing is provided, but both can be also
      * populated. */
-    mrpt::maps::CMetricMap::Ptr map;
+    mrpt::maps::CMetricMap::ConstPtr map;
 
     /** If the map is georeferenced, its metadata
      *  \note Added in MOLA 1.7.0

@@ -111,7 +111,7 @@ class BridgeROS2 : public RawDataSourceBase, public mola::RawDataConsumer
   void spinOnce() override;
 
   // RawDataConsumer implementation:
-  void onNewObservation(const CObservation::Ptr& o) override;
+  void onNewObservation(const CObservation::ConstPtr& o) override;
 
  protected:
   // See docs in base class

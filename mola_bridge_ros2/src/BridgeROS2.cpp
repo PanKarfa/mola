@@ -616,7 +616,7 @@ void BridgeROS2::callbackOnNavSatFix(
   MRPT_END
 }
 
-void BridgeROS2::onNewObservation(const CObservation::Ptr& o)
+void BridgeROS2::onNewObservation(const CObservation::ConstPtr& o)
 {
   using namespace mrpt::obs;
 
@@ -624,27 +624,27 @@ void BridgeROS2::onNewObservation(const CObservation::Ptr& o)
 
   // TODO(jlbc): Add some filter not to publish everything to ROS?
 
-  if (auto oImg = std::dynamic_pointer_cast<CObservationImage>(o); oImg)
+  if (auto oImg = std::dynamic_pointer_cast<const CObservationImage>(o); oImg)
   {
     return internalOn(*oImg);
   }
-  else if (auto oPc = std::dynamic_pointer_cast<CObservationPointCloud>(o); oPc)
+  else if (auto oPc = std::dynamic_pointer_cast<const CObservationPointCloud>(o); oPc)
   {
     return internalOn(*oPc);
   }
-  else if (auto oLS = std::dynamic_pointer_cast<CObservation2DRangeScan>(o); oLS)
+  else if (auto oLS = std::dynamic_pointer_cast<const CObservation2DRangeScan>(o); oLS)
   {
     return internalOn(*oLS);
   }
-  else if (auto oRP = std::dynamic_pointer_cast<CObservationRobotPose>(o); oRP)
+  else if (auto oRP = std::dynamic_pointer_cast<const CObservationRobotPose>(o); oRP)
   {
     return internalOn(*oRP);
   }
-  else if (auto oGPS = std::dynamic_pointer_cast<CObservationGPS>(o); oGPS)
+  else if (auto oGPS = std::dynamic_pointer_cast<const CObservationGPS>(o); oGPS)
   {
     return internalOn(*oGPS);
   }
-  else if (auto oIMU = std::dynamic_pointer_cast<CObservationIMU>(o); oIMU)
+  else if (auto oIMU = std::dynamic_pointer_cast<const CObservationIMU>(o); oIMU)
   {
     return internalOn(*oIMU);
   }
@@ -1395,21 +1395,22 @@ void BridgeROS2::timerPubMap()
     const std::string mapTopic = (mu.method.empty() ? "slam"s : mu.method) + "/"s + layerName;
 
     // Is it a point cloud?
-    if (const auto mapPts = std::dynamic_pointer_cast<mrpt::maps::CPointsMap>(mu.map); mapPts)
+    if (const auto mapPts = std::dynamic_pointer_cast<const mrpt::maps::CPointsMap>(mu.map); mapPts)
     {
       mrpt::obs::CObservationPointCloud obs;
       obs.sensorLabel = mapTopic;
-      obs.pointcloud  = mapPts;
+      obs.pointcloud  = std::const_pointer_cast<mrpt::maps::CPointsMap>(mapPts);
       // Reuse code for point cloud observations: build a "fake" observation:
       internalOn(obs, false /*no tf*/, mu.reference_frame);
     }
     // Is it a grid map?
-    else if (auto grid = std::dynamic_pointer_cast<mrpt::maps::COccupancyGridMap2D>(mu.map); grid)
+    else if (auto grid = std::dynamic_pointer_cast<const mrpt::maps::COccupancyGridMap2D>(mu.map);
+             grid)
     {
       internalPublishGridMap(*grid, mapTopic, mu.reference_frame);
     }
     // Is it a CVoxelMap?
-    else if (auto vox = std::dynamic_pointer_cast<mrpt::maps::CVoxelMap>(mu.map); vox)
+    else if (auto vox = std::dynamic_pointer_cast<const mrpt::maps::CVoxelMap>(mu.map); vox)
     {
       mrpt::maps::CSimplePointsMap::Ptr pm = vox->getOccupiedVoxels();
       if (pm)
@@ -1596,8 +1597,7 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
     else if (type == "Odometry")
     {
       subsOdometry_.emplace_back(rosNode_->create_subscription<nav_msgs::msg::Odometry>(
-          topic_name, qos,
-          [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
+          topic_name, qos, [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
           { this->callbackOnOdometry(o, output_sensor_label); }));
     }
     else
