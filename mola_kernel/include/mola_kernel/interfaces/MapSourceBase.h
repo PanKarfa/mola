@@ -60,7 +60,6 @@ class MapSourceBase
     mrpt::maps::CMetricMap::ConstPtr map;
 
     /** If the map is georeferenced, its metadata
-     *  \note Added in MOLA 1.7.0
      */
     std::optional<Georeferencing> georeferencing;
 
@@ -70,6 +69,13 @@ class MapSourceBase
      *  \note Added in MOLA 1.9.0
      */
     std::optional<std::string> map_metadata;
+
+    /** If true, the map update invalidates all previous maps from the same
+     * source/method in queue. Set to false for very fast maps that need to be aggregated over short
+     * periods of time.
+     *  \note Added in MOLA 2.1.0
+     */
+    bool keep_last_one_only = true;
   };
 
   using map_updates_callback_t = std::function<void(const MapUpdate&)>;
