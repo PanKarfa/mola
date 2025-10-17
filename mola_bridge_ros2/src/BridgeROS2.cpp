@@ -78,7 +78,10 @@ BridgeROS2::~BridgeROS2()
   try
   {
     rclcpp::shutdown();
-    if (rosNodeThread_.joinable()) rosNodeThread_.join();
+    if (rosNodeThread_.joinable())
+    {
+      rosNodeThread_.join();
+    }
   }
   catch (const std::exception& e)
   {
@@ -101,12 +104,17 @@ void BridgeROS2::ros_node_thread_main(Yaml cfg)
     {
       ASSERT_(cfg["ros_args"].isSequence());
       for (const auto& p : cfg["ros_args"].asSequenceRange())
+      {
         rosArgs.push_back(p.as<std::string>());
+      }
     }
 
     // Convert to good old C (argc,argv):
     std::vector<const char*> rosArgsC;
-    for (const auto& s : rosArgs) rosArgsC.push_back(s.c_str());
+    for (const auto& s : rosArgs)
+    {
+      rosArgsC.push_back(s.c_str());
+    }
 
     const int    argc = static_cast<int>(rosArgs.size());
     const char** argv = rosArgsC.data();
@@ -268,7 +276,10 @@ void BridgeROS2::initialize_rds(const Yaml& c)
     // Format: "[x y z yaw pitch roll]" (meters & degrees)
     auto poseSeq = cfg["base_footprint_to_base_link_tf"].toStdVector<double>();
     ASSERT_EQUAL_(poseSeq.size(), 6UL);
-    for (int i = 0; i < 3; i++) poseSeq[3 + i] = mrpt::DEG2RAD(poseSeq[3 + i]);
+    for (int i = 0; i < 3; i++)
+    {
+      poseSeq[3 + i] = mrpt::DEG2RAD(poseSeq[3 + i]);
+    }
 
     params_.base_footprint_to_base_link_tf = mrpt::math::TPose3D::FromVector(poseSeq);
   }
@@ -334,7 +345,9 @@ void BridgeROS2::callbackOnPointCloud2(
   {
     auto p = mrpt::maps::CPointsMapXYZIRT::Create();
     if (!mrpt::ros2bridge::fromROS(o, *p))
+    {
       throw std::runtime_error("Error converting ros->mrpt(?)");
+    }
 
     // Fix timestamps for Livox driver:
     // It uses doubles for timestamps, but they are actually nanoseconds!
@@ -360,7 +373,9 @@ void BridgeROS2::callbackOnPointCloud2(
   {
     auto p = mrpt::maps::CPointsMapXYZI::Create();
     if (!mrpt::ros2bridge::fromROS(o, *p))
+    {
       throw std::runtime_error("Error converting ros->mrpt(?)");
+    }
 
     mapPtr = p;
   }
@@ -368,7 +383,9 @@ void BridgeROS2::callbackOnPointCloud2(
   {
     auto p = mrpt::maps::CSimplePointsMap::Create();
     if (!mrpt::ros2bridge::fromROS(o, *p))
+    {
       throw std::runtime_error("Error converting ros->mrpt(?)");
+    }
 
     mapPtr = p;
   }
@@ -428,7 +445,10 @@ bool BridgeROS2::waitForTransform(
   }
   catch (const tf2::TransformException& ex)
   {
-    if (printErrors) MRPT_LOG_ERROR(ex.what());
+    if (printErrors)
+    {
+      MRPT_LOG_ERROR(ex.what());
+    }
     return false;
   }
 }
@@ -457,12 +477,18 @@ void BridgeROS2::callbackOnOdometry(
 
 void BridgeROS2::importRosOdometryToMOLA()
 {
-  if (!params_.forward_ros_tf_as_mola_odometry_observations) return;
+  if (!params_.forward_ros_tf_as_mola_odometry_observations)
+  {
+    return;
+  }
 
   // Is the node already initialized?
   {
     auto lck = mrpt::lockHelper(ros_clock_mtx_);
-    if (!ros_clock_) return;  // nope...
+    if (!ros_clock_)
+    {
+      return;  // nope...
+    }
   }
 
   // Get pose from tf:
@@ -628,34 +654,32 @@ void BridgeROS2::onNewObservation(const CObservation::ConstPtr& o)
   {
     return internalOn(*oImg);
   }
-  else if (auto oPc = std::dynamic_pointer_cast<const CObservationPointCloud>(o); oPc)
+  if (auto oPc = std::dynamic_pointer_cast<const CObservationPointCloud>(o); oPc)
   {
     return internalOn(*oPc);
   }
-  else if (auto oLS = std::dynamic_pointer_cast<const CObservation2DRangeScan>(o); oLS)
+  if (auto oLS = std::dynamic_pointer_cast<const CObservation2DRangeScan>(o); oLS)
   {
     return internalOn(*oLS);
   }
-  else if (auto oRP = std::dynamic_pointer_cast<const CObservationRobotPose>(o); oRP)
+  if (auto oRP = std::dynamic_pointer_cast<const CObservationRobotPose>(o); oRP)
   {
     return internalOn(*oRP);
   }
-  else if (auto oGPS = std::dynamic_pointer_cast<const CObservationGPS>(o); oGPS)
+  if (auto oGPS = std::dynamic_pointer_cast<const CObservationGPS>(o); oGPS)
   {
     return internalOn(*oGPS);
   }
-  else if (auto oIMU = std::dynamic_pointer_cast<const CObservationIMU>(o); oIMU)
+  if (auto oIMU = std::dynamic_pointer_cast<const CObservationIMU>(o); oIMU)
   {
     return internalOn(*oIMU);
   }
-  else
-  {
-    MRPT_LOG_THROTTLE_WARN_FMT(
-        5.0,
-        "Do not know how to publish to ROS an observation of type '%s' "
-        "with sensorLabel='%s'",
-        o->GetRuntimeClass()->className, o->sensorLabel.c_str());
-  }
+
+  MRPT_LOG_THROTTLE_WARN_FMT(
+      5.0,
+      "Do not know how to publish to ROS an observation of type '%s' "
+      "with sensorLabel='%s'",
+      o->GetRuntimeClass()->className, o->sensorLabel.c_str());
 }
 
 void BridgeROS2::internalOn(const mrpt::obs::CObservationImage& obs)
@@ -753,8 +777,6 @@ void BridgeROS2::internalOn(
   const auto lbPoints = obs.sensorLabel + "_points"s;
 
   auto pubPoints = get_publisher<sensor_msgs::msg::PointCloud2>(lbPoints, mapQos);
-
-  const std::string sSensorFrameId_points = lbPoints;
 
   // POINTS
   // --------
@@ -937,7 +959,9 @@ void BridgeROS2::doLookForNewMolaSubs()
     // Skip myself!
     if (std::string(rds->GetRuntimeClass()->className) ==
         std::string(this->GetRuntimeClass()->className))
+    {
       continue;
+    }
 
     if (molaSubs_.dataSources.count(rds) == 0)
     {
@@ -1080,7 +1104,7 @@ void BridgeROS2::service_relocalize_from_se(
     return;
   }
 
-  for (auto m : molaSubs_.relocalization)
+  for (auto& m : molaSubs_.relocalization)
   {
     m->relocalize_from_gnss();
   }
@@ -1175,7 +1199,9 @@ void BridgeROS2::service_param_get(
     // Skip myself!
     if (std::string(m->GetRuntimeClass()->className) ==
         std::string(this->GetRuntimeClass()->className))
+    {
       continue;
+    }
 
     // Get params:
     mrpt::containers::yaml params = m->getModuleParameters();
@@ -1212,7 +1238,9 @@ void BridgeROS2::service_param_set(
       // Skip myself!
       if (std::string(m->GetRuntimeClass()->className) ==
           std::string(this->GetRuntimeClass()->className))
+      {
         continue;
+      }
       modsByName[m->getModuleInstanceName()] = m;
     }
 
@@ -1221,9 +1249,11 @@ void BridgeROS2::service_param_set(
       const auto paramsModuleName = k.as<std::string>();
       auto       itMod            = modsByName.find(paramsModuleName);
       if (itMod == modsByName.end())
+      {
         THROW_EXCEPTION_FMT(
             "Error: requested setting runtime parameter for non-existing MOLA module '%s'",
             paramsModuleName.c_str());
+      }
 
       auto& m = itMod->second;
       ASSERT_(m);
@@ -1243,9 +1273,11 @@ void BridgeROS2::service_param_set(
 rclcpp::Time BridgeROS2::myNow(const mrpt::Clock::time_point& observationStamp)
 {
   if (params_.publish_in_sim_time)
+  {
     return mrpt::ros2bridge::toROS(observationStamp);
-  else
-    return mrpt::ros2bridge::toROS(mrpt::Clock::now());
+  }
+
+  return mrpt::ros2bridge::toROS(mrpt::Clock::now());
 }
 
 void BridgeROS2::onNewLocalization(const mola::LocalizationSourceBase::LocalizationUpdate& l)
@@ -1259,7 +1291,14 @@ void BridgeROS2::onNewMap(const mola::MapSourceBase::MapUpdate& m)
 {
   auto lck = mrpt::lockHelper(lastLocMapMtx_);
 
-  lastMaps_[m.map_name] = m;
+  if (m.keep_last_one_only)
+  {
+    if (auto it = lastMaps_.find(m.map_name); it != lastMaps_.end())
+    {
+      lastMaps_.erase(it);
+    }
+  }
+  lastMaps_.insert({m.map_name, m});
 }
 
 void BridgeROS2::timerPubLocalization()
@@ -1325,7 +1364,7 @@ void BridgeROS2::timerPubLocalization()
         }
         else
         {
-          const tf2::Transform baseOnMap_tf = transform;
+          const tf2::Transform& baseOnMap_tf = transform;
 
           const tf2::Transform odomOnBase_tf = mrpt::ros2bridge::toROS_tfTransform(T_base_to_odom);
 
@@ -1356,7 +1395,10 @@ void BridgeROS2::timerPubLocalization()
 
       mrpt::poses::CPose3DPDFGaussian posePdf;
       posePdf.mean = mrpt::poses::CPose3D(l.pose);
-      if (l.cov) posePdf.cov = l.cov.value();
+      if (l.cov)
+      {
+        posePdf.cov = l.cov.value();
+      }
 
       msg.pose = mrpt::ros2bridge::toROS_Pose(posePdf);
 
@@ -1377,7 +1419,7 @@ void BridgeROS2::timerPubMap()
   using namespace std::string_literals;
 
   // get a copy of the data minimizing the time owning the mutex:
-  std::map<std::string /*map_name*/, mola::MapSourceBase::MapUpdate> m;
+  std::multimap<std::string /*map_name*/, mola::MapSourceBase::MapUpdate> m;
   {
     auto lck  = mrpt::lockHelper(lastLocMapMtx_);
     m         = std::move(lastMaps_);
@@ -1597,8 +1639,7 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
     else if (type == "Odometry")
     {
       subsOdometry_.emplace_back(rosNode_->create_subscription<nav_msgs::msg::Odometry>(
-          topic_name, qos,
-          [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
+          topic_name, qos, [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
           { this->callbackOnOdometry(o, output_sensor_label); }));
     }
     else
@@ -1610,7 +1651,10 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
 
 void BridgeROS2::publishStaticTFs()
 {
-  if (params_.base_footprint_frame.empty()) return;
+  if (params_.base_footprint_frame.empty())
+  {
+    return;
+  }
 
   const tf2::Transform transform =
       mrpt::ros2bridge::toROS_tfTransform(-params_.base_footprint_to_base_link_tf);
@@ -1631,7 +1675,10 @@ namespace
 std::string module_name_to_valid_topic(const std::string& s)
 {
   const auto lastPos = s.find_last_of(':');
-  if (lastPos == std::string::npos) return s;
+  if (lastPos == std::string::npos)
+  {
+    return s;
+  }
 
   return s.substr(lastPos + 1);
 }
