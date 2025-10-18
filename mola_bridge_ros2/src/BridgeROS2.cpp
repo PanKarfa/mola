@@ -1441,6 +1441,7 @@ void BridgeROS2::timerPubMap()
     {
       mrpt::obs::CObservationPointCloud obs;
       obs.sensorLabel = mapTopic;
+      obs.timestamp   = mu.timestamp;
       obs.pointcloud  = std::const_pointer_cast<mrpt::maps::CPointsMap>(mapPts);
       // Reuse code for point cloud observations: build a "fake" observation:
       internalOn(obs, false /*no tf*/, mu.reference_frame);
@@ -1449,7 +1450,7 @@ void BridgeROS2::timerPubMap()
     else if (auto grid = std::dynamic_pointer_cast<const mrpt::maps::COccupancyGridMap2D>(mu.map);
              grid)
     {
-      internalPublishGridMap(*grid, mapTopic, mu.reference_frame);
+      internalPublishGridMap(*grid, mapTopic, mu.reference_frame, mu.timestamp);
     }
     // Is it a CVoxelMap?
     else if (auto vox = std::dynamic_pointer_cast<const mrpt::maps::CVoxelMap>(mu.map); vox)
@@ -1460,6 +1461,7 @@ void BridgeROS2::timerPubMap()
         mrpt::obs::CObservationPointCloud obs;
         obs.sensorLabel = mapTopic;
         obs.pointcloud  = pm;
+        obs.timestamp   = mu.timestamp;
         // Reuse code for point cloud observations: build a "fake" observation:
         internalOn(obs, false /*no tf*/, mu.reference_frame);
       }
@@ -1759,7 +1761,7 @@ void BridgeROS2::publishDiagnostics()
 
 void BridgeROS2::internalPublishGridMap(
     const mrpt::maps::COccupancyGridMap2D& m, const std::string& sMapTopicName,
-    const std::string& sReferenceFrame)
+    const std::string& sReferenceFrame, const mrpt::Clock::time_point& timestamp)
 {
   using namespace std::string_literals;
 
@@ -1774,7 +1776,7 @@ void BridgeROS2::internalPublishGridMap(
   auto pubMeta = get_publisher<nav_msgs::msg::MapMetaData>(grid_metadata_topic, qos);
 
   std_msgs::msg::Header msg_header;
-  msg_header.stamp    = rosNode_->get_clock()->now();
+  msg_header.stamp    = myNow(timestamp);
   msg_header.frame_id = sReferenceFrame;
 
   {

@@ -363,7 +363,7 @@ class BridgeROS2 : public RawDataSourceBase, public mola::RawDataConsumer
 
   void internalPublishGridMap(
       const mrpt::maps::COccupancyGridMap2D& m, const std::string& sMapTopicName,
-      const std::string& sReferenceFrame);
+      const std::string& sReferenceFrame, const mrpt::Clock::time_point& timestamp);
 
   void internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& ds_subscribe);
 
