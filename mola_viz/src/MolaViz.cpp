@@ -80,7 +80,7 @@ constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
 
 void gui_handler_show_common_sensor_info(
     const mrpt::obs::CObservation& obs, nanogui::Window* w,
-    const std::vector<std::string>& additionalMsgs = {})
+    const double sensor_rate_decimation = 1.0, const std::vector<std::string>& additionalMsgs = {})
 {
   auto glControl = dynamic_cast<mrpt::gui::MRPT2NanoguiGLCanvas*>(w->children().at(1));
   if (!glControl)
@@ -138,7 +138,7 @@ void gui_handler_show_common_sensor_info(
   else
   {
     const double At    = curTim - lastTimestamp[w];
-    const double curHz = At > 0 ? (1.0 / At) : 1.0;
+    const double curHz = (At > 0 ? (1.0 / At) : 1.0) * sensor_rate_decimation;
     const double alpha = 0.9;
 
     double showHz;
@@ -224,6 +224,15 @@ void gui_handler_images(
   }
   ASSERT_(glControl != nullptr);
 
+  const double sensorDecimation = [&]()
+  {
+    if (extra_parameters)
+    {
+      return extra_parameters->getOrDefault("sensor_rate_decimation", 1.0);
+    }
+    return 1.0;
+  }();
+
   const auto imgW        = static_cast<int>(imgToShow.getWidth());
   const auto imgH        = static_cast<int>(imgToShow.getHeight());
   const int  imgChannels = imgToShow.channelCount();
@@ -232,7 +241,7 @@ void gui_handler_images(
   glControl->scene->getViewport()->setImageView(imgToShow);
 
   gui_handler_show_common_sensor_info(
-      *std::dynamic_pointer_cast<mrpt::obs::CObservation>(o), w,
+      *std::dynamic_pointer_cast<mrpt::obs::CObservation>(o), w, sensorDecimation,
       {mrpt::format("Size: %ix%ix%i", imgW, imgH, imgChannels)});
 }
 
@@ -251,6 +260,15 @@ void gui_handler_point_cloud(
   mrpt::opengl::CPointCloudColoured::Ptr      glPc;
   mrpt::opengl::CSetOfObjects::Ptr            glCornerRef, glCornerSensor;
   std::optional<mrpt::LockHelper<std::mutex>> lck;
+
+  const double sensorDecimation = [&]()
+  {
+    if (extra_parameters)
+    {
+      return extra_parameters->getOrDefault("sensor_rate_decimation", 1.0);
+    }
+    return 1.0;
+  }();
 
   bool  color_from_z = true;
   float point_size   = 3.0f;
@@ -327,7 +345,7 @@ void gui_handler_point_cloud(
       additionalMsgs.push_back(mrpt::format("Intensity range: [%.02f,%.02f]", *itMin, *itMax));
     }
 
-    gui_handler_show_common_sensor_info(*objPc, w, additionalMsgs);
+    gui_handler_show_common_sensor_info(*objPc, w, sensorDecimation, additionalMsgs);
   }
   else if (auto objRS = std::dynamic_pointer_cast<CObservationRotatingScan>(o); objRS)
   {
@@ -353,7 +371,7 @@ void gui_handler_point_cloud(
     }
     glPc->recolorizeByCoordinate(bbox.min.z, bbox.max.z);
 
-    gui_handler_show_common_sensor_info(*objRS, w);
+    gui_handler_show_common_sensor_info(*objRS, w, sensorDecimation);
   }
   else if (auto obj3D = std::dynamic_pointer_cast<CObservation3DRangeScan>(o);
            instance->show_rgbd_as_point_cloud_ && obj3D)
@@ -392,7 +410,7 @@ void gui_handler_point_cloud(
         obj3D->unprojectInto(*glPc, pp);
       }
     }
-    gui_handler_show_common_sensor_info(*obj3D, w);
+    gui_handler_show_common_sensor_info(*obj3D, w, sensorDecimation);
   }
   else if (auto obj2D = std::dynamic_pointer_cast<CObservation2DRangeScan>(o); obj2D)
   {
@@ -400,7 +418,7 @@ void gui_handler_point_cloud(
     auxMap.insertObservationPtr(obj2D);
     glPc->loadFromPointsMap(&auxMap);
 
-    gui_handler_show_common_sensor_info(*obj2D, w);
+    gui_handler_show_common_sensor_info(*obj2D, w, sensorDecimation);
   }
   else if (auto objVel = std::dynamic_pointer_cast<CObservationVelodyneScan>(o); objVel)
   {
@@ -421,7 +439,7 @@ void gui_handler_point_cloud(
     glPc->loadFromPointsMap(&pts);
 
     gui_handler_show_common_sensor_info(
-        *objVel, w,
+        *objVel, w, sensorDecimation,
         {
             mrpt::format("Point count: %zu", N),
         });
@@ -514,6 +532,15 @@ void gui_handler_imu(
     return;
   }
 
+  const double sensorDecimation = [&]()
+  {
+    if (extra_parameters)
+    {
+      return extra_parameters->getOrDefault("sensor_rate_decimation", 1.0);
+    }
+    return 1.0;
+  }();
+
   mrpt::gui::MRPT2NanoguiGLCanvas* glControl;
   // mrpt::opengl::CSetOfObjects::Ptr            glCornerRef, glCornerSensor;
   std::optional<mrpt::LockHelper<std::mutex>> lck;
@@ -576,7 +603,7 @@ void gui_handler_imu(
     txts.push_back("acc=None");
   }
 
-  gui_handler_show_common_sensor_info(*obj, w, txts);
+  gui_handler_show_common_sensor_info(*obj, w, sensorDecimation, txts);
 }
 
 }  // namespace
