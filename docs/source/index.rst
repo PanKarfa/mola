@@ -61,14 +61,15 @@ MOLA
   bibliography
 
 
-:octicon:`mark-github` `MOLA`_ is a Modular system for Localization and Mapping.
+:octicon:`mark-github` `MOLA`_ is a Modular system for Localization and Mapping, 
+providing LiDAR Odometry (LO), LiDAR-inertial Odometry (LIO), SLAM, localization-only modes,
+and geo-referencing.
 
 Get started:
- - Follow the tutorials: :ref:`Building your first map <building-maps>`, :ref:`Mapping and localization <tutorial-mola-lo-map-and-localize>`.
- - Read :octicon:`rocket` :ref:`mola_lidar_odometry` documentation.
- - See :ref:`use-cases` for examples of use.
+ - Follow the tutorials: (1) :ref:`Building your first map <building-maps>`; (2) :ref:`Mapping and localization <tutorial-mola-lo-map-and-localize>`.
+ - Read :octicon:`rocket` :ref:`mola_lidar_odometry` documentation and the provided LO/LIO :ref:`pipelines <mola_lo_pipelines>`.
  - See :ref:`installing` and :ref:`how to cite it <citing_mola>`.
- - See `videos`_ on YouTube.
+ - See :ref:`use-cases` for examples of use or `videos`_ on YouTube.
 
 .. raw:: html
 
