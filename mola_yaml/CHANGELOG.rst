@@ -2,6 +2,9 @@
 Changelog for package mola_yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 2.0.0 (2025-10-13)
 ------------------
 * Modernize copyright notice

@@ -2,6 +2,13 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Send sensor_rate_decimation to Viz
+* interfaces/MapSourceBase: Add keep_last_one_only property
+* Make use of ConstPtr across API
+* Contributors: Jose Luis Blanco-Claraco
+
 2.0.0 (2025-10-13)
 ------------------
 * Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio

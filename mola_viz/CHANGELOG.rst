@@ -2,6 +2,12 @@
 Changelog for package mola_viz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* FIX: Show correct sensor rate in Hz when visualizing with a decimation
+* Fix clang-tidy warnings
+* Contributors: Jose Luis Blanco-Claraco
+
 2.0.0 (2025-10-13)
 ------------------
 * Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio

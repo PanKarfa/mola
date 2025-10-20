@@ -2,6 +2,13 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix formatting
+* Implement getAsSimplePointsMap()
+* KeyframePointCloudMap: Fix class must be copy-constructible
+* Contributors: Jose Luis Blanco-Claraco
+
 2.0.0 (2025-10-13)
 ------------------
 * Merge pull request `#93 <https://github.com/MOLAorg/mola/issues/93>`_ from MOLAorg/feature/better-lio

@@ -3,6 +3,16 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Publish to ROS all map types implementing getAsSimplePointsMap()
+* format
+* FIX: ROS2 bridge must use timestamps for map updates to publish maps and deskewed clouds
+* Support publishing several maps from the same source per iteration to ROS
+* clang-format
+* Make use of ConstPtr across API
+* Contributors: Jose Luis Blanco-Claraco
+
 2.0.0 (2025-10-13)
 ------------------
 * fix clang-format
