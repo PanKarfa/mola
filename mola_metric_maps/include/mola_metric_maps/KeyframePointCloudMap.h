@@ -438,6 +438,13 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
 
   CachedData cached_;
 
+  /** This will be a copy of cachedPoints, but kept here as long as possible until
+   * getAsSimplePointsMap() is called again, to extend the life of the returned pointer.
+   * A better solution would be for MRPT-3.0 to have shared_ptr return values, when that happens,
+   * remove this one.
+   */
+  mutable mrpt::maps::CSimplePointsMap::Ptr cachedPointsLastReturned_;
+
  protected:
   // See docs in base CMetricMap class:
   void internal_clear() override;

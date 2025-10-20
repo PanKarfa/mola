@@ -563,8 +563,27 @@ void KeyframePointCloudMap::saveMetricMapRepresentationToFile(
 
 const mrpt::maps::CSimplePointsMap* KeyframePointCloudMap::getAsSimplePointsMap() const
 {
-  // TODO: return cachedPoints_ or recompute it
-  return cached_.cachedPoints.get();
+  auto lck = mrpt::lockHelper(*state_mtx_);
+
+  // Return cachedPoints_ or recompute it:
+  if (cached_.cachedPoints && cachedPointsLastReturned_ == cached_.cachedPoints)
+  {
+    return cachedPointsLastReturned_.get();
+  }
+
+  // rebuild global point cloud (quite inefficient, but this is only for MOLA->ROS2 bridge).
+  cached_.cachedPoints = mrpt::maps::CSimplePointsMap::Create();
+  for (const auto& [kf_id, kf] : keyframes_)
+  {
+    if (kf.pointcloud())
+    {
+      cached_.cachedPoints->insertAnotherMap(
+          kf.pointcloud_global().get(), mrpt::poses::CPose3D::Identity());
+    }
+  }
+  cachedPointsLastReturned_ = cached_.cachedPoints;
+
+  return cachedPointsLastReturned_.get();
 }
 
 // ==========================
