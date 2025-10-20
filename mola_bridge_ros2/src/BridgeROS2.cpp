@@ -1473,9 +1473,23 @@ void BridgeROS2::timerPubMap()
     // Not empty?
     else if (mu.map)
     {
-      MRPT_LOG_WARN_STREAM(
-          "Do not know how to publish map layer '" << layerName << "' of type '"
-                                                   << mu.map->GetRuntimeClass()->className << "'");
+      // Try to publish it via it's simple pointsmap representation:
+      const auto* pts = mu.map->getAsSimplePointsMap();
+      if (!pts)
+      {
+        MRPT_LOG_WARN_STREAM(
+            "Do not know how to publish map layer '"
+            << layerName << "' of type '" << mu.map->GetRuntimeClass()->className << "'");
+      }
+      else
+      {
+        mrpt::obs::CObservationPointCloud obs;
+        obs.sensorLabel = mapTopic;
+        obs.pointcloud  = std::make_shared<mrpt::maps::CSimplePointsMap>(*pts);
+        obs.timestamp   = mu.timestamp;
+        // Reuse code for point cloud observations: build a "fake" observation:
+        internalOn(obs, false /*no tf*/, mu.reference_frame);
+      }
     }
 
     // If we have georef info, publish it:
