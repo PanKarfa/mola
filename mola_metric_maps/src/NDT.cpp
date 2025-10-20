@@ -995,7 +995,10 @@ void NDT::internal_insertPointCloud3D(
 
 const mrpt::maps::CSimplePointsMap* NDT::getAsSimplePointsMap() const
 {
-  if (!cachedPoints_) cachedPoints_ = mrpt::maps::CSimplePointsMap::Create();
+  if (!cachedPoints_)
+  {
+    cachedPoints_ = mrpt::maps::CSimplePointsMap::Create();
+  }
 
   cachedPoints_->clear();
 
@@ -1007,7 +1010,10 @@ const mrpt::maps::CSimplePointsMap* NDT::getAsSimplePointsMap() const
 
 const std::optional<mp2p_icp::PointCloudEigen>& NDT::VoxelData::ndt() const
 {
-  if (has_ndt() || size() < 4) return ndt_;
+  if (has_ndt() || size() < 4)
+  {
+    return ndt_;
+  }
 
   ndt_.emplace();
   *ndt_ = mp2p_icp::estimate_points_eigen(
@@ -1020,7 +1026,10 @@ const std::optional<mp2p_icp::PointCloudEigen>& NDT::VoxelData::ndt() const
       mrpt::math::dotProduct<3, float>(ev.at(0), *was_seen_from_ - ndt_->meanCov.mean.asTPoint());
 
   // +z must point outwards:
-  if (r < 0) ev.at(0) = -ev.at(0);
+  if (r < 0)
+  {
+    ev.at(0) = -ev.at(0);
+  }
 
   // Ensure CCW axes:
   mrpt::math::crossProduct3D(ev[0], ev[1], ev[2]);
@@ -1081,10 +1090,19 @@ mp2p_icp::NearestPlaneCapable::NearestPlaneResult NDT::nn_search_pt2pl(
   auto lambdaCheckCell = [&](const global_index3d_t& p)
   {
     auto* v = voxelByGlobalIdxs(p);
-    if (!v) return;
+    if (!v)
+    {
+      return;
+    }
     const auto& ndt = v->ndt();
-    if (!ndt) return;
-    if (!ndt_is_plane(*ndt)) return;
+    if (!ndt)
+    {
+      return;
+    }
+    if (!ndt_is_plane(*ndt))
+    {
+      return;
+    }
 
     const auto&                normal        = ndt->eigVectors[0];
     const mrpt::math::TPoint3D planeCentroid = ndt->meanCov.mean.asTPoint();
@@ -1104,8 +1122,15 @@ mp2p_icp::NearestPlaneCapable::NearestPlaneResult NDT::nn_search_pt2pl(
   };
 
   for (int32_t cx = idxs0.cx; cx <= idxs1.cx; cx++)
+  {
     for (int32_t cy = idxs0.cy; cy <= idxs1.cy; cy++)
-      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++) lambdaCheckCell({cx, cy, cz});
+    {
+      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++)
+      {
+        lambdaCheckCell({cx, cy, cz});
+      }
+    }
+  }
 
   return ret;
 }
@@ -1118,7 +1143,10 @@ bool NDT::nn_single_search(
   std::vector<float>                 dist_sqr;
   std::vector<uint64_t>              resultIndices;
   nn_multiple_search_impl<1>(query, 1, r, dist_sqr, resultIndices);
-  if (r.empty()) return false;  // none found
+  if (r.empty())
+  {
+    return false;  // none found
+  }
   result          = r[0];
   out_dist_sqr    = dist_sqr[0];
   resultIndexOrID = resultIndices[0];
@@ -1151,8 +1179,8 @@ void NDT::nn_multiple_search_impl(
   struct Match
   {
     mrpt::math::TPoint3Df globalPt;
-    float                 sqrDist;
-    uint64_t              id;
+    float                 sqrDist = 0;
+    uint64_t              id      = 0;
   };
   std::array<Match, MAX_KNN> matches;  // sorted by sqrDist!
   size_t                     foundMatches = 0;
@@ -1165,19 +1193,31 @@ void NDT::nn_multiple_search_impl(
     size_t i = 0;
     for (i = 0; i < foundMatches; i++)
     {
-      if (sqrDist < matches[i].sqrDist) break;
+      if (sqrDist < matches[i].sqrDist)
+      {
+        break;
+      }
     }
-    if (i >= MAX_KNN) return;
+    if (i >= MAX_KNN)
+    {
+      return;
+    }
 
     // insert new one at [i], shift [i+1:end] one position.
     const size_t last = std::min(foundMatches + 1, MAX_KNN);
-    for (size_t j = i + 1; j < last; j++) matches[j] = matches[j - 1];
+    for (size_t j = i + 1; j < last; j++)
+    {
+      matches[j] = matches[j - 1];
+    }
 
     matches[i].globalPt = pt;
     matches[i].id       = id;
     matches[i].sqrDist  = sqrDist;
 
-    if (foundMatches < MAX_KNN) foundMatches++;
+    if (foundMatches < MAX_KNN)
+    {
+      foundMatches++;
+    }
   };
 
   auto lambdaCheckCell = [&](const global_index3d_t& p)
@@ -1197,8 +1237,15 @@ void NDT::nn_multiple_search_impl(
   };
 
   for (int32_t cx = idxs0.cx; cx <= idxs1.cx; cx++)
+  {
     for (int32_t cy = idxs0.cy; cy <= idxs1.cy; cy++)
-      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++) lambdaCheckCell({cx, cy, cz});
+    {
+      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++)
+      {
+        lambdaCheckCell({cx, cy, cz});
+      }
+    }
+  }
 
   for (size_t i = 0; i < std::min<size_t>(N, foundMatches); i++)
   {
@@ -1219,7 +1266,10 @@ void NDT::nn_radius_search(
   out_dists_sqr.clear();
   resultIndicesOrIDs.clear();
 
-  if (search_radius_sqr <= 0) return;
+  if (search_radius_sqr <= 0)
+  {
+    return;
+  }
 
   const float radius   = std::sqrt(search_radius_sqr);
   const auto  diagonal = mrpt::math::TPoint3Df(1.0f, 1.0f, 1.0f) * radius;
@@ -1232,8 +1282,8 @@ void NDT::nn_radius_search(
   struct Match
   {
     mrpt::math::TPoint3Df globalPt;
-    float                 sqrDist;
-    uint64_t              id;
+    float                 sqrDist = 0;
+    uint64_t              id      = 0;
   };
   std::array<Match, HARD_MAX_MATCHES> matches;  // sorted by sqrDist!
   size_t                              foundMatches = 0;
@@ -1246,19 +1296,31 @@ void NDT::nn_radius_search(
     size_t i = 0;
     for (i = 0; i < foundMatches; i++)
     {
-      if (sqrDist < matches[i].sqrDist) break;
+      if (sqrDist < matches[i].sqrDist)
+      {
+        break;
+      }
     }
-    if (i >= HARD_MAX_MATCHES) return;
+    if (i >= HARD_MAX_MATCHES)
+    {
+      return;
+    }
 
     // insert new one at [i], shift [i+1:end] one position.
     const size_t last = std::min(foundMatches + 1, HARD_MAX_MATCHES);
-    for (size_t j = i + 1; j < last; j++) matches[j] = matches[j - 1];
+    for (size_t j = i + 1; j < last; j++)
+    {
+      matches[j] = matches[j - 1];
+    }
 
     matches[i].globalPt = pt;
     matches[i].id       = id;
     matches[i].sqrDist  = sqrDist;
 
-    if (foundMatches < HARD_MAX_MATCHES) foundMatches++;
+    if (foundMatches < HARD_MAX_MATCHES)
+    {
+      foundMatches++;
+    }
   };
 
   auto lambdaCheckCell = [&](const global_index3d_t& p)
@@ -1270,7 +1332,10 @@ void NDT::nn_radius_search(
       {
         const auto& pt      = pts[i];
         float       distSqr = (pt - query).sqrNorm();
-        if (distSqr > search_radius_sqr) continue;
+        if (distSqr > search_radius_sqr)
+        {
+          continue;
+        }
 
         const auto id = g2plain(p, i);
 
@@ -1291,8 +1356,15 @@ void NDT::nn_radius_search(
   };
 
   for (int32_t cx = idxs0.cx; cx <= idxs1.cx; cx++)
+  {
     for (int32_t cy = idxs0.cy; cy <= idxs1.cy; cy++)
-      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++) lambdaCheckCell({cx, cy, cz});
+    {
+      for (int32_t cz = idxs0.cz; cz <= idxs1.cz; cz++)
+      {
+        lambdaCheckCell({cx, cy, cz});
+      }
+    }
+  }
 
   if (maxPoints != 0)
   {
