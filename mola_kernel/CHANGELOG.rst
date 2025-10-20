@@ -2,8 +2,8 @@
 Changelog for package mola_kernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2025-10-20)
+------------------
 * Send sensor_rate_decimation to Viz
 * interfaces/MapSourceBase: Add keep_last_one_only property
 * Make use of ConstPtr across API

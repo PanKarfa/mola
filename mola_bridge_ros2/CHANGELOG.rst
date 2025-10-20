@@ -3,8 +3,8 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.1.0 (2025-10-20)
+------------------
 * Publish to ROS all map types implementing getAsSimplePointsMap()
 * format
 * FIX: ROS2 bridge must use timestamps for map updates to publish maps and deskewed clouds

@@ -2,8 +2,8 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2025-10-20)
+------------------
 * Fix formatting
 * Implement getAsSimplePointsMap()
 * KeyframePointCloudMap: Fix class must be copy-constructible
