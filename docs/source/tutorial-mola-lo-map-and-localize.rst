@@ -251,7 +251,7 @@ relocalization via ROS 2 API.
       obtaining feedback about whether the request was received or not by a running MOLA module:
 
       - Service default name: ``/relocalize_near_pose``
-      - Service interface: `mola_msgs::srv::RelocalizeNearPose <https://docs.ros.org/en/rolling/p/mola_msgs/interfaces/srv/RelocalizeNearPose.html>`_
+      - Service interface: `mola_msgs::srv::RelocalizeNearPose <https://docs.ros.org/en/rolling/p/mola_msgs/srv/RelocalizeNearPose.html>`_
 
 |
 

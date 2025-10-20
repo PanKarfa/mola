@@ -47,9 +47,9 @@ During a live SLAM run, ``BridgeROS2`` will look for modules implementing
 :ref:`MapServer <doxid-classmola_1_1_map_server>` and will expose
 these **ROS 2 services** to load or save the current map:
 
-* ``/map_load``: See ROS docs for `mola_msgs/MapLoad <https://docs.ros.org/en/rolling/p/mola_msgs/interfaces/srv/MapLoad.html>`_
+* ``/map_load``: See ROS docs for `mola_msgs/MapLoad <https://docs.ros.org/en/rolling/p/mola_msgs/srv/MapLoad.html>`_
 
-* ``/map_save``: See ROS docs for `mola_msgs/MapSave <https://docs.ros.org/en/rolling/p/mola_msgs/interfaces/srv/MapSave.html>`_
+* ``/map_save``: See ROS docs for `mola_msgs/MapSave <https://docs.ros.org/en/rolling/p/mola_msgs/srv/MapSave.html>`_
 
 .. dropdown:: Example ROS 2 cli service calls
 
