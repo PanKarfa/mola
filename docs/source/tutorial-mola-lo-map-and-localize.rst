@@ -97,8 +97,11 @@ Open **three terminals**, and run these commands in each one:
 The map saved in the former step comprises two files:
 
 - A **key-frame (view-based) map** (``*.simplemap``): a set of SE(3) poses annotated with metadata and raw sensor observations.
-- The metric **local map** used by the specific LO pipeline; e.g. for the ``lidar3d-default`` :ref:`pipeline <mola_3d_default_pipeline>`,
-  it is a voxel-based point cloud of the current area, which may include an area of more than 100 meters around the latest robot pose, but if you mapped a larger area, it would be an incomplete representation of the whole map.
+- The metric **local map** used by the specific LO/LIO pipeline; For the for the ``lidar3d-gicp`` :ref:`pipeline <mola_3d_gicp_pipeline>` (default),
+  it is a key-frame based point cloud based on :ref:`mola_metric_maps/KeyframePointCloudMap <keyframe_point_cloud_map_8h>`.
+  For the ``lidar3d-icp`` :ref:`pipeline <mola_3d_icp_pipeline>`,  it is a voxel-based point cloud of the current area, which may include an area of
+  more than 100 meters around the latest robot pose, but if you mapped a larger area, it would be an incomplete representation of the whole map.
+
 
 The key-frame map is the more versatile one since it allows for running further map filtering,
 loop closure, downsampling, etc. while the metric local map is just what LO needs for **local** alignment of
@@ -117,7 +120,7 @@ the local map would contain the whole scenario and you are good to go with it as
     mm-viewer -l libmola_metric_maps.so  /path/to/your/map.mm
 
   Where the ``-l`` flag is used to load the additional metric map classes defined in ``mola_metric_maps``, and
-  used in the ``lidar3d-default`` :ref:`pipeline <mola_3d_default_pipeline>`.
+  used in the ``lidar3d-default`` :ref:`pipeline <mola_lo_pipelines>`.
 
 
 However, if the map is much larger, you need to **generate a new local metric map** that includes the whole area where
@@ -132,7 +135,7 @@ the robot needs to operate so it can localize correctly.
   the :ref:`loop closure module <solutions>` would be needed to post-process the ``*.simplemap`` file.
 
   Next, either if you already have closed loops or you do not need them, follow :ref:`these instructions <building-maps_step_mm>`,
-  taking into account that there must exist an output metric map **layer** named as expected by the LO pipeline (e.g. :ref:`lidar3d-default <mola_3d_default_pipeline>`).
+  taking into account that there must exist an output metric map **layer** named as expected by the LO pipeline (e.g. :ref:`lidar3d-default <mola_lo_pipelines>`).
 
   TO-DO: Write complete example files and commands!
 

@@ -30,8 +30,8 @@ ____________________________________________
 
 .. _ros2_node_lo_docs:
 
-1.1. ROS 2 node for Lidar Odometry (LO)
-============================================
+1.1. ROS 2 node for LiDAR Odometry (LO) / LiDAR-inertial Odometry (LIO)
+=========================================================================
 
 .. include:: ../../../mola_lidar_odometry/docs/mola_lo_ros_node.rst
 

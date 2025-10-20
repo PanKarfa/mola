@@ -45,6 +45,7 @@
         "Colorf",
         "eigen",
         "ENTYPO",
+        "gicp",
         "recolorize",
         "Velodyne"
     ]
