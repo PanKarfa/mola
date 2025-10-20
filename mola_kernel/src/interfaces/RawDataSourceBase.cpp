@@ -71,10 +71,13 @@ void RawDataSourceBase::initialize(const Yaml& cfg)
     auto ds_preview = cfg["gui_preview_sensors"];
     for (const auto& s : ds_preview.asSequence())
     {
-      const auto sensor     = mrpt::containers::yaml(s);
+      auto       sensor     = mrpt::containers::yaml(s);
       const auto label      = sensor["raw_sensor_label"].as<std::string>();
       const auto decimation = sensor.getOrDefault<unsigned int>("decimation", 1);
       const auto win_pos    = sensor.getOrDefault<std::string>("win_pos", "");
+
+      // store here to help computing sensor rate in the GUI
+      sensor["sensor_rate_decimation"] = decimation;
 
       // Allow quickly disabling sections:
       if (!sensor.getOrDefault("enabled", true))
