@@ -131,11 +131,11 @@ class MolaViz : public ExecutableBase, public VizInterface
    * @{ */
 
   using update_handler_t = std::function<void(
-      const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin, window_name_t parentWin,
+      const mrpt::rtti::CObject::Ptr&, nanogui::Window* subWin, const window_name_t& parentWin,
       MolaViz* instance, const mrpt::containers::yaml* extra_parameters)>;
   using class_name_t     = std::string;
 
-  static void register_gui_handler(class_name_t name, update_handler_t handler);
+  static void register_gui_handler(const class_name_t& name, const update_handler_t& handler);
 
   /** @} */
 
