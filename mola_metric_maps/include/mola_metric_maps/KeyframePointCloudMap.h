@@ -258,6 +258,10 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
      *  as color index: 0=x  1=y  2=z  3=intensity
      */
     uint8_t recolorizeByCoordinateIndex = 3;
+
+    uint64_t max_points_per_kf = 10000;  //!< Max points to render per key-frame
+
+    uint64_t max_overall_points = 1000000;  //!< Max points to render in global maps
   };
   TRenderOptions renderOptions;
 
