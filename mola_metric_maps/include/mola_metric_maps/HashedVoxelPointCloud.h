@@ -232,8 +232,9 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
   }
 
   /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx  //
-                                     /*, bool createIfNew this must be false for const! */) const
+  const VoxelData* voxelByGlobalIdxs(
+      const global_index3d_t& idx  //
+      /*, bool createIfNew this must be false for const! */) const
   {  // reuse the non-const method:
     return const_cast<HashedVoxelPointCloud*>(this)->voxelByGlobalIdxs(idx, false);
   }
@@ -413,10 +414,8 @@ class HashedVoxelPointCloud : public mrpt::maps::CMetricMap,
     /** Colormap for points (index is "z" coordinates) */
     mrpt::img::TColormap colormap = mrpt::img::cmHOT;
 
-    /** If colormap!=mrpt::img::cmNONE, use this coordinate
-     *  as color index: 0=x  1=y  2=z
-     */
-    uint8_t recolorizeByCoordinateIndex = 2;
+    /** If colormap!=mrpt::img::cmNONE, use this channel as color index */
+    std::string recolorByPointField = "intensity";
   };
   TRenderOptions renderOptions;
 

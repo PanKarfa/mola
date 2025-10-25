@@ -42,6 +42,7 @@
 #include <mrpt/ros2bridge/pose.h>
 #include <mrpt/ros2bridge/time.h>
 #include <mrpt/system/filesystem.h>
+#include <mrpt/version.h>
 
 #include <tf2/buffer_core.hpp>
 #include <tf2/convert.hpp>
@@ -315,7 +316,8 @@ void Rosbag2Dataset::initialize_rds(const Yaml& c)
     }
     else if (sensorType == "CObservationRotatingScan")
     {
-      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m) {
+      auto callback = [=](const rosbag2_storage::SerializedBagMessage& m)
+      {
         return catchExceptions([=]() { return toRotatingScan(sensorLabel, m, fixedSensorPose); });
       };
       lookup_[topic].emplace_back(callback);
@@ -691,7 +693,12 @@ Rosbag2Dataset::Obs Rosbag2Dataset::toPointCloud2(
 
     // Fix timestamps for Livox driver:
     // It uses doubles for timestamps, but they are actually nanoseconds!
+#if MRPT_VERSION >= 0x020f00  // 2.15.0
+    auto ts = mrptPts->getPointsBufferRef_float_field(
+        mrpt::maps::CPointsMapXYZIRT::POINT_FIELD_TIMESTAMP);
+#else
     auto ts = mrptPts->getPointsBufferRef_timestamp();
+#endif
     ASSERT_(ts);
     if (!ts->empty())
     {

@@ -298,7 +298,20 @@ void SparseVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
     std::vector<double> coords;
     std::vector<double> hits;
 
-    const int idx = renderOptions.recolorizeByCoordinateIndex;
+    const auto recolor_idx_from_field = [](const std::string& field) -> int
+    {
+      if (field == "x")
+      {
+        return 0;
+      }
+      if (field == "y")
+      {
+        return 1;
+      }
+      // Default to "z" (2)
+      return 2;
+    };
+    const int idx = recolor_idx_from_field(renderOptions.recolorByPointField);
     ASSERT_(idx >= 0 && idx < 3);
 
     float            min = .0, max = 1.f;
@@ -307,8 +320,7 @@ void SparseVoxelPointCloud::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
     hists[idx].getHistogramNormalized(coords, hits);
     mrpt::math::confidenceIntervalsFromHistogram(coords, hits, min, max, confidenceInterval);
 
-    obj->recolorizeByCoordinate(
-        min, max, renderOptions.recolorizeByCoordinateIndex, renderOptions.colormap);
+    obj->recolorizeByCoordinate(min, max, idx, renderOptions.colormap);
     outObj.insert(obj);
   }
   if (renderOptions.show_inner_grid_boxes)
@@ -802,9 +814,10 @@ void SparseVoxelPointCloud::visitAllPoints(
   }
 }
 
-void SparseVoxelPointCloud::visitAllVoxels(const std::function<void(
-                                               const outer_index3d_t&, const inner_plain_index_t,
-                                               const VoxelData&, const InnerGrid&)>& f) const
+void SparseVoxelPointCloud::visitAllVoxels(
+    const std::function<void(
+        const outer_index3d_t&, const inner_plain_index_t, const VoxelData&, const InnerGrid&)>& f)
+    const
 {
   for (const auto& kv : grids_)
   {
@@ -881,10 +894,10 @@ void SparseVoxelPointCloud::TLikelihoodOptions::readFromStream(mrpt::serializati
 
 void SparseVoxelPointCloud::TRenderOptions::writeToStream(mrpt::serialization::CArchive& out) const
 {
-  const int8_t version = 0;
+  const int8_t version = 1;
   out << version;
   out << point_size << show_mean_only << show_inner_grid_boxes << color << int8_t(colormap)
-      << recolorizeByCoordinateIndex;
+      << recolorByPointField;  // v1
 }
 
 void SparseVoxelPointCloud::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
@@ -894,11 +907,30 @@ void SparseVoxelPointCloud::TRenderOptions::readFromStream(mrpt::serialization::
   switch (version)
   {
     case 0:
+    case 1:
     {
       in >> point_size >> show_mean_only >> show_inner_grid_boxes;
       in >> this->color;
       in.ReadAsAndCastTo<int8_t>(this->colormap);
-      in >> recolorizeByCoordinateIndex;
+      if (version >= 1)
+      {
+        in >> recolorByPointField;
+      }
+      else
+      {
+        switch (in.ReadAs<uint8_t>())
+        {
+          case 0:
+            recolorByPointField = "x";
+            break;
+          case 1:
+            recolorByPointField = "y";
+            break;
+          default:
+            recolorByPointField = "z";
+            break;
+        }
+      }
     }
     break;
     default:
@@ -936,7 +968,8 @@ void SparseVoxelPointCloud::TRenderOptions::dumpToTextStream(std::ostream& out) 
   LOADABLEOPTS_DUMP_VAR(color.G, float);
   LOADABLEOPTS_DUMP_VAR(color.B, float);
   LOADABLEOPTS_DUMP_VAR(colormap, int);
-  LOADABLEOPTS_DUMP_VAR(recolorizeByCoordinateIndex, int);
+  using std::string;
+  LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);
 }
 
 void SparseVoxelPointCloud::TInsertionOptions::loadFromConfigFile(
@@ -965,7 +998,7 @@ void SparseVoxelPointCloud::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.A, float, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
-  MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
+  MRPT_LOAD_CONFIG_VAR(recolorByPointField, string, c, s);
 }
 
 void SparseVoxelPointCloud::internal_insertPointCloud3D(

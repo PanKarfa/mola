@@ -247,6 +247,22 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
 
   this->visitAllPoints(lambdaVisitPointsForHist);
 
+  const auto recolor_idx_from_field = [](const std::string& field) -> int
+  {
+    if (field == "x")
+    {
+      return 0;
+    }
+    if (field == "y")
+    {
+      return 1;
+    }
+    // Default to "z" (2)
+    return 2;
+  };
+  const int recolorIdx = recolor_idx_from_field(renderOptions.recolorByPointField);
+  ASSERT_(recolorIdx >= 0 && recolorIdx < 3);
+
   float recolorMin = .0, recolorMax = 1.f;
   if (nPoints)
   {
@@ -254,12 +270,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
     std::vector<double> coords;
     std::vector<double> hits;
 
-    const int idx = renderOptions.recolorizeByCoordinateIndex;
-    ASSERT_(idx >= 0 && idx < 3);
-
     constexpr double confidenceInterval = 0.02;
 
-    hists[idx].getHistogramNormalized(coords, hits);
+    hists[recolorIdx].getHistogramNormalized(coords, hits);
     mrpt::math::confidenceIntervalsFromHistogram(
         coords, hits, recolorMin, recolorMax, confidenceInterval);
   }
@@ -270,9 +283,8 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
   {
     auto obj = mrpt::opengl::CPointCloudColoured::Create();
 
-    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt) {
-      obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0});
-    };
+    const auto lambdaVisitPoints = [&obj](const mrpt::math::TPoint3Df& pt)
+    { obj->insertPoint({pt.x, pt.y, pt.z, 0, 0, 0}); };
     this->visitAllPoints(lambdaVisitPoints);
 
     if (renderOptions.points_colormap == mrpt::img::cmNONE)
@@ -284,8 +296,7 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
       if (!obj->empty())
       {
         obj->recolorizeByCoordinate(
-            recolorMin, recolorMax, renderOptions.recolorizeByCoordinateIndex,
-            renderOptions.points_colormap);
+            recolorMin, recolorMax, recolorIdx, renderOptions.points_colormap);
 
         // Set alpha:
         if (renderOptions.points_color.A != 1.0f)
@@ -311,15 +322,21 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
     auto obj = mrpt::opengl::CSetOfTriangles::Create();
 
     const auto lambdaVisitVoxel =
-        [&obj, recolorK, recolorMin, this](
+        [&obj, recolorK, recolorMin, recolorIdx, this](
             [[maybe_unused]] const global_index3d_t& idx, const VoxelData& v)
     {
       // get or evaluate its NDT:
       const auto& ndt = v.ndt();
-      if (!ndt.has_value()) return;
+      if (!ndt.has_value())
+      {
+        return;
+      }
 
       // flat enough to be a plane?
-      if (!ndt_is_plane(*ndt)) return;
+      if (!ndt_is_plane(*ndt))
+      {
+        return;
+      }
 
       const auto center = ndt->meanCov.mean.asTPoint().cast<float>();
 
@@ -337,9 +354,9 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
       }
       else
       {
-        t.setColor(mrpt::img::colormap(
-            renderOptions.planes_colormap,
-            recolorK * (center[renderOptions.recolorizeByCoordinateIndex] - recolorMin)));
+        t.setColor(
+            mrpt::img::colormap(
+                renderOptions.planes_colormap, recolorK * (center[recolorIdx] - recolorMin)));
       }
 
       t.vertices[0].xyzrgba.pt = center + vx + vy;
@@ -369,10 +386,16 @@ void NDT::getVisualizationInto(mrpt::opengl::CSetOfObjects& outObj) const
     {
       // get or evaluate its NDT:
       const auto& ndt = v.ndt();
-      if (!ndt.has_value()) return;
+      if (!ndt.has_value())
+      {
+        return;
+      }
 
       // flat enough to be a plane?
-      if (!ndt_is_plane(*ndt)) return;
+      if (!ndt_is_plane(*ndt))
+      {
+        return;
+      }
 
       const auto center = ndt->meanCov.mean.asTPoint().cast<float>();
 
@@ -851,13 +874,13 @@ void NDT::TLikelihoodOptions::readFromStream(mrpt::serialization::CArchive& in)
 
 void NDT::TRenderOptions::writeToStream(mrpt::serialization::CArchive& out) const
 {
-  const int8_t version = 1;
+  const int8_t version = 2;
   out << version;
   out << points_visible << point_size << points_color;
   out << planes_visible << planes_color;
   out << normals_visible << normals_color;
   out << static_cast<int8_t>(points_colormap) << static_cast<int8_t>(planes_colormap)
-      << recolorizeByCoordinateIndex;  // v1
+      << recolorByPointField;  // v1, v2
 }
 
 void NDT::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
@@ -868,6 +891,7 @@ void NDT::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
   {
     case 0:
     case 1:
+    case 2:
     {
       in >> points_visible >> point_size >> points_color;
       in >> planes_visible >> planes_color;
@@ -876,7 +900,26 @@ void NDT::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
       {
         in.ReadAsAndCastTo<int8_t>(this->points_colormap);
         in.ReadAsAndCastTo<int8_t>(this->planes_colormap);
-        in >> recolorizeByCoordinateIndex;
+
+        if (version >= 2)
+        {
+          in >> recolorByPointField;
+        }
+        else
+        {
+          switch (in.ReadAs<uint8_t>())
+          {
+            case 0:
+              recolorByPointField = "x";
+              break;
+            case 1:
+              recolorByPointField = "y";
+              break;
+            default:
+              recolorByPointField = "z";
+              break;
+          }
+        }
       }
     }
     break;
@@ -928,7 +971,8 @@ void NDT::TRenderOptions::dumpToTextStream(std::ostream& out) const
 
   LOADABLEOPTS_DUMP_VAR(points_colormap, int);
   LOADABLEOPTS_DUMP_VAR(planes_colormap, int);
-  LOADABLEOPTS_DUMP_VAR(recolorizeByCoordinateIndex, int);
+  using std::string;
+  LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);
 }
 
 void NDT::TInsertionOptions::loadFromConfigFile(
@@ -969,7 +1013,7 @@ void NDT::TRenderOptions::loadFromConfigFile(
 
   points_colormap = c.read_enum(s, "points_colormap", this->points_colormap);
   planes_colormap = c.read_enum(s, "planes_colormap", this->planes_colormap);
-  MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
+  MRPT_LOAD_CONFIG_VAR(recolorByPointField, string, c, s);
 }
 
 void NDT::internal_insertPointCloud3D(

@@ -710,7 +710,7 @@ void KeyframePointCloudMap::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(max_points_per_kf, uint64_t, c, s);
   MRPT_LOAD_CONFIG_VAR(max_overall_points, uint64_t, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
-  MRPT_LOAD_CONFIG_VAR(recolorizeByCoordinateIndex, int, c, s);
+  MRPT_LOAD_CONFIG_VAR(recolorByPointField, string, c, s);
 }
 
 void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) const
@@ -722,16 +722,17 @@ void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) 
   LOADABLEOPTS_DUMP_VAR(color.G, float);
   LOADABLEOPTS_DUMP_VAR(color.B, float);
   LOADABLEOPTS_DUMP_VAR(colormap, int);
-  LOADABLEOPTS_DUMP_VAR(recolorizeByCoordinateIndex, int);
+  using std::string;
+  LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);
   LOADABLEOPTS_DUMP_VAR(max_points_per_kf, int);
   LOADABLEOPTS_DUMP_VAR(max_overall_points, int);
 }
 
 void KeyframePointCloudMap::TRenderOptions::writeToStream(mrpt::serialization::CArchive& out) const
 {
-  const int8_t version = 1;
+  const int8_t version = 2;
   out << version;
-  out << point_size << color << int8_t(colormap) << recolorizeByCoordinateIndex;
+  out << point_size << color << int8_t(colormap) << recolorByPointField;  // v2
   out << max_points_per_kf << max_overall_points;  // v1
 }
 
@@ -743,11 +744,32 @@ void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::
   {
     case 0:
     case 1:
+    case 2:
     {
       in >> point_size;
       in >> this->color;
       in.ReadAsAndCastTo<int8_t>(this->colormap);
-      in >> recolorizeByCoordinateIndex;
+
+      if (version >= 2)
+      {
+        in >> recolorByPointField;
+      }
+      else
+      {
+        switch (in.ReadAs<uint8_t>())
+        {
+          case 0:
+            recolorByPointField = "x";
+            break;
+          case 1:
+            recolorByPointField = "y";
+            break;
+          default:
+            recolorByPointField = "z";
+            break;
+        }
+      }
+
       if (version >= 1)
       {
         in >> max_points_per_kf >> max_overall_points;
@@ -1138,6 +1160,15 @@ std::shared_ptr<mrpt::opengl::CPointCloudColoured> KeyframePointCloudMap::KeyFra
       return;
     }
 
+#if MRPT_VERSION >= 0x020f00  // 2.15.0
+    // Colorize by intensity with custom color map?
+    if (!org_cloud || !org_cloud->hasPointField("intensity"))
+    {
+      return;
+    }
+
+    const auto* Is = org_cloud->getPointsBufferRef_float_field("intensity");
+#else
     // Colorize by intensity with custom color map?
     if (!org_cloud || !org_cloud->hasField_Intensity())
     {
@@ -1145,6 +1176,7 @@ std::shared_ptr<mrpt::opengl::CPointCloudColoured> KeyframePointCloudMap::KeyFra
     }
 
     const auto* Is = org_cloud->getPointsBufferRef_intensity();
+#endif
     ASSERT_(Is);
 
     // Thread-local cache for max intensity
@@ -1189,7 +1221,22 @@ std::shared_ptr<mrpt::opengl::CPointCloudColoured> KeyframePointCloudMap::KeyFra
 
   if (ro.colormap != mrpt::img::cmNONE)
   {
-    const int idx = ro.recolorizeByCoordinateIndex;
+    const auto recolor_idx_from_field = [](const std::string& field) -> int
+    {
+      if (field == "x")
+      {
+        return 0;
+      }
+      if (field == "y")
+      {
+        return 1;
+      }
+      // Default to "z" (2)
+      return 2;
+    };
+    const int idx = recolor_idx_from_field(ro.recolorByPointField);
+    MRPT_TODO("Refactor this to make color by any channel");
+
     ASSERT_(idx >= 0 && idx <= 3);
 
     if (idx == 3)
@@ -1220,7 +1267,7 @@ std::shared_ptr<mrpt::opengl::CPointCloudColoured> KeyframePointCloudMap::KeyFra
         default:
           THROW_EXCEPTION("Should not reach here!");
       };
-      obj->recolorizeByCoordinate(minCoord, maxCoord, ro.recolorizeByCoordinateIndex, ro.colormap);
+      obj->recolorizeByCoordinate(minCoord, maxCoord, idx, ro.colormap);
     }
   }
 

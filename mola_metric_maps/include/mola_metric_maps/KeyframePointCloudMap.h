@@ -254,10 +254,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     /** Colormap for points (index is "z" coordinates) */
     mrpt::img::TColormap colormap = mrpt::img::cmHOT;
 
-    /** If colormap!=mrpt::img::cmNONE, use this coordinate
-     *  as color index: 0=x  1=y  2=z  3=intensity
-     */
-    uint8_t recolorizeByCoordinateIndex = 3;
+    /** If colormap!=mrpt::img::cmNONE, use this channel as color index */
+    std::string recolorByPointField = "intensity";
 
     uint64_t max_points_per_kf = 10000;  //!< Max points to render per key-frame
 
