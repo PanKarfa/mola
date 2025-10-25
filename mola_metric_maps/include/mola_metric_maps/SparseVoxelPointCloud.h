@@ -312,10 +312,9 @@ class SparseVoxelPointCloud : public mrpt::maps::CMetricMap,
 
   void visitAllPoints(const std::function<void(const mrpt::math::TPoint3Df&)>& f) const;
 
-  void visitAllVoxels(
-      const std::function<void(
-          const outer_index3d_t&, const inner_plain_index_t, const VoxelData&, const InnerGrid&)>&
-          f) const;
+  void visitAllVoxels(const std::function<void(
+                          const outer_index3d_t&, const inner_plain_index_t, const VoxelData&,
+                          const InnerGrid&)>& f) const;
 
   void visitAllGrids(const std::function<void(const outer_index3d_t&, const InnerGrid&)>& f) const;
 

@@ -702,8 +702,9 @@ void SparseTreesPointCloud::nn_radius_search(
   // Used to sort all candidates by distance:
   std::map<float /*distSqr*/, std::pair<mrpt::math::TPoint3Df, uint64_t /*id*/>> candidates;
 
-  auto lmbAddCandidate = [&](const float distSqr, const mrpt::math::TPoint3Df& pt, uint64_t id)
-  { candidates[distSqr] = {pt, id}; };
+  auto lmbAddCandidate = [&](const float distSqr, const mrpt::math::TPoint3Df& pt, uint64_t id) {
+    candidates[distSqr] = {pt, id};
+  };
 
   auto lambdaCheckCell = [&](const outer_index3d_t& p)
   {

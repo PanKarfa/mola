@@ -814,10 +814,9 @@ void SparseVoxelPointCloud::visitAllPoints(
   }
 }
 
-void SparseVoxelPointCloud::visitAllVoxels(
-    const std::function<void(
-        const outer_index3d_t&, const inner_plain_index_t, const VoxelData&, const InnerGrid&)>& f)
-    const
+void SparseVoxelPointCloud::visitAllVoxels(const std::function<void(
+                                               const outer_index3d_t&, const inner_plain_index_t,
+                                               const VoxelData&, const InnerGrid&)>& f) const
 {
   for (const auto& kv : grids_)
   {

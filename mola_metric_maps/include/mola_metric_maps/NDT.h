@@ -258,9 +258,8 @@ class NDT : public mrpt::maps::CMetricMap,
   }
 
   /// \overload (const version)
-  const VoxelData* voxelByGlobalIdxs(
-      const global_index3d_t& idx  //
-      /*, bool createIfNew this must be false for const! */) const
+  const VoxelData* voxelByGlobalIdxs(const global_index3d_t& idx  //
+                                     /*, bool createIfNew this must be false for const! */) const
   {  // reuse the non-const method:
     return const_cast<NDT*>(this)->voxelByGlobalIdxs(idx, false);
   }
