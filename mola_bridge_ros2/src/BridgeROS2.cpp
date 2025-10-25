@@ -351,7 +351,12 @@ void BridgeROS2::callbackOnPointCloud2(
 
     // Fix timestamps for Livox driver:
     // It uses doubles for timestamps, but they are actually nanoseconds!
+#if MRPT_VERSION >= 0x020f00  // 2.15.0
+    auto* ts =
+        p->getPointsBufferRef_float_field(mrpt::maps::CPointsMapXYZIRT::POINT_FIELD_TIMESTAMP);
+#else
     auto ts = p->getPointsBufferRef_timestamp();
+#endif
     ASSERT_(ts);
     if (!ts->empty())
     {
@@ -1655,8 +1660,7 @@ void BridgeROS2::internalAnalyzeTopicsToSubscribe(const mrpt::containers::yaml& 
     else if (type == "Odometry")
     {
       subsOdometry_.emplace_back(rosNode_->create_subscription<nav_msgs::msg::Odometry>(
-          topic_name, qos,
-          [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
+          topic_name, qos, [this, output_sensor_label](const nav_msgs::msg::Odometry& o)
           { this->callbackOnOdometry(o, output_sensor_label); }));
     }
     else
