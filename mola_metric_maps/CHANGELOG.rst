@@ -2,8 +2,8 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.0 (2025-10-28)
+------------------
 * format
 * Upgrade to use the upcoming MRPT 2.15 API for CGenericsPointsMap
 * KeyFrames metric map: new option to visualize (via ROS publish) with a maximum number of points, downsampling for better performance

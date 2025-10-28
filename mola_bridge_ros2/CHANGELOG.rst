@@ -3,8 +3,8 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.2.0 (2025-10-28)
+------------------
 * format
 * Fix build against upcoming mrpt v2.15.0
 * Contributors: Jose Luis Blanco-Claraco
