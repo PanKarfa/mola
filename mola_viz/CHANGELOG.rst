@@ -2,6 +2,12 @@
 Changelog for package mola_viz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* format
+* Upgrade to use the upcoming MRPT 2.15 API for CGenericsPointsMap
+* Contributors: Jose Luis Blanco-Claraco
+
 2.1.0 (2025-10-20)
 ------------------
 * FIX: Show correct sensor rate in Hz when visualizing with a decimation

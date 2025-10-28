@@ -3,6 +3,12 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* format
+* Fix build against upcoming mrpt v2.15.0
+* Contributors: Jose Luis Blanco-Claraco
+
 2.1.0 (2025-10-20)
 ------------------
 * Publish to ROS all map types implementing getAsSimplePointsMap()
