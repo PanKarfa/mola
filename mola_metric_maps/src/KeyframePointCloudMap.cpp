@@ -707,6 +707,7 @@ void KeyframePointCloudMap::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(color.R, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.G, float, c, s);
   MRPT_LOAD_CONFIG_VAR(color.B, float, c, s);
+  MRPT_LOAD_CONFIG_VAR(color.A, float, c, s);
   MRPT_LOAD_CONFIG_VAR(max_points_per_kf, uint64_t, c, s);
   MRPT_LOAD_CONFIG_VAR(max_overall_points, uint64_t, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
@@ -721,6 +722,7 @@ void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) 
   LOADABLEOPTS_DUMP_VAR(color.R, float);
   LOADABLEOPTS_DUMP_VAR(color.G, float);
   LOADABLEOPTS_DUMP_VAR(color.B, float);
+  LOADABLEOPTS_DUMP_VAR(color.A, float);
   LOADABLEOPTS_DUMP_VAR(colormap, int);
   using std::string;
   LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);

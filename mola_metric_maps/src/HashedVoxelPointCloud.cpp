@@ -1026,6 +1026,7 @@ void HashedVoxelPointCloud::TRenderOptions::dumpToTextStream(std::ostream& out) 
   LOADABLEOPTS_DUMP_VAR(color.R, float);
   LOADABLEOPTS_DUMP_VAR(color.G, float);
   LOADABLEOPTS_DUMP_VAR(color.B, float);
+  LOADABLEOPTS_DUMP_VAR(color.A, float);
   LOADABLEOPTS_DUMP_VAR(colormap, int);
   using std::string;
   LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);
