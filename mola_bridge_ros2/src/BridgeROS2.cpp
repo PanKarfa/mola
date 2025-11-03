@@ -1441,6 +1441,10 @@ void BridgeROS2::timerPubMap()
   {
     const std::string mapTopic = (mu.method.empty() ? "slam"s : mu.method) + "/"s + layerName;
 
+    MRPT_LOG_DEBUG_STREAM(
+        "Publishing map topic '" << mapTopic << "', source class: "
+                                 << (mu.map ? mu.map->GetRuntimeClass()->className : "(null)"));
+
     // Is it a point cloud?
     if (const auto mapPts = std::dynamic_pointer_cast<const mrpt::maps::CPointsMap>(mu.map); mapPts)
     {
