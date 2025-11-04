@@ -260,6 +260,8 @@ How to install all MOLA modules:
         git clone https://github.com/MOLAorg/mola.git --recursive
         git clone https://github.com/MOLAorg/mola_state_estimation.git
         git clone https://github.com/MOLAorg/mola_test_datasets.git
+        git clone https://github.com/MOLAorg/mola_imu_preintegration.git
+        git clone https://github.com/MOLAorg/mola_sm_loop_closure.git
 
         # MOLA lidar odometry package:
         git clone https://github.com/MOLAorg/mola_lidar_odometry.git --recursive
