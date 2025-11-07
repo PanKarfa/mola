@@ -1,3 +1,5 @@
+# cmake-lint: disable=convention/filename
+
 # This is from https://github.com/vector-of-bool/pitchfork/blob/develop/cmake/FindFilesystem.cmake
 
 include(CMakePushCheckState)
@@ -6,11 +8,6 @@ include(CheckCXXSourceCompiles)
 include(FindPackageHandleStandardArgs)
 
 cmake_push_check_state(RESET)
-
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(FILESYSTEM
-  REQUIRED_VARS FILESYSTEM_LIBRARIES FILESYSTEM_INCLUDE_DIR
-  VERSION_VAR FILESYSTEM_VERSION
-)
 
 # this seems not to affect check_cxx_source_compiles()...
 set(CMAKE_CXX_STANDARD 17)
@@ -83,3 +80,10 @@ else()
         message(FATAL_ERROR "No C++ support for std::filesystem")
     endif()
 endif()
+
+
+
+find_package_handle_standard_args(Filesystem
+  REQUIRED_VARS have_fs
+)
+
