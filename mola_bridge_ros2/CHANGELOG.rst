@@ -3,6 +3,11 @@ Changelog for package mola_bridge_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* BridgeROS2: more debug traces in map publishing
+* Contributors: Jose Luis Blanco-Claraco
+
 2.2.0 (2025-10-28)
 ------------------
 * format

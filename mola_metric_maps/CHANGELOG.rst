@@ -2,6 +2,11 @@
 Changelog for package mola_metric_maps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Metric maps: implement missing loading 'color.A' from config files
+* Contributors: Jose Luis Blanco-Claraco
+
 2.2.0 (2025-10-28)
 ------------------
 * format
