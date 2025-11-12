@@ -260,6 +260,8 @@ class KeyframePointCloudMap : public mrpt::maps::CMetricMap,
     uint64_t max_points_per_kf = 10000;  //!< Max points to render per key-frame
 
     uint64_t max_overall_points = 1000000;  //!< Max points to render in global maps
+
+    float keyframes_axes_length = .0f;  //!< If >0, draw XYZ frames per key-frame in the map
   };
   TRenderOptions renderOptions;
 

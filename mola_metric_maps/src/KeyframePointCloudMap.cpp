@@ -22,6 +22,7 @@
 #include <mrpt/obs/CObservationPointCloud.h>
 #include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/opengl/Scene.h>
+#include <mrpt/opengl/stock_objects.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
 #include <mrpt/system/string_utils.h>  // unitsFormat()
 #include <mrpt/version.h>
@@ -544,6 +545,14 @@ void KeyframePointCloudMap::getVisualizationInto(mrpt::opengl::CSetOfObjects& ou
 #endif
 
     outObj.insert(obj);
+
+    if (renderOptions.keyframes_axes_length > 0)
+    {
+      auto glAxes =
+          mrpt::opengl::stock_objects::CornerXYZSimple(renderOptions.keyframes_axes_length);
+      glAxes->setPose(kf.pose());
+      outObj.insert(glAxes);
+    }
   }
 
   MRPT_END
@@ -712,6 +721,7 @@ void KeyframePointCloudMap::TRenderOptions::loadFromConfigFile(
   MRPT_LOAD_CONFIG_VAR(max_overall_points, uint64_t, c, s);
   colormap = c.read_enum(s, "colormap", this->colormap);
   MRPT_LOAD_CONFIG_VAR(recolorByPointField, string, c, s);
+  MRPT_LOAD_CONFIG_VAR(keyframes_axes_length, float, c, s);
 }
 
 void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) const
@@ -728,14 +738,16 @@ void KeyframePointCloudMap::TRenderOptions::dumpToTextStream(std::ostream& out) 
   LOADABLEOPTS_DUMP_VAR(recolorByPointField, string);
   LOADABLEOPTS_DUMP_VAR(max_points_per_kf, int);
   LOADABLEOPTS_DUMP_VAR(max_overall_points, int);
+  LOADABLEOPTS_DUMP_VAR(keyframes_axes_length, float);
 }
 
 void KeyframePointCloudMap::TRenderOptions::writeToStream(mrpt::serialization::CArchive& out) const
 {
-  const int8_t version = 2;
+  const int8_t version = 3;
   out << version;
   out << point_size << color << int8_t(colormap) << recolorByPointField;  // v2
   out << max_points_per_kf << max_overall_points;  // v1
+  out << keyframes_axes_length;  // v3
 }
 
 void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::CArchive& in)
@@ -747,6 +759,7 @@ void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::
     case 0:
     case 1:
     case 2:
+    case 3:
     {
       in >> point_size;
       in >> this->color;
@@ -775,6 +788,10 @@ void KeyframePointCloudMap::TRenderOptions::readFromStream(mrpt::serialization::
       if (version >= 1)
       {
         in >> max_points_per_kf >> max_overall_points;
+      }
+      if (version >= 3)
+      {
+        in >> keyframes_axes_length;
       }
     }
     break;
