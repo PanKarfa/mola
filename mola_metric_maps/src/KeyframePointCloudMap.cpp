@@ -23,6 +23,7 @@
 #include <mrpt/opengl/CPointCloudColoured.h>
 #include <mrpt/opengl/Scene.h>
 #include <mrpt/opengl/stock_objects.h>
+#include <mrpt/poses/Lie/SO.h>
 #include <mrpt/serialization/CArchive.h>  // serialization
 #include <mrpt/system/string_utils.h>  // unitsFormat()
 #include <mrpt/version.h>
@@ -299,9 +300,18 @@ void KeyframePointCloudMap::icp_get_prepared_as_global(
     }
 
     // convert query to local coordinates of the keyframe:
-    const auto query_local    = kf.pose().inverseComposePoint(icp_ref_point.translation());
-    const auto dist_to_kf     = query_local.norm();
-    kfs_to_search[dist_to_kf] = kf_id;
+    const auto query_local = icp_ref_point - kf.pose();
+
+    // Heuristic mix of Euclidean and angular distances, to favor nearby frames, but only if their
+    // orientation is similar:
+    const double sigma_rot = mrpt::DEG2RAD(90.0);
+
+    const auto dist_to_kf  = query_local.norm();
+    const auto angle_to_kf = mrpt::poses::Lie::SO<3>::log(query_local.getRotationMatrix()).norm();
+
+    const double metric = dist_to_kf * std::exp(angle_to_kf / sigma_rot);
+
+    kfs_to_search[metric] = kf_id;
   }
 
   // TODO: Explore other criteria here so more distant frames are used too?
