@@ -119,7 +119,7 @@ class MolaViz : public ExecutableBase, public VizInterface
       const std::string&                               parentWindow = "main") override;
 
   std::future<bool> output_console_message(
-      const std::string& msg, const std::string& parentWindow = "main") override;
+      const std::string& message, const std::string& parentWindow = "main") override;
 
   /// Updates to nanogui window controls must happen via this method to ensure
   /// it is run by the correct thread, in the next available time slot.

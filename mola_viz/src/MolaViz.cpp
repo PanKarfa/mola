@@ -1374,24 +1374,30 @@ std::future<bool> MolaViz::execute_custom_code_on_background_scene(
 }
 
 std::future<bool> MolaViz::output_console_message(
-    const std::string& msg, const std::string& parentWindow)
+    const std::string& message, const std::string& parentWindow)
 {
   using return_type = bool;
 
   auto task = std::make_shared<std::packaged_task<return_type()>>(
-      [this, msg, parentWindow]()
+      [this, message, parentWindow]()
       {
-        MRPT_LOG_DEBUG_STREAM("output_console_message() msg=" << msg);
+        MRPT_LOG_DEBUG_STREAM("output_console_message() msg=" << message);
 
         ASSERT_(windows_.count(parentWindow));
         auto& winData = windows_.at(parentWindow);
 
-        // Append msg:
-        winData.console_messages.push_back(msg);
-        // remove older ones:
-        while (winData.console_messages.size() > max_console_lines_)
+        // Split multiline messages:
+        std::vector<std::string> lines;
+        mrpt::system::tokenize(message, "\r\n", lines);
+        for (const auto& msg : lines)
         {
-          winData.console_messages.erase(winData.console_messages.begin());
+          // Append msg:
+          winData.console_messages.push_back(msg);
+          // remove older ones:
+          while (winData.console_messages.size() > max_console_lines_)
+          {
+            winData.console_messages.erase(winData.console_messages.begin());
+          }
         }
 
         mrpt::gui::CDisplayWindowGUI::Ptr topWin = winData.win;
@@ -1533,8 +1539,8 @@ void MolaViz::internal_handle_decaying_clouds()
       // clouds to be deleted?
       if (delta_time > static_cast<float>(decay_cloud.decay_time_seconds))
       {
-        // Delete clouds from the actual GL container, otherwise they will keep consuming rendering
-        // resources forever!
+        // Delete clouds from the actual GL container, otherwise they will keep consuming
+        // rendering resources forever!
         mrpt::opengl::CSetOfObjects::Ptr glContainer;
         if (auto o = winData.win->background_scene->getByName(
                 DECAY_CLOUDS_NAME, decay_cloud.opengl_viewport_name);
