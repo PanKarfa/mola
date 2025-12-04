@@ -78,6 +78,38 @@ namespace
 
 constexpr const char* DECAY_CLOUDS_NAME = "__viz_decaying_clouds";
 
+template <typename Iter>
+std::pair<Iter, Iter> minmax_ignore_nan(Iter begin, Iter end)
+{
+  // Find first non-NaN element
+  Iter first = std::find_if(begin, end, [](auto x) { return !std::isnan(x); });
+
+  if (first == end)
+  {
+    return {end, end};  // no valid elements
+  }
+
+  Iter itMin = first;
+  Iter itMax = first;
+
+  for (Iter it = std::next(first); it != end; ++it)
+  {
+    if (!std::isnan(*it))
+    {
+      if (*it < *itMin)
+      {
+        itMin = it;
+      }
+      if (*it > *itMax)
+      {
+        itMax = it;
+      }
+    }
+  }
+
+  return {itMin, itMax};
+}
+
 void gui_handler_show_common_sensor_info(
     const mrpt::obs::CObservation& obs, nanogui::Window* w,
     const double sensor_rate_decimation = 1.0, const std::vector<std::string>& additionalMsgs = {})
@@ -340,12 +372,13 @@ void gui_handler_point_cloud(
 
     // Collect optional stats:
 #if MRPT_VERSION >= 0x020f00  // 2.15.0
+
     for (const auto& field : objPc->pointcloud->getPointFieldNames_float())
     {
       if (const auto* buf = objPc->pointcloud->getPointsBufferRef_float_field(field);
           buf && !buf->empty())
       {
-        const auto [itMin, itMax] = std::minmax_element(buf->begin(), buf->end());
+        const auto [itMin, itMax] = minmax_ignore_nan(buf->begin(), buf->end());
         additionalMsgs.push_back(mrpt::format(
             "%.*s range: [%.02f,%.02f]", static_cast<int>(field.size()), field.data(), *itMin,
             *itMax));
@@ -353,7 +386,7 @@ void gui_handler_point_cloud(
       if (const auto* buf = objPc->pointcloud->getPointsBufferRef_uint_field(field);
           buf && !buf->empty())
       {
-        const auto [itMin, itMax] = std::minmax_element(buf->begin(), buf->end());
+        const auto [itMin, itMax] = minmax_ignore_nan(buf->begin(), buf->end());
         additionalMsgs.push_back(mrpt::format(
             "%.*s range: [%hu,%hu]", static_cast<int>(field.size()), field.data(), *itMin, *itMax));
       }
