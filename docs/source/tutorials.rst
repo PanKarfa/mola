@@ -10,6 +10,7 @@ Tutorials
   :caption: SLAM, mapping, localization
 
   building-maps
+  tutorial-ouster-lio
   tutorial-mola-lo-map-and-localize
 
 
